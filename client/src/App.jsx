@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
+import Registration from './pages/auth/Register'
 import React from 'react'
 import './App.css'
 
@@ -10,7 +11,7 @@ const App = () => {
 
         <Route path="/" element={<div>Home Page</div>} />
         <Route path="/auth/login" element={<div>Login Page</div>} />
-        <Route path="/auth/register" element={<div>Register Page</div>} />
+        <Route path="/auth/register" element={<Registration />} />
 
         <Route path="/client/client-dashboard" element={<div>Client Dashboard</div>} />
         <Route path="/client/appointment-scheduling" element={<div>appointment scheduling</div>} />
