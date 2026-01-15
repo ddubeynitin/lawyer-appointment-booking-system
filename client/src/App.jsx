@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
 import React from 'react'
 import './App.css'
+import LoginPage from './pages/auth/LoginPage'
 
 const App = () => {
  
@@ -9,7 +10,7 @@ const App = () => {
       <Routes>
 
         <Route path="/" element={<div>Home Page</div>} />
-        <Route path="/auth/login" element={<div>Login Page</div>} />
+        <Route path="/auth/login" element={<LoginPage />} />
         <Route path="/auth/register" element={<div>Register Page</div>} />
 
         <Route path="/client/client-dashboard" element={<div>Client Dashboard</div>} />
