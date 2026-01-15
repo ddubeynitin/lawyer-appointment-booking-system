@@ -3,6 +3,7 @@ import Registration from './pages/auth/Register'
 import ClientDashboard from './pages/client/ClientDasshboard'
 import React from 'react'
 import './App.css'
+import LoginPage from './pages/auth/LoginPage'
 
 const App = () => {
  
@@ -11,7 +12,7 @@ const App = () => {
       <Routes>
 
         <Route path="/" element={<div>Home Page</div>} />
-        <Route path="/auth/login" element={<div>Login Page</div>} />
+        <Route path="/auth/login" element={<LoginPage />} />
         <Route path="/auth/register" element={<Registration />} />
 
         <Route path="/client/client-dashboard" element={<ClientDashboard />} />
