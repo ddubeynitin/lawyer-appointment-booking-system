@@ -1,4 +1,6 @@
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
+import Registration from './pages/auth/Register'
+import ClientDashboard from './pages/client/ClientDasshboard'
 import React from 'react'
 import './App.css'
 import LoginPage from './pages/auth/LoginPage'
@@ -11,9 +13,9 @@ const App = () => {
 
         <Route path="/" element={<div>Home Page</div>} />
         <Route path="/auth/login" element={<LoginPage />} />
-        <Route path="/auth/register" element={<div>Register Page</div>} />
+        <Route path="/auth/register" element={<Registration />} />
 
-        <Route path="/client/client-dashboard" element={<div>Client Dashboard</div>} />
+        <Route path="/client/client-dashboard" element={<ClientDashboard />} />
         <Route path="/client/appointment-scheduling" element={<div>appointment scheduling</div>} />
         <Route path="/client/appointment-confirmation" element={<div>appointment confirmation</div>} />
 
