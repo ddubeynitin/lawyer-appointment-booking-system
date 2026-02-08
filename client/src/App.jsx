@@ -14,12 +14,14 @@ const App = () => {
         <Route path="/" element={<div>Home Page</div>} />
         <Route path="/auth/login" element={<LoginPage />} />
         <Route path="/auth/register" element={<Registration />} />
+        <Route path="/complete-profile" element={<div>Lawyer Complete Profile Details</div>} />
 
         <Route path="/client/client-dashboard" element={<ClientDashboard />} />
         <Route path="/client/appointment-scheduling" element={<div>appointment scheduling</div>} />
         <Route path="/client/appointment-confirmation" element={<div>appointment confirmation</div>} />
 
         <Route path="/lawyer/lawyer-dashboard" element={<div>Lawyer Dashboard</div>} />
+        <Route path="/lawyer/lawyer-profile" element={<div>Lawyer Profile</div>} />
 
         <Route path="/admin/admin-dashboard" element={<div>Admin Dashboard</div>} />
         <Route path="/admin/manage-users" element={<div>Manage Users</div>} />
