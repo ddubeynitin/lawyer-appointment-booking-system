@@ -36,7 +36,7 @@ export default function Dashboard() {
   return (
     <div className="flex min-h-screen bg-[#F7F9FC] font-sans">
       {/* Sidebar */}
-      <aside className="w-[260px] bg-white border-r border-gray-200 px-6 py-6 flex flex-col justify-between">
+      <aside className="w-65 bg-white border-r border-gray-200 px-6 py-6 flex flex-col justify-between">
         <div>
           <div className="flex items-center gap-2 mb-10">
             <div className="w-9 h-9 rounded-lg bg-blue-600 text-white flex items-center justify-center font-semibold">
@@ -127,7 +127,7 @@ export default function Dashboard() {
             {activeMenu === "overview" && "Dashboard Overview"}
             {activeMenu === "users" && "User Management"}
             {activeMenu === "verification" && "Verification Queue"}
-            {activeMenu === "financials" && "Financials"}
+            {activeMenu === "financial" && "Financial"}
             {activeMenu === "appointments" && "Appointments"}
             {activeMenu === "reports" && "Reports"}
             {activeMenu === "settings" && "Settings"}
@@ -204,7 +204,7 @@ export default function Dashboard() {
                 </button>
               </div>
             </div>
-            <div className="h-52 rounded-lg bg-gradient-to-t from-blue-100 via-blue-50 to-transparent flex items-center justify-center">
+            <div className="h-52 rounded-lg bg-linear-to-t from-blue-100 via-blue-50 to-transparent flex items-center justify-center">
               <span className="text-sm text-gray-500">
                 {selectedRange === "monthly" ? "Monthly chart placeholder" : "Weekly chart placeholder"}
               </span>
