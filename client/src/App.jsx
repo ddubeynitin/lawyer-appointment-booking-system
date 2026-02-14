@@ -1,11 +1,12 @@
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
 import Registration from './pages/auth/Register'
-import ClientDashboard from './pages/client/ClientDasshboard';
+import ClientDashboard from './pages/client/ClientDasshboard'
 import AdminDashBoard from './pages/admin/AdminDashBoard'
 
 import React from 'react'
 import './App.css'
 import LoginPage from './pages/auth/LoginPage'
+import AdminLoginPage from './pages/admin/AdminLoginPage';  
 
 const App = () => {
  
@@ -25,6 +26,7 @@ const App = () => {
         <Route path="/lawyer/lawyer-dashboard" element={<div>Lawyer Dashboard</div>} />
         <Route path="/lawyer/lawyer-profile" element={<div>Lawyer Profile</div>} />
 
+        <Route path="/admin/admin-login" element={<AdminLoginPage />} />
         <Route path="/admin/admin-dashboard" element={<AdminDashBoard/>} />
         <Route path="/admin/manage-users" element={<div>Manage Users</div>} />
         <Route path="/admin/manage-lawyers" element={<div>Manage Lawyers</div>} />
