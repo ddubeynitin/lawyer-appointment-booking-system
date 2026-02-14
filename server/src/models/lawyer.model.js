@@ -1,7 +1,14 @@
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
+const bcrypt = require("bcrypt");
 
 const lawyerSchema = new mongoose.Schema(
   {
+    licenseNo: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+
     name: {
       type: String,
       required: true,
@@ -16,18 +23,26 @@ const lawyerSchema = new mongoose.Schema(
       trim: true,
     },
 
+    phone: {
+      type: String,
+      required: true,
+    },
+
     password: {
       type: String,
       required: true,
     },
-
-    profileImage: {
+    
+    role: {
       type: String,
+      enum: ["lawyer"],
+      default: "lawyer",
     },
 
-    phone: {
+    // Additional fields for lawyer profile
+    
+    profileImage: {
       type: String,
-      required: true,
     },
 
     location: {
@@ -44,11 +59,6 @@ const lawyerSchema = new mongoose.Schema(
       },
     ],
 
-    licenseNo: {
-      type: String,
-      required: true,
-      unique: true,
-    },
 
     specializations: [
       {
@@ -65,14 +75,14 @@ const lawyerSchema = new mongoose.Schema(
         },
         fee: {
           type: Number,
-          required: true,
+          default: 0,
         },
       },
     ],
 
     experience: {
       type: Number,
-      required: true,
+      default: 0,
     },
 
     rating: {
@@ -96,6 +106,11 @@ const lawyerSchema = new mongoose.Schema(
       default: "Pending",
     },
 
+    isProfileComplete: {
+      type: Boolean,
+      default: false 
+    },
+
     isActive: {
       type: Boolean,
       default: true,
@@ -106,7 +121,22 @@ const lawyerSchema = new mongoose.Schema(
   },
 );
 
-lawyerSchema.index({ licenseNo: 1 }, { unique: true });
+// Hash password before saving
+lawyerSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+  } catch (err) {
+    throw err;
+  }
+});
+
+// Method to compare password for authentication
+lawyerSchema.methods.comparePassword = async function (candidatePassword) {
+  return await bcrypt.compare(candidatePassword, this.password);
+};
+
 lawyerSchema.index({ specializations: 1 });
 lawyerSchema.index({ rating: -1 });
 
