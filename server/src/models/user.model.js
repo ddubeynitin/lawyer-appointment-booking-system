@@ -1,5 +1,5 @@
-import mongoose from "mongoose";
-
+const mongoose = require("mongoose");
+const bcrypt = require("bcrypt");
 const userSchema = new mongoose.Schema(
   {
     name: {
@@ -15,13 +15,13 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
-
-    password: {
+    
+    phone: {
       type: String,
       required: true,
     },
 
-    phone: {
+    password: {
       type: String,
       required: true,
     },
@@ -41,6 +41,21 @@ const userSchema = new mongoose.Schema(
     timestamps: { createdAt: true, updatedAt: false },
   },
 );
+
+userSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
+  try {    
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    
+  } catch (err) {
+    throw err;
+  }
+});
+
+userSchema.methods.comparePassword = async function (candidatePassword) {
+  return await bcrypt.compare(candidatePassword, this.password);
+};
 
 userSchema.index({ email: 1 }, { unique: true });
 
