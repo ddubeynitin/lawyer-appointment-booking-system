@@ -1,6 +1,8 @@
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
 import Registration from './pages/auth/Register'
-import ClientDashboard from './pages/client/ClientDasshboard'
+import ClientDashboard from './pages/client/ClientDasshboard';
+import AdminDashBoard from './pages/admin/AdminDashBoard'
+
 import React from 'react'
 import './App.css'
 import LoginPage from './pages/auth/LoginPage'
@@ -18,6 +20,7 @@ const App = () => {
         <Route path="/" element={<Home />} />
         <Route path="/auth/login" element={<LoginPage />} />
         <Route path="/auth/register" element={<Registration />} />
+        <Route path="/complete-profile" element={<div>Lawyer Complete Profile Details</div>} />
 
         <Route path="/client/client-dashboard" element={<ClientDashboard />} />
         <Route path="/client/appointment-scheduling" element={<MyAppointments />} />
@@ -25,8 +28,9 @@ const App = () => {
         <Route path="/client/lawyer-list" element={<LawyersList />} />
 
         <Route path="/lawyer/lawyer-dashboard" element={<LawyerDashboard/>} />
+        <Route path="/lawyer/lawyer-profile" element={<div>Lawyer Profile</div>} />
 
-        <Route path="/admin/admin-dashboard" element={<div>Admin Dashboard</div>} />
+        <Route path="/admin/admin-dashboard" element={<AdminDashBoard/>} />
         <Route path="/admin/manage-users" element={<div>Manage Users</div>} />
         <Route path="/admin/manage-lawyers" element={<div>Manage Lawyers</div>} />
 
