@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
 const adminSchema = new mongoose.Schema(
   {
@@ -31,7 +31,5 @@ const adminSchema = new mongoose.Schema(
     timestamps: false
   }
 );
-
-adminSchema.index({ email: 1 }, { unique: true });
 
 module.exports = mongoose.model("Admin", adminSchema);

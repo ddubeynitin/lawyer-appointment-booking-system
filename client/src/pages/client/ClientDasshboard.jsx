@@ -16,8 +16,8 @@ const ClientDashboard = () => {
 
           <nav className="hidden md:flex items-center gap-6 text-shadow-2xsm font-medium ml-auto px-5">
             <Link className="text-blue-600">Dashboard</Link>
-            <Link className="hover:text-blue-600">Search Lawyers</Link>
-            <Link className="hover:text-blue-600">Messages</Link>
+            <Link to={"/client/lawyer-list"} className="hover:text-blue-600">Search Lawyers</Link>
+            <Link to={"/client/appointment-scheduling"} className="hover:text-blue-600">My Appoinments</Link>
             <Link className="hover:text-blue-600">My Profile</Link>
         </nav>
 
