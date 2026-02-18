@@ -1,92 +1,107 @@
 import React from "react";
 import { FaGavel } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import  useFetch  from "../../hooks/useFetch";
+import LawyerCard from "../../components/common/LawyerCard";
+const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+
+// const lawyers = [
+//   {
+//     name: "Sarah Jenkins, Esq.",
+//     role: "Senior Family Attorney",
+//     location: "San Francisco, CA",
+//     rating: "4.9 (84)",
+//     tags: ["Family Law", "Divorce", "Custody"],
+//     price: "$250/hr",
+//     availability: "Today",
+//     img: "https://randomuser.me/api/portraits/women/44.jpg",
+//   },
+//   {
+//     name: "James Carter",
+//     role: "Corporate & Startups",
+//     location: "Oakland, CA",
+//     rating: "5.0 (120)",
+//     tags: ["Corporate", "IP Law"],
+//     price: "$400/hr",
+//     availability: "Mon, Oct 24",
+//     img: "https://randomuser.me/api/portraits/men/32.jpg",
+//   },
+//   {
+//     name: "Elena Rodriguez",
+//     role: "Criminal Defense Expert",
+//     location: "San Francisco, CA",
+//     rating: "4.8 (45)",
+//     tags: ["Criminal", "DUI", "Litigation"],
+//     price: "$300/hr",
+//     availability: "Tomorrow",
+//     img: "https://randomuser.me/api/portraits/women/65.jpg",
+//   },
+//   {
+//     name: "Michael Chang",
+//     role: "Immigration Specialist",
+//     location: "San Jose, CA",
+//     rating: "4.7 (210)",
+//     tags: ["Immigration", "Visas"],
+//     price: "$200/hr",
+//     availability: "Video Available",
+//     img: "https://randomuser.me/api/portraits/men/54.jpg",
+//   },
+//   {
+//     name: "Linda Silva",
+//     role: "Tax Law Expert",
+//     location: "San Francisco, CA",
+//     rating: "5.0 (15)",
+//     tags: ["Tax Law", "Audits"],
+//     price: "$350/hr",
+//     availability: "Today",
+//     img: "https://randomuser.me/api/portraits/women/12.jpg",
+//   },
+//   {
+//     name: "David Rossi",
+//     role: "Real Estate Attorney",
+//     location: "Berkeley, CA",
+//     rating: "4.6 (72)",
+//     tags: ["Property", "Contracts"],
+//     price: "$275/hr",
+//     availability: "Video Available",
+//     img: "https://randomuser.me/api/portraits/men/76.jpg",
+//   },
+//   {
+//     name: "Amit Verma",
+//     role: "Corporate Lawyer",
+//     location: "San Francisco, CA",
+//     rating: "4.8 (98)",
+//     tags: ["Corporate", "Compliance"],
+//     price: "$320/hr",
+//     availability: "Tomorrow",
+//     img: "https://randomuser.me/api/portraits/men/85.jpg",
+//   },
+//   {
+//     name: "Sophia Lee",
+//     role: "Employment Lawyer",
+//     location: "San Francisco, CA",
+//     rating: "4.7 (88)",
+//     tags: ["Employment", "HR Law"],
+//     price: "$280/hr",
+//     availability: "Tomorrow",
+//     img: "https://randomuser.me/api/portraits/women/56.jpg",
+//   },
+// ];
 
 
-const lawyers = [
-  {
-    name: "Sarah Jenkins, Esq.",
-    role: "Senior Family Attorney",
-    location: "San Francisco, CA",
-    rating: "4.9 (84)",
-    tags: ["Family Law", "Divorce", "Custody"],
-    price: "$250/hr",
-    availability: "Today",
-    img: "https://randomuser.me/api/portraits/women/44.jpg",
-  },
-  {
-    name: "James Carter",
-    role: "Corporate & Startups",
-    location: "Oakland, CA",
-    rating: "5.0 (120)",
-    tags: ["Corporate", "IP Law"],
-    price: "$400/hr",
-    availability: "Mon, Oct 24",
-    img: "https://randomuser.me/api/portraits/men/32.jpg",
-  },
-  {
-    name: "Elena Rodriguez",
-    role: "Criminal Defense Expert",
-    location: "San Francisco, CA",
-    rating: "4.8 (45)",
-    tags: ["Criminal", "DUI", "Litigation"],
-    price: "$300/hr",
-    availability: "Tomorrow",
-    img: "https://randomuser.me/api/portraits/women/65.jpg",
-  },
-  {
-    name: "Michael Chang",
-    role: "Immigration Specialist",
-    location: "San Jose, CA",
-    rating: "4.7 (210)",
-    tags: ["Immigration", "Visas"],
-    price: "$200/hr",
-    availability: "Video Available",
-    img: "https://randomuser.me/api/portraits/men/54.jpg",
-  },
-  {
-    name: "Linda Silva",
-    role: "Tax Law Expert",
-    location: "San Francisco, CA",
-    rating: "5.0 (15)",
-    tags: ["Tax Law", "Audits"],
-    price: "$350/hr",
-    availability: "Today",
-    img: "https://randomuser.me/api/portraits/women/12.jpg",
-  },
-  {
-    name: "David Rossi",
-    role: "Real Estate Attorney",
-    location: "Berkeley, CA",
-    rating: "4.6 (72)",
-    tags: ["Property", "Contracts"],
-    price: "$275/hr",
-    availability: "Video Available",
-    img: "https://randomuser.me/api/portraits/men/76.jpg",
-  },
-  {
-    name: "Amit Verma",
-    role: "Corporate Lawyer",
-    location: "San Francisco, CA",
-    rating: "4.8 (98)",
-    tags: ["Corporate", "Compliance"],
-    price: "$320/hr",
-    availability: "Tomorrow",
-    img: "https://randomuser.me/api/portraits/men/85.jpg",
-  },
-  {
-    name: "Sophia Lee",
-    role: "Employment Lawyer",
-    location: "San Francisco, CA",
-    rating: "4.7 (88)",
-    tags: ["Employment", "HR Law"],
-    price: "$280/hr",
-    availability: "Tomorrow",
-    img: "https://randomuser.me/api/portraits/women/56.jpg",
-  },
-];
 
 function LawyerList() {
+  const [lawyers, setLawyers] = React.useState([]);
+  const { data, loading, error } = useFetch(`${API_URL}/api/lawyers`);
+  console.log("Data:", data);
+  console.log("Loading:", loading);
+  console.log("Error:", error);
+  React.useEffect(() => {
+    if (data) {
+      setLawyers(data);
+    }
+  }, [data]);
+  
   return (
     <div className="min-h-screen bg-slate-50">
       {/* HEADER */}
@@ -172,61 +187,15 @@ function LawyerList() {
         {/* LAWYER GRID */}
         <main className="flex-1 border border-gray-50 rounded-xl bg-gray-50 p-8">
           <p className="mb-4 text-gray-700">
-            Showing <span className="font-semibold">{lawyers.length}</span> Lawyers
-            in San Francisco, CA
+            Showing <span className="font-semibold">{lawyers.length}</span> 
           </p>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {lawyers.map((lawyer, index) => (
-              <div
-                key={index}
-                className="bg-white p-5 rounded-xl border border-gray-300 hover:shadow-md transition"
-              >
-                <div className="flex gap-4">
-                  <img
-                    src={lawyer.img}
-                    alt="lawyer"
-                    className="w-14 h-14 rounded-full"
-                  />
-                  <div>
-                    <h4 className="font-semibold">{lawyer.name}</h4>
-                    <p className="text-sm text-gray-500">{lawyer.role}</p>
-                    <p className="text-sm text-gray-500">📍 {lawyer.location}</p>
-                  </div>
-                </div>
-
-                <div className="mt-3 text-yellow-500 font-semibold">
-                  ⭐ {lawyer.rating}
-                </div>
-
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {lawyer.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-md"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-
-                <p className="text-sm text-gray-500 mt-3">
-                  Next available: {lawyer.availability}
-                </p>
-
-                <div className="flex justify-between items-center mt-4">
-                  <span className="font-semibold">{lawyer.price}</span>
-                  <div className="flex gap-2">
-                    <button className="border border-gray-200 text-black bg-gray-50  px-3 py-1 rounded-lg text-sm">
-                      Profile
-                    </button>
-                    <button className="bg-blue-600 text-white  px-3 py-1 rounded-lg text-sm">
-                      Book Now
-                    </button>
-                  </div>
-                </div>
-              </div>
+            {/* lawyer card with image , name, role, location, rating, tags, price, availability */}
+            {lawyers.map((lawyer) => (
+              <LawyerCard key={lawyer._id} lawyer={lawyer} />
             ))}
+
           </div>
         </main>
       </div>
