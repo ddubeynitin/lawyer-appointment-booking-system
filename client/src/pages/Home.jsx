@@ -23,7 +23,7 @@ const Home = () => {
 
           {/* Nav */}
           <nav className="hidden md:flex items-center gap-8 text-sm">
-            <Link to="/find-lawyer" className="hover:text-blue-600">
+            <Link to="/" className="hover:text-blue-600">
               Find a Lawyer
             </Link>
             <Link to="/for-lawyers" className="hover:text-blue-600">
@@ -40,13 +40,13 @@ const Home = () => {
           {/* Auth */}
           <div className="flex items-center gap-3">
             <Link
-              to="/login"
+              to="/auth/login"
               className="border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-100"
             >
               Login
             </Link>
             <Link
-              to="/signup"
+              to="/auth/register"
               className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
             >
               Get Started
@@ -56,7 +56,7 @@ const Home = () => {
       </header>
 
       {/* ================= HERO ================= */}
-      <section className="bg-gradient-to-b from-blue-50 to-white">
+      <section className="bg-linear-to-b from-blue-50 to-white">
         <div className="max-w-7xl mx-auto px-6 py-20 text-center">
           <span className="inline-block mb-4 px-4 py-1 text-xs bg-blue-100 text-blue-600 rounded-full">
             TRUSTED BY OVER 10,000 CLIENTS
@@ -75,7 +75,7 @@ const Home = () => {
 
           {/* Search Bar */}
           <div className="max-w-3xl mx-auto bg-white shadow-lg rounded-xl flex flex-col md:flex-row items-center overflow-hidden">
-            <div className="flex items-center gap-2 px-4 py-3 w-full border-b md:border-b-0 md:border-r">
+            <div className="flex items-center gap-2 px-4 py-2 w-full border-b md:border-b-0 md:border-r">
               <FaSearch className="text-gray-400" />
               <input
                 type="text"
@@ -106,7 +106,7 @@ const Home = () => {
           <img
             src="https://images.unsplash.com/photo-1589829545856-d10d557cf95f"
             alt="office"
-            className="w-full h-[350px] object-cover"
+            className="w-full h-87.5 object-cover"
           />
         </div>
       </section>
