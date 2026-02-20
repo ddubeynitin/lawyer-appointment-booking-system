@@ -8,43 +8,12 @@ import Logo from "../../assets/images/logo.png";
 import Feature1 from "../../assets/images/registerpage.png";
 import Feature2 from "../../assets/images/registerpage1.png";
 
-// Validation functions
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/;
-const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-
-const validateEmail = (email) => emailRegex.test(email);
-const validatePhone = (phone) => phoneRegex.test(phone);
-const validatePassword = (password) => {
-  if (password.length < 8) return "Password must be at least 8 characters";
-  if (!/[A-Z]/.test(password)) return "Password must contain uppercase letter";
-  if (!/[a-z]/.test(password)) return "Password must contain lowercase letter";
-  if (!/\d/.test(password)) return "Password must contain number";
-  if (!/[@$!%*?&]/.test(password)) return "Password must contain special character (@$!%*?&)";
-  return "";
-};
-const validateName = (name) => {
-  if (name.trim().length < 2) return "Name must be at least 2 characters";
-  if (!/^[a-zA-Z\s]+$/.test(name)) return "Name can only contain letters and spaces";
-  return "";
-};
-const validateLicense = (license) => {
-  if (license.trim().length < 5) return "License number must be at least 5 characters";
-  return "";
-};
-const validateExperience = (exp) => {
-  if (!exp || exp < 0) return "Experience must be a positive number";
-  if (exp > 70) return "Experience cannot exceed 70 years";
-  return "";
-};
-
 const Registration = () => {
   const navigate = useNavigate();
 
   const [role, setRole] = useState("client");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [fieldErrors, setFieldErrors] = useState({});
 
   const [formData, setFormData] = useState({
     name: "",
@@ -62,90 +31,18 @@ const Registration = () => {
       ...formData,
       [name]: type === "checkbox" ? checked : value,
     });
-    // Clear field error on change
-    if (fieldErrors[name]) {
-      setFieldErrors({ ...fieldErrors, [name]: "" });
-    }
-    setError("");
-  };
-
-  const validateForm = () => {
-    const errors = {};
-
-    // Validate name
-    const nameError = validateName(formData.name);
-    if (nameError) errors.name = nameError;
-
-    // Validate email
-    if (!formData.email) {
-      errors.email = "Email is required";
-    } else if (!validateEmail(formData.email)) {
-      errors.email = "Invalid email format";
-    }
-
-    // Validate phone
-    if (!formData.phone) {
-      errors.phone = "Phone number is required";
-    } else if (!validatePhone(formData.phone)) {
-      errors.phone = "Invalid phone number format";
-    }
-
-    // Validate password
-    if (!formData.password) {
-      errors.password = "Password is required";
-    } else {
-      const pwError = validatePassword(formData.password);
-      if (pwError) errors.password = pwError;
-    }
-
-    // Validate confirm password
-    if (formData.password !== formData.confirmPassword) {
-      errors.confirmPassword = "Passwords do not match";
-    }
-
-    // Validate terms agreement
-    if (!formData.agree) {
-      errors.agree = "Please accept Terms & Privacy Policy";
-    }
-
-    // Role-specific validations
-    if (role === "lawyer") {
-      if (!formData.certNo) {
-        errors.certNo = "License number is required";
-      } else {
-        const licError = validateLicense(formData.certNo);
-        if (licError) errors.certNo = licError;
-      }
-
-      if (!formData.specialization) {
-        errors.specialization = "Lawyer type is required";
-      }
-
-      if (!formData.experience) {
-        errors.experience = "Years of experience is required";
-      } else {
-        const expError = validateExperience(formData.experience);
-        if (expError) errors.experience = expError;
-      }
-
-      if (!formData.bio || formData.bio.trim().length < 10) {
-        errors.bio = "Description must be at least 10 characters";
-      }
-    }
-
-    return errors;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
-    // Validate form
-    const errors = validateForm();
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
-      setError("Please fix the errors below");
-      return;
+    if (formData.password !== formData.confirmPassword) {
+      return setError("Passwords do not match");
+    }
+
+    if (!formData.agree) {
+      return setError("Please accept Terms & Privacy Policy");
     }
 
     try {
@@ -169,7 +66,6 @@ const Registration = () => {
   const handleSelectRole = (r) => {
     setRole(r);
     setError("");
-    setFieldErrors({});
     setFormData({
       name: "",
       phone: "",
@@ -286,7 +182,6 @@ const Registration = () => {
                 handleSubmit={handleSubmit}
                 error={error}
                 loading={loading}
-                fieldErrors={fieldErrors}
               />
             ) : (
               <LawyerRegform
@@ -295,7 +190,6 @@ const Registration = () => {
                 handleSubmit={handleSubmit}
                 error={error}
                 loading={loading}
-                fieldErrors={fieldErrors}
               />
             )}
           
@@ -325,95 +219,62 @@ const Registration = () => {
   );
 };
 
-const Input = ({ icon, error, ...props }) => (
-  <div className="space-y-1">
-    <div
-      className={`
-        h-10 flex items-center
-        bg-gray-100 rounded-lg
-        px-3 
-        transition
-        focus-within:ring-2 ${error ? 'ring-red-500 focus-within:ring-red-500 bg-red-50' : 'ring-blue-600 focus-within:ring-blue-600'}
-        ${error ? 'border border-red-300' : ''}
-      `}
-    >
-      <span className={`mr-2 pointer-events-none ${error ? 'text-red-500' : 'text-gray-500'}`}>
-        {icon}
-      </span>
+const Input = ({ icon, ...props }) => (
+  <div
+    className="
+      h-10 flex items-center
+      bg-gray-100 rounded-lg
+      px-3 
+      transition
+      focus-within:ring-2 focus-within:ring-blue-600
+    "
+  >
+    <span className="text-gray-500 mr-2 pointer-events-none">
+      {icon}
+    </span>
 
-      <input
-        {...props}
-        required
-        className={`
-          w-full
-          outline-none
-          bg-transparent
-          placeholder:text-gray-400
-          ${error ? 'text-red-600' : ''}
-        `}
-      />
-    </div>
-    {error && <p className="text-red-500 text-xs font-semibold">{error}</p>}
+    <input
+      {...props}
+      required
+      className="
+        w-full
+        outline-none
+        bg-transparent
+        placeholder:text-gray-400
+      "
+    />
   </div>
 );
 
-const ClientRegform = ({ formData, handleChange, handleSubmit, error, loading, fieldErrors }) => {
+const ClientRegform = ({ formData, handleChange, handleSubmit, error, loading }) => {
   return (
-    <div>
-      <form
-            onSubmit={handleSubmit}
-            className="w-full bg-white  rounded-xl p-8 "
-          >
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                <Input icon={<FaUser />} name="name" placeholder="e.g.Jane Doe" onChange={handleChange} value={formData.name} error={fieldErrors.name} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                <Input icon={<FaPhone />} name="phone" placeholder="(+91)1800 030 020" onChange={handleChange} value={formData.phone} error={fieldErrors.phone} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                <Input icon={<FaEnvelope />} name="email" placeholder="name@example.com" onChange={handleChange} value={formData.email} error={fieldErrors.email} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                <div className="text-xs text-gray-600 mb-2">Must contain: 8+ chars, uppercase, lowercase, number, special character</div>
-                <Input icon={<FaLock />} name="password" type="password" placeholder="Create a Password" onChange={handleChange} value={formData.password} error={fieldErrors.password} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
-                <Input icon={<FaLock />} name="confirmPassword" type="password" placeholder="Confirm Password" onChange={handleChange} value={formData.confirmPassword} error={fieldErrors.confirmPassword} />
-              </div>
-            </div>
+    <form onSubmit={handleSubmit} className="mt-4">
 
-            {error && (
-              <p className="text-red-500 text-sm mt-3 bg-red-50 p-3 rounded-lg">{error}</p>
-            )}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-            <div className="flex items-center mt-4">
-              <input
-                type="checkbox"
-                name="agree"
-                onChange={handleChange}
-                checked={formData.agree}
-                className={`mr-2 ${fieldErrors.agree ? 'border-red-500' : ''}`}
-              />
-              <p className="text-sm text-black">
-                I agree to  <span className="text-blue-700">Terms</span> & <span className="text-blue-700">Privacy Policy</span>
-              </p>
-            </div>
-            {fieldErrors.agree && <p className="text-red-500 text-xs mt-1">{fieldErrors.agree}</p>}
+        {/* Full Name */}
+        <div>
+          <label className="text-sm font-medium text-gray-700">Full Name</label>
+          <Input
+            icon={<FaUser />}
+            name="name"
+            placeholder="e.g. Jane Doe"
+            onChange={handleChange}
+            value={formData.name}
+          />
+        </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full mt-6 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
-            >
-              {loading ? "Creating Account..." : "Create Account"}
-              <FaArrowRight className="inline mr-2 m-2" />
-            </button>
+        {/* Phone */}
+        <div>
+          <label className="text-sm font-medium text-gray-700">Phone Number</label>
+          <Input
+            icon={<FaPhone />}
+            name="phone"
+            placeholder="+91 98765 43210"
+            onChange={handleChange}
+            value={formData.phone}
+          />
+        </div>
 
         {/* Email (Full Width) */}
         <div className="md:col-span-2">
