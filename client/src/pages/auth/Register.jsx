@@ -308,6 +308,25 @@ const Registration = () => {
           
           </div>
         </div>
+        {/* Help Links */}
+        <div className="text-center mt-4 text-sm text-gray-500">
+          <div className="flex justify-end  gap-6">
+          <Link
+            to="/help-center"
+          className="hover:text-blue-600 transition"
+          >
+          Help Center
+        </Link>
+
+        <Link
+          to="/contact-support"
+        className="hover:text-blue-600 transition"
+        >
+        Contact Support
+        </Link>
+      </div>
+    </div>
+
       </div>
     </div>
   );
@@ -403,96 +422,220 @@ const ClientRegform = ({ formData, handleChange, handleSubmit, error, loading, f
               <FaArrowRight className="inline mr-2 m-2" />
             </button>
 
-          </form>
-    </div>
+        {/* Email (Full Width) */}
+        <div className="md:col-span-2">
+          <label className="text-sm font-medium text-gray-700">Email Address</label>
+          <Input
+            icon={<FaEnvelope />}
+            name="email"
+            placeholder="name@example.com"
+            onChange={handleChange}
+            value={formData.email}
+          />
+        </div>
+
+        {/* Password */}
+        <div>
+          <label className="text-sm font-medium text-gray-700">Password</label>
+          <Input
+            icon={<FaLock />}
+            name="password"
+            type="password"
+            placeholder="Create password"
+            onChange={handleChange}
+            value={formData.password}
+          />
+        </div>
+
+        {/* Confirm Password */}
+        <div>
+          <label className="text-sm font-medium text-gray-700">Confirm Password</label>
+          <Input
+            icon={<FaLock />}
+            name="confirmPassword"
+            type="password"
+            placeholder="Confirm password"
+            onChange={handleChange}
+            value={formData.confirmPassword}
+          />
+        </div>
+
+      </div>
+
+      {error && (
+        <p className="text-red-500 text-sm mt-4">{error}</p>
+      )}
+
+      {/* Terms */}
+      <div className="flex items-center gap-2 mt-5">
+        <input
+          type="checkbox"
+          name="agree"
+          onChange={handleChange}
+          checked={formData.agree}
+          className="accent-blue-600"
+        />
+        <p className="text-sm text-gray-600">
+          I agree to{" "}
+          <span className="text-blue-600 font-medium cursor-pointer">Terms</span>{" "}
+          &{" "}
+          <span className="text-blue-600 font-medium cursor-pointer">Privacy Policy</span>
+        </p>
+      </div>
+
+      {/* Button */}
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full mt-6 bg-blue-600 text-white py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition flex justify-center items-center gap-2"
+      >
+        {loading ? "Creating Account..." : "Create Account"}
+        <FaArrowRight />
+      </button>
+    </form>
   );
-}
-const LawyerRegform = ({ formData, handleChange, handleSubmit, error, loading, fieldErrors }) => {
+};
+
+const LawyerRegform = ({ formData, handleChange, handleSubmit, error, loading }) => {
+  const navigate = useNavigate();
+
+  const handleLawyerSubmit = (e) => {
+    e.preventDefault();
+
+    if (
+      !formData.name ||
+      !formData.email ||
+      !formData.phone ||
+      !formData.certNo ||
+      !formData.password ||
+      !formData.confirmPassword
+    ) {
+      alert("Please fill all required fields");
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      alert("Passwords do not match");
+      return;
+    }
+
+    // After successful basic register
+    navigate("/complete-lawyer-profile");
+  };
   return (
-    <div>
-      <form
-            onSubmit={handleSubmit}
-            className="w-full bg-white rounded-xl  p-8"
-          >
+    <form onSubmit={handleSubmit} className="mt-4">
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                <Input icon={<FaUser />} name="name" placeholder="e.g.Jake Doe" onChange={handleChange} value={formData.name} error={fieldErrors.name} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                <Input icon={<FaPhone />} name="phone" placeholder="+1(900)822 030 0210" onChange={handleChange} value={formData.phone} error={fieldErrors.phone} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                <Input icon={<FaEnvelope />} name="email" placeholder="Lawyerexample.com" onChange={handleChange} value={formData.email} error={fieldErrors.email} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">License Number</label>
-                <Input icon={<IoAlertOutline/>} name="certNo" type="text" placeholder="Add LC number" onChange={handleChange} value={formData.certNo || ""} error={fieldErrors.certNo} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Type of Lawyer</label>
-                <Input icon={<MdCategory />} name="specialization" type="text" placeholder="e.g.Criminal Lawyer" onChange={handleChange} value={formData.specialization || ""} error={fieldErrors.specialization} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Year of Experience</label>
-                <Input icon={<FaGraduationCap />} name="experience" type="number" placeholder="Experience Year" onChange={handleChange} value={formData.experience || ""} error={fieldErrors.experience} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <div className="relative">
-                  <textarea
-                    name="bio"
-                    placeholder="Describe your expertise and background (minimum 10 characters)"
-                    className={`w-full h-20 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${fieldErrors.bio ? 'border-red-300 focus:ring-red-500 bg-red-50' : 'border-gray-300 focus:ring-blue-500'}`}
-                    onChange={handleChange}
-                    value={formData.bio || ""}
-                  />
-                </div>
-                {fieldErrors.bio && <p className="text-red-500 text-xs mt-1">{fieldErrors.bio}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                <div className="text-xs text-gray-600 mb-2">Must contain: 8+ chars, uppercase, lowercase, number, special character</div>
-                <Input icon={<FaLock />} name="password" type="password" placeholder="Create a Password" onChange={handleChange} value={formData.password} error={fieldErrors.password} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
-                <Input icon={<FaLock />} name="confirmPassword" type="password" placeholder="Confirm Password" onChange={handleChange} value={formData.confirmPassword} error={fieldErrors.confirmPassword} />
-              </div>
-            </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-            {error && (
-              <p className="text-red-500 text-sm mt-3 bg-red-50 p-3 rounded-lg">{error}</p>
-            )}
+        {/* Full Name */}
+        <div>
+          <label className="text-sm font-medium text-gray-700">Full Name</label>
+          <Input
+            icon={<FaUser />}
+            name="name"
+            placeholder="e.g. John Smith"
+            onChange={handleChange}
+            value={formData.name}
+          />
+        </div>
 
-            <div className="flex items-center mt-4">
-              <input
-                type="checkbox"
-                name="agree"
-                onChange={handleChange}
-                checked={formData.agree}
-                className={`mr-2 ${fieldErrors.agree ? 'border-red-500' : ''}`}
-              />
-              <p className="text-sm text-black">
-                I agree to <span className="text-blue-700">Terms</span> & <span className="text-blue-700">Privacy Policy</span>
-              </p>
-            </div>
-            {fieldErrors.agree && <p className="text-red-500 text-xs mt-1">{fieldErrors.agree}</p>}
+        {/* Phone */}
+        <div>
+          <label className="text-sm font-medium text-gray-700">Phone Number</label>
+          <Input
+            icon={<FaPhone />}
+            name="phone"
+            placeholder="+1 900 822 030"
+            onChange={handleChange}
+            value={formData.phone}
+          />
+        </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full mt-6 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
-            >
-              {loading ? "Creating Account..." : "Create Account"}
-              <FaArrowRight className="inline mr-2 m-2" />
-            </button>
-          </form>
-    </div>
+        {/* Email */}
+        <div className="md:col-span-2">
+          <label className="text-sm font-medium text-gray-700">Email Address</label>
+          <Input
+            icon={<FaEnvelope />}
+            name="email"
+            placeholder="lawyer@example.com"
+            onChange={handleChange}
+            value={formData.email}
+          />
+        </div>
+
+        {/* License Number */}
+        <div className="md:col-span-2">
+          <label className="text-sm font-medium text-gray-700">License Number</label>
+          <Input
+            icon={<IoAlertOutline />}
+            name="certNo"
+            type="text"
+            placeholder="Enter license number"
+            onChange={handleChange}
+            value={formData.certNo || ""}
+          />
+        </div>
+
+        {/* Password */}
+        <div>
+          <label className="text-sm font-medium text-gray-700">Password</label>
+          <Input
+            icon={<FaLock />}
+            name="password"
+            type="password"
+            placeholder="Create password"
+            onChange={handleChange}
+            value={formData.password}
+          />
+        </div>
+
+        {/* Confirm Password */}
+        <div>
+          <label className="text-sm font-medium text-gray-700">Confirm Password</label>
+          <Input
+            icon={<FaLock />}
+            name="confirmPassword"
+            type="password"
+            placeholder="Confirm password"
+            onChange={handleChange}
+            value={formData.confirmPassword}
+          />
+        </div>
+
+      </div>
+
+      {error && (
+        <p className="text-red-500 text-sm mt-4">{error}</p>
+      )}
+
+      {/* Terms */}
+      <div className="flex items-center gap-2 mt-5">
+        <input
+          type="checkbox"
+          name="agree"
+          onChange={handleChange}
+          checked={formData.agree}
+          className="accent-blue-600"
+        />
+        <p className="text-sm text-gray-600">
+          I agree to{" "}
+          <span className="text-blue-600 font-medium cursor-pointer">Terms</span>{" "}
+          &{" "}
+          <span className="text-blue-600 font-medium cursor-pointer">Privacy Policy</span>
+        </p>
+      </div>
+
+      {/* Button */}
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full mt-6 bg-blue-600 text-white py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition flex justify-center items-center gap-2"
+      >
+        {loading ? "Creating Account..." : "Create Account"}
+        <FaArrowRight />
+      </button>
+    </form>
   );
-}
+};
 
 export default Registration;

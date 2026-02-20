@@ -11,6 +11,7 @@ import LawyerDashboard from './pages/lawyer/LawyerDashboard'
 import LawyersList from './pages/client/LawyersList'
 import MyAppointments from './pages/client/MyAppointments'
 import Home from './pages/Home'
+import CompleteLawyerProfile from './pages/auth/CompleteLawyerProfile'
 
 const App = () => {
  
@@ -21,7 +22,7 @@ const App = () => {
         <Route path="/" element={<Home />} />
         <Route path="/auth/login" element={<LoginPage />} />
         <Route path="/auth/register" element={<Registration />} />
-        <Route path="/complete-profile" element={<div>Lawyer Complete Profile Details</div>} />
+        <Route path="/complete-profile" element={<CompleteLawyerProfile />} />
 
         <Route path="/client/client-dashboard" element={<ClientDashboard />} />
         <Route path="/client/appointment-scheduling" element={<MyAppointments />} />
