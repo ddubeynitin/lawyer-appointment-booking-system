@@ -6,7 +6,8 @@ import { CgLogIn } from "react-icons/cg";
 
 import { RiLockPasswordFill } from "react-icons/ri";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
   
 function LoginPage() {
   const [role, setRole] = useState("client");
@@ -16,7 +17,7 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
 
-  
+  const navigate = useNavigate();
 
   const validateEmail = (value) => {
     const re = /^\S+@\S+\.\S+$/;              
@@ -37,13 +38,33 @@ function LoginPage() {
     return true;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const emailOk = validateEmail(email);
     const passwordOk = validatePassword(password);
     if (!emailOk || !passwordOk) return;
-    // TODO: submit form
+    
+    const res = await axios.post("http://localhost:3000/api/auth/login", { 
+      email, 
+      password,
+      role: role === "client" ? "user" : role
+    })
+    .then((res) => {
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("role", res.data.role);
+      //check if lawyer profile isComplete false then redirect to complete-profile page
+      if(res.data.role === "lawyer" && !res.data.isComplete){
+        navigate("/complete-profile");
+      } else {
+        navigate(res.data.role === "user" ? "/client/client-dashboard" : "/lawyer/lawyer-dashboard");
+      }
+    })
+    .catch((err) => {
+      alert("Login failed: " + (err.response?.data?.message || "Invalid credentials"));
+    }); 
   };
+
+  
 
   return (
     <div className="h-screen flex shadow-lg rounded-lg overflow-hidden">

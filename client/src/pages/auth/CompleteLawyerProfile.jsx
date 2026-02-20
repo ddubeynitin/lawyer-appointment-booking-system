@@ -6,68 +6,114 @@ import { IoCashOutline } from "react-icons/io5";
 
 const CompleteLawyerProfile = () => {
   const navigate = useNavigate();
+  const [step, setStep] = useState(1);
 
   const [formData, setFormData] = useState({
     specialization: "",
     experience: "",
     court: "",
+    consultationFee: "",
+    education: "",
+    languages: [], // ✅ Array for multiple languages
     address: "",
     city: "",
     state: "",
     about: "",
-    consultationFee: "",
   });
 
   const [errors, setErrors] = useState({});
 
-  // ✅ CORRECT HANDLE CHANGE
+  const languageOptions = [
+    "English",
+    "Hindi",
+    "Marathi",
+    "Gujarati",
+    "Tamil",
+    "Telugu",
+  ];
+
+  // Handle input change
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    setFormData((prevData) => ({
-      ...prevData,
+    setFormData((prev) => ({
+      ...prev,
       [name]: value,
     }));
 
-    // remove error while typing
     if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: "",
-      }));
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
-  const validate = () => {
+  // Handle language checkbox
+  const handleLanguageChange = (language) => {
+    setFormData((prev) => {
+      const updatedLanguages = prev.languages.includes(language)
+        ? prev.languages.filter((lang) => lang !== language)
+        : [...prev.languages, language];
+
+      return { ...prev, languages: updatedLanguages };
+    });
+
+    if (errors.languages) {
+      setErrors((prev) => ({ ...prev, languages: "" }));
+    }
+  };
+
+  // Step-wise validation
+  const validateStep = () => {
     let newErrors = {};
 
-    for (let key in formData) {
-      if (!formData[key]) {
-        newErrors[key] = "This field is required";
-      }
+    if (step === 1) {
+      if (!formData.specialization) newErrors.specialization = "Required";
+      if (!formData.experience) newErrors.experience = "Required";
+      if (!formData.court) newErrors.court = "Required";
+      if (!formData.consultationFee) newErrors.consultationFee = "Required";
+      if (!formData.education) newErrors.education = "Required";
+      if (formData.languages.length === 0)
+        newErrors.languages = "Select at least one language";
+
+      if (formData.experience && Number(formData.experience) < 0)
+        newErrors.experience = "Must be positive";
+
+      if (formData.consultationFee && Number(formData.consultationFee) <= 0)
+        newErrors.consultationFee = "Must be greater than 0";
     }
 
-    if (formData.experience && Number(formData.experience) < 0) {
-      newErrors.experience = "Experience must be positive";
-    }
-
-    if (formData.consultationFee && Number(formData.consultationFee) <= 0) {
-      newErrors.consultationFee = "Fee must be greater than 0";
+    if (step === 2) {
+      if (!formData.address) newErrors.address = "Required";
+      if (!formData.city) newErrors.city = "Required";
+      if (!formData.state) newErrors.state = "Required";
+      if (!formData.about) newErrors.about = "Required";
     }
 
     return newErrors;
   };
 
+  const handleNext = () => {
+    const validationErrors = validateStep();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+    setStep(2);
+  };
+
+  const handleBack = () => {
+    setStep(1);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    const validationErrors = validate();
-
+    const validationErrors = validateStep();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
     }
 
+    console.log("Final Data:", formData);
     alert("Profile Completed Successfully!");
     navigate("/lawyer/lawyer-dashboard");
   };
@@ -81,197 +127,141 @@ const CompleteLawyerProfile = () => {
             Complete Your Professional Profile
           </h2>
           <p className="text-gray-500 mt-2">
-            Add your professional information to activate your lawyer dashboard
+            Step {step} of 2
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-10">
 
-          {/* Professional */}
-          <div className="bg-gray-50 rounded-2xl p-8 shadow-sm">
-            <h3 className="text-xl font-semibold text-blue-600 mb-6">
-              Professional Details
-            </h3>
+          {/* STEP 1 */}
+          {step === 1 && (
+            <div className="bg-gray-50 rounded-2xl p-8 shadow-sm">
+              <h3 className="text-xl font-semibold text-blue-600 mb-6">
+                Professional Details
+              </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-              <div>
-                <div className="h-12 flex items-center bg-gray-100 rounded-xl px-4">
-                  <FaBriefcase className="text-gray-500 mr-3" />
-                  <input
-                    type="text"
-                    name="specialization"
-                    value={formData.specialization}
-                    onChange={handleChange}
-                    placeholder="Specialization"
-                    className="w-full bg-transparent outline-none"
-                  />
+                <InputField name="specialization" placeholder="Specialization" value={formData.specialization} onChange={handleChange} error={errors.specialization} />
+
+                <InputField type="number" name="experience" placeholder="Years of Experience" value={formData.experience} onChange={handleChange} error={errors.experience} />
+
+                <InputField name="court" placeholder="Practicing Court" value={formData.court} onChange={handleChange} error={errors.court} />
+
+                <InputField type="number" name="consultationFee" placeholder="Consultation Fee (₹)" value={formData.consultationFee} onChange={handleChange} error={errors.consultationFee} />
+
+                <InputField name="education" placeholder="Education (e.g. LLB - Delhi University)" value={formData.education} onChange={handleChange} error={errors.education} />
+
+              </div>
+
+              {/* Languages */}
+              <div className="mt-6">
+                <label className="font-semibold text-gray-700">
+                  Languages Spoken
+                </label>
+
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-3">
+                  {languageOptions.map((lang) => (
+                    <label key={lang} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={formData.languages.includes(lang)}
+                        onChange={() => handleLanguageChange(lang)}
+                      />
+                      {lang}
+                    </label>
+                  ))}
                 </div>
-                {errors.specialization && (
-                  <p className="text-blue-600 text-sm mt-1">
-                    {errors.specialization}
+
+                {errors.languages && (
+                  <p className="text-blue-600 text-sm mt-2">
+                    {errors.languages}
                   </p>
                 )}
               </div>
 
-              <div>
-                <div className="h-12 flex items-center bg-gray-100 rounded-xl px-4">
-                  <FaBriefcase className="text-gray-500 mr-3" />
-                  <input
-                    type="number"
-                    name="experience"
-                    value={formData.experience}
-                    onChange={handleChange}
-                    placeholder="Years of Experience"
-                    className="w-full bg-transparent outline-none"
-                  />
-                </div>
-                {errors.experience && (
-                  <p className="text-blue-600 text-sm mt-1">
-                    {errors.experience}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <div className="h-12 flex items-center bg-gray-100 rounded-xl px-4">
-                  <FaUniversity className="text-gray-500 mr-3" />
-                  <input
-                    type="text"
-                    name="court"
-                    value={formData.court}
-                    onChange={handleChange}
-                    placeholder="Practicing Court"
-                    className="w-full bg-transparent outline-none"
-                  />
-                </div>
-                {errors.court && (
-                  <p className="text-blue-600 text-sm mt-1">
-                    {errors.court}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <div className="h-12 flex items-center bg-gray-100 rounded-xl px-4">
-                  <IoCashOutline className="text-gray-500 mr-3" />
-                  <input
-                    type="number"
-                    name="consultationFee"
-                    value={formData.consultationFee}
-                    onChange={handleChange}
-                    placeholder="Consultation Fee (₹)"
-                    className="w-full bg-transparent outline-none"
-                  />
-                </div>
-                {errors.consultationFee && (
-                  <p className="text-blue-600 text-sm mt-1">
-                    {errors.consultationFee}
-                  </p>
-                )}
-              </div>
-
+              <button
+                type="button"
+                onClick={handleNext}
+                className="mt-8 w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl text-lg font-semibold"
+              >
+                Next
+              </button>
             </div>
-          </div>
+          )}
 
-          {/* Office */}
-          <div className="bg-gray-50 rounded-2xl p-8 shadow-sm">
-            <h3 className="text-xl font-semibold text-blue-600 mb-6">
-              Office Information
-            </h3>
+          {/* STEP 2 */}
+          {step === 2 && (
+            <div className="bg-gray-50 rounded-2xl p-8 shadow-sm">
+              <h3 className="text-xl font-semibold text-blue-600 mb-6">
+                Office Information
+              </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-              <div>
-                <div className="h-12 flex items-center bg-gray-100 rounded-xl px-4">
-                  <FaMapMarkerAlt className="text-gray-500 mr-3" />
-                  <input
-                    type="text"
-                    name="address"
-                    value={formData.address}
-                    onChange={handleChange}
-                    placeholder="Office Address"
-                    className="w-full bg-transparent outline-none"
-                  />
-                </div>
-                {errors.address && (
-                  <p className="text-blue-600 text-sm mt-1">
-                    {errors.address}
-                  </p>
-                )}
+                <InputField name="address" placeholder="Office Address" value={formData.address} onChange={handleChange} error={errors.address} />
+
+                <InputField name="city" placeholder="City" value={formData.city} onChange={handleChange} error={errors.city} />
+
+                <InputField name="state" placeholder="State" value={formData.state} onChange={handleChange} error={errors.state} />
+
               </div>
 
-              <div>
-                <div className="h-12 flex items-center bg-gray-100 rounded-xl px-4">
-                  <MdLocationCity className="text-gray-500 mr-3" />
-                  <input
-                    type="text"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleChange}
-                    placeholder="City"
-                    className="w-full bg-transparent outline-none"
-                  />
-                </div>
-                {errors.city && (
-                  <p className="text-blue-600 text-sm mt-1">
-                    {errors.city}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <div className="h-12 flex items-center bg-gray-100 rounded-xl px-4">
-                  <MdLocationCity className="text-gray-500 mr-3" />
-                  <input
-                    type="text"
-                    name="state"
-                    value={formData.state}
-                    onChange={handleChange}
-                    placeholder="State"
-                    className="w-full bg-transparent outline-none"
-                  />
-                </div>
-                {errors.state && (
-                  <p className="text-blue-600 text-sm mt-1">
-                    {errors.state}
-                  </p>
-                )}
-              </div>
-
-            </div>
-
-            <div className="mt-6">
-              <div className="flex items-start bg-gray-100 rounded-xl px-4 py-4">
-                <MdDescription className="text-gray-500 mr-3 mt-1" />
+              <div className="mt-6">
                 <textarea
                   name="about"
                   value={formData.about}
                   onChange={handleChange}
                   rows="4"
                   placeholder="About yourself..."
-                  className="w-full bg-transparent outline-none resize-none"
+                  className="w-full bg-gray-100 rounded-xl px-4 py-4 outline-none resize-none"
                 />
+                {errors.about && (
+                  <p className="text-blue-600 text-sm mt-1">
+                    {errors.about}
+                  </p>
+                )}
               </div>
-              {errors.about && (
-                <p className="text-blue-600 text-sm mt-1">
-                  {errors.about}
-                </p>
-              )}
-            </div>
-          </div>
 
-          <button
-            type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl text-lg font-semibold transition"
-          >
-            Complete Profile & Go to Dashboard
-          </button>
+              <div className="flex gap-4 mt-8">
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  className="w-1/2 bg-gray-300 py-4 rounded-xl font-semibold"
+                >
+                  Back
+                </button>
+
+                <button
+                  type="submit"
+                  className="w-1/2 bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-semibold"
+                >
+                  Complete Profile
+                </button>
+              </div>
+            </div>
+          )}
 
         </form>
       </div>
     </div>
   );
 };
+
+const InputField = ({ type = "text", name, placeholder, value, onChange, error }) => (
+  <div>
+    <div className="h-12 flex items-center bg-gray-100 rounded-xl px-4">
+      <input
+        type={type}
+        name={name}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        className="w-full bg-transparent outline-none"
+      />
+    </div>
+    {error && <p className="text-blue-600 text-sm mt-1">{error}</p>}
+  </div>
+);
 
 export default CompleteLawyerProfile;
