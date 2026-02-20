@@ -11,43 +11,42 @@ import {
 
 const Home = () => {
   return (
-    <div className="w-full bg-white text-gray-900">
-      {/* ================= HEADER ================= */}
-      <header className="border-b bg-white">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 text-slate-800">
+
+      {/* ================= PREMIUM HEADER ================= */}
+      <header className="sticky top-0 z-50 backdrop-blur-md bg-white/80 border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          {/* Logo */}
+
           <div className="flex items-center gap-2 text-blue-600 font-bold text-xl">
             <FaBalanceScale />
-            LexLink
+            <span className="tracking-wide">LexLink</span>
           </div>
 
-          {/* Nav */}
-          <nav className="hidden md:flex items-center gap-8 text-sm">
-            <Link to="/" className="hover:text-blue-600">
+          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
+            <Link to="/" className="hover:text-blue-600 transition">
               Find a Lawyer
             </Link>
-            <Link to="/for-lawyers" className="hover:text-blue-600">
+            <Link to="/for-lawyers" className="hover:text-blue-600 transition">
               For Lawyers
             </Link>
-            <Link to="/specializations" className="hover:text-blue-600">
+            <Link to="/specializations" className="hover:text-blue-600 transition">
               Specializations
             </Link>
-            <Link to="/about" className="hover:text-blue-600">
+            <Link to="/about" className="hover:text-blue-600 transition">
               About
             </Link>
           </nav>
 
-          {/* Auth */}
           <div className="flex items-center gap-3">
             <Link
               to="/auth/login"
-              className="border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-100"
+              className="px-4 py-2 rounded-xl text-sm font-medium border border-slate-300 hover:bg-slate-100 transition"
             >
               Login
             </Link>
             <Link
               to="/auth/register"
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
+              className="px-5 py-2 rounded-xl text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow-md hover:shadow-lg hover:scale-105 transition"
             >
               Get Started
             </Link>
@@ -56,27 +55,31 @@ const Home = () => {
       </header>
 
       {/* ================= HERO ================= */}
-      <section className="bg-linear-to-b from-blue-50 to-white">
-        <div className="max-w-7xl mx-auto px-6 py-20 text-center">
-          <span className="inline-block mb-4 px-4 py-1 text-xs bg-blue-100 text-blue-600 rounded-full">
-            TRUSTED BY OVER 10,000 CLIENTS
+      <section className="py-24 text-center">
+        <div className="max-w-5xl mx-auto px-6">
+
+          <span className="inline-block mb-6 px-4 py-1 text-xs font-medium bg-blue-100 text-blue-600 rounded-full">
+            TRUSTED BY 10,000+ CLIENTS
           </span>
 
-          <h1 className="text-4xl md:text-5xl font-bold mb-6">
+          <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6">
             Find the Right{" "}
-            <span className="text-blue-600">Legal Expert</span>
-            <br /> Today
+            <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              Legal Expert
+            </span>{" "}
+            Today
           </h1>
 
-          <p className="max-w-2xl mx-auto text-gray-500 mb-10">
+          <p className="text-slate-500 max-w-2xl mx-auto mb-12 text-lg">
             Connect with top-rated lawyers for expert legal advice and seamless
             appointment booking. Secure your future with professional counsel.
           </p>
 
-          {/* Search Bar */}
-          <div className="max-w-3xl mx-auto bg-white shadow-lg rounded-xl flex flex-col md:flex-row items-center overflow-hidden">
-            <div className="flex items-center gap-2 px-4 py-2 w-full border-b md:border-b-0 md:border-r">
-              <FaSearch className="text-gray-400" />
+          {/* Premium Search */}
+          <div className="max-w-4xl mx-auto bg-white shadow-xl rounded-2xl flex flex-col md:flex-row items-center overflow-hidden border border-slate-200 hover:shadow-2xl transition">
+
+            <div className="flex items-center gap-3 px-6 py-4 w-full border-b md:border-b-0 md:border-r">
+              <FaSearch className="text-slate-400" />
               <input
                 type="text"
                 placeholder="Specialization (e.g. Family Law)"
@@ -84,8 +87,8 @@ const Home = () => {
               />
             </div>
 
-            <div className="flex items-center gap-2 px-4 py-3 w-full border-b md:border-b-0 md:border-r">
-              <FaMapMarkerAlt className="text-gray-400" />
+            <div className="flex items-center gap-3 px-6 py-4 w-full border-b md:border-b-0 md:border-r">
+              <FaMapMarkerAlt className="text-slate-400" />
               <input
                 type="text"
                 placeholder="Location"
@@ -93,181 +96,90 @@ const Home = () => {
               />
             </div>
 
-            <button className="bg-blue-600 text-white px-8 py-3 text-sm font-medium hover:bg-blue-700 w-full md:w-auto">
+            <button className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-10 py-4 text-sm font-semibold hover:scale-105 transition">
               Search Now
             </button>
           </div>
         </div>
       </section>
 
-      {/* ================= IMAGE SECTION ================= */}
-      <section className="max-w-7xl mx-auto px-6">
-        <div className="rounded-2xl overflow-hidden shadow-lg">
-          <img
-            src="https://images.unsplash.com/photo-1589829545856-d10d557cf95f"
-            alt="office"
-            className="w-full h-87.5 object-cover"
-          />
-        </div>
-      </section>
-
       {/* ================= HOW IT WORKS ================= */}
-      <section className="py-20 bg-white">
+      <section className="py-24">
         <div className="max-w-7xl mx-auto px-6">
           <h2 className="text-3xl font-bold text-center mb-4">
             How It Works
           </h2>
-          <p className="text-center text-gray-500 mb-12">
-            Our platform streamlines the legal consultation process from start
-            to finish.
+          <p className="text-center text-slate-500 mb-16">
+            Simple. Secure. Professional.
           </p>
 
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* For Clients */}
-            <div>
-              <span className="text-xs bg-blue-100 text-blue-600 px-3 py-1 rounded-full">
-                For Clients
-              </span>
-
-              <div className="mt-6 space-y-4">
-                <InfoCard
-                  icon={<FaSearch />}
-                  title="Search Experts"
-                  desc="Find top lawyers by specialization, experience, and location."
-                />
-                <InfoCard
-                  icon={<FaBriefcase />}
-                  title="Book Instantly"
-                  desc="Choose a time that works for you and book a consultation."
-                />
-                <InfoCard
-                  icon={<FaGavel />}
-                  title="Secure Consultation"
-                  desc="Consult via video call or in-person securely."
-                />
-              </div>
-            </div>
-
-            {/* For Lawyers */}
-            <div>
-              <span className="text-xs bg-yellow-100 text-yellow-600 px-3 py-1 rounded-full">
-                For Lawyers
-              </span>
-
-              <div className="mt-6 space-y-4">
-                <InfoCard
-                  icon={<FaHome />}
-                  title="List Your Practice"
-                  desc="Create a professional profile and showcase expertise."
-                />
-                <InfoCard
-                  icon={<FaBriefcase />}
-                  title="Manage Schedule"
-                  desc="Control availability and manage appointments easily."
-                />
-                <InfoCard
-                  icon={<FaBalanceScale />}
-                  title="Grow Revenue"
-                  desc="Reach more clients and grow your legal practice."
-                />
-              </div>
-            </div>
+          <div className="grid md:grid-cols-3 gap-8">
+            <PremiumCard
+              icon={<FaSearch />}
+              title="Search Experts"
+              desc="Find top lawyers by specialization and location."
+            />
+            <PremiumCard
+              icon={<FaBriefcase />}
+              title="Book Instantly"
+              desc="Choose a time that works for you."
+            />
+            <PremiumCard
+              icon={<FaGavel />}
+              title="Secure Consultation"
+              desc="Video or in-person consultations."
+            />
           </div>
         </div>
       </section>
 
       {/* ================= SPECIALIZATIONS ================= */}
-      <section className="bg-gray-50 py-20">
+      <section className="py-24 bg-slate-50">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="flex justify-between items-center mb-10">
-            <h2 className="text-2xl font-bold">Top Specializations</h2>
-            <Link to="/specializations" className="text-blue-600 text-sm">
-              View All Categories →
-            </Link>
-          </div>
+          <h2 className="text-3xl font-bold text-center mb-16">
+            Top Specializations
+          </h2>
 
-          <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-6">
-            <SpecCard title="Family Law" desc="Divorce, Custody, Mediation" />
-            <SpecCard title="Corporate Law" desc="M&A, Contracts, Startups" />
-            <SpecCard title="Criminal Defense" desc="Felonies, Misdemeanors" />
-            <SpecCard title="Real Estate" desc="Property, Leasing, Zoning" />
+          <div className="grid md:grid-cols-4 gap-8">
+            <SpecCard title="Family Law" />
+            <SpecCard title="Corporate Law" />
+            <SpecCard title="Criminal Defense" />
+            <SpecCard title="Real Estate" />
           </div>
         </div>
       </section>
 
       {/* ================= TESTIMONIALS ================= */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-6">
-          <h2 className="text-3xl font-bold text-center mb-4">
+      <section className="py-24">
+        <div className="max-w-6xl mx-auto px-6">
+          <h2 className="text-3xl font-bold text-center mb-16">
             Trusted by Thousands
           </h2>
-          <p className="text-center text-gray-500 mb-12">
-            Join thousands of satisfied clients who found their legal partner.
-          </p>
 
-          <div className="grid md:grid-cols-3 gap-6">
-            <Testimonial
-              name="Sarah Jenkins"
-              role="Small Business Owner"
-              text="LexLink made finding a reliable lawyer incredibly easy."
-            />
-            <Testimonial
-              name="Robert Chen"
-              role="Corporate Attorney"
-              text="A great platform to connect with serious clients."
-            />
-            <Testimonial
-              name="David Thompson"
-              role="Real Estate Developer"
-              text="The consultation process was seamless and efficient."
-            />
+          <div className="grid md:grid-cols-3 gap-8">
+            <Testimonial name="Sarah Jenkins" />
+            <Testimonial name="Robert Chen" />
+            <Testimonial name="David Thompson" />
           </div>
         </div>
       </section>
 
-      {/* ================= CTA ================= */}
-      <section className="bg-blue-600 py-20 text-white">
-        <div className="max-w-4xl mx-auto text-center px-6">
-          <h2 className="text-3xl font-bold mb-4">
-            Ready to find your legal partner?
-          </h2>
-          <p className="mb-8">
-            Whether you're a client or a lawyer, we have the tools you need.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              to="/find-lawyer"
-              className="bg-white text-blue-600 px-6 py-3 rounded-lg font-medium"
-            >
-              Book a Consultation
-            </Link>
-            <Link
-              to="/signup"
-              className="border border-white px-6 py-3 rounded-lg font-medium"
-            >
-              Join as a Lawyer
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ================= FOOTER ================= */}
-      <footer className="bg-black text-gray-400 py-12">
-        <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-4 gap-8">
+      {/* ================= PREMIUM FOOTER ================= */}
+      <footer className="bg-slate-900 text-slate-400 py-16 mt-20">
+        <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-4 gap-10">
           <div>
-            <h3 className="text-white font-semibold mb-3">LexLink</h3>
+            <h3 className="text-white text-lg font-semibold mb-4">LexLink</h3>
             <p className="text-sm">
               Connecting people with world-class legal professionals.
             </p>
           </div>
 
-          <FooterCol title="Platform" items={["Find a Lawyer", "Pricing Plans", "Consultation Guide"]} />
-          <FooterCol title="Company" items={["About Us", "Careers", "Press"]} />
-          <FooterCol title="Support" items={["Help Center", "Privacy Policy", "Terms of Service"]} />
+          <FooterCol title="Platform" items={["Find Lawyer", "Pricing", "Guide"]} />
+          <FooterCol title="Company" items={["About", "Careers", "Press"]} />
+          <FooterCol title="Support" items={["Help Center", "Privacy", "Terms"]} />
         </div>
 
-        <p className="text-center text-xs mt-10">
+        <p className="text-center text-xs mt-12 text-slate-500">
           © 2024 LexLink. All rights reserved.
         </p>
       </footer>
@@ -275,44 +187,44 @@ const Home = () => {
   );
 };
 
-/* ================= COMPONENTS ================= */
+/* ================= PREMIUM COMPONENTS ================= */
 
-const InfoCard = ({ icon, title, desc }) => (
-  <div className="bg-gray-50 p-5 rounded-xl flex gap-4">
-    <div className="text-blue-600 text-xl">{icon}</div>
-    <div>
-      <h4 className="font-semibold">{title}</h4>
-      <p className="text-sm text-gray-500">{desc}</p>
+const PremiumCard = ({ icon, title, desc }) => (
+  <div className="bg-white rounded-2xl p-8 shadow-md hover:shadow-xl hover:-translate-y-2 transition duration-300 border border-slate-100 text-center">
+    <div className="text-blue-600 text-3xl mb-4 flex justify-center">
+      {icon}
     </div>
+    <h4 className="font-semibold text-lg mb-2">{title}</h4>
+    <p className="text-sm text-slate-500">{desc}</p>
   </div>
 );
 
-const SpecCard = ({ title, desc }) => (
-  <div className="bg-white rounded-xl p-6 shadow-sm text-center">
-    <h4 className="font-semibold mb-2">{title}</h4>
-    <p className="text-sm text-gray-500">{desc}</p>
+const SpecCard = ({ title }) => (
+  <div className="bg-white p-8 rounded-2xl text-center shadow-md hover:shadow-xl hover:scale-105 transition border border-slate-100">
+    <h4 className="font-semibold text-lg">{title}</h4>
   </div>
 );
 
-const Testimonial = ({ name, role, text }) => (
-  <div className="bg-gray-50 p-6 rounded-xl shadow-sm">
-    <div className="flex gap-1 text-yellow-400 mb-2">
+const Testimonial = ({ name }) => (
+  <div className="bg-white p-8 rounded-2xl shadow-md border border-slate-100 hover:shadow-xl transition">
+    <div className="flex justify-center gap-1 text-yellow-400 mb-4">
       {[...Array(5)].map((_, i) => (
         <FaStar key={i} />
       ))}
     </div>
-    <p className="text-sm text-gray-600 mb-4">"{text}"</p>
-    <p className="font-semibold">{name}</p>
-    <p className="text-xs text-gray-500">{role}</p>
+    <p className="text-sm text-slate-500 mb-4">
+      “LexLink made the entire process seamless and professional.”
+    </p>
+    <p className="font-semibold text-center">{name}</p>
   </div>
 );
 
 const FooterCol = ({ title, items }) => (
   <div>
-    <h4 className="text-white font-semibold mb-3">{title}</h4>
+    <h4 className="text-white font-semibold mb-4">{title}</h4>
     <ul className="space-y-2 text-sm">
       {items.map((item, i) => (
-        <li key={i} className="hover:text-white cursor-pointer">
+        <li key={i} className="hover:text-white cursor-pointer transition">
           {item}
         </li>
       ))}

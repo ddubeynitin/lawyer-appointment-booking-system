@@ -12,6 +12,8 @@ import LawyersList from './pages/client/LawyersList'
 import MyAppointments from './pages/client/MyAppointments'
 import Home from './pages/Home'
 import CompleteLawyerProfile from './pages/auth/CompleteLawyerProfile'
+import AppointmentConfirmation from './pages/client/AppointmentConfirmation'
+import LawyerProfile from './pages/lawyer/LawyerProfile'
 
 const App = () => {
  
@@ -26,11 +28,11 @@ const App = () => {
 
         <Route path="/client/client-dashboard" element={<ClientDashboard />} />
         <Route path="/client/appointment-scheduling" element={<MyAppointments />} />
-        <Route path="/client/appointment-confirmation" element={<div>appointment confirmation</div>} />
+        <Route path="/client/appointment-confirmation" element={<AppointmentConfirmation />} />
         <Route path="/client/lawyer-list" element={<LawyersList />} />
 
         <Route path="/lawyer/lawyer-dashboard" element={<LawyerDashboard/>} />
-        <Route path="/lawyer/lawyer-profile" element={<div>Lawyer Profile</div>} />
+        <Route path="/lawyer/lawyer-profile" element={<LawyerProfile />} />
 
         <Route path="/admin/admin-login" element={<AdminLoginPage />} />
         <Route path="/admin/admin-dashboard" element={<AdminDashBoard/>} />

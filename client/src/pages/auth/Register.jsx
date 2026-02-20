@@ -19,6 +19,7 @@ const Registration = () => {
     name: "",
     phone: "",
     email: "",
+    certNo: "", // For lawyers, this will be filled; for clients, it can be ignored
     password: "",
     confirmPassword: "",
     agree: false,
@@ -46,12 +47,13 @@ const Registration = () => {
 
     try {
       setLoading(true);
-      await axios.post("http://localhost:5000/api/user/register", {
+      await axios.post("http://localhost:3000/api/auth/register", {
         name: formData.name,
         phone: formData.phone,
         email: formData.email,
+        licenseNo: formData.certNo, // For lawyers, this will be filled; for clients, it can be ignored
         password: formData.password,
-        role,
+        role: role === "client" ? "user" : role,
       });
       navigate("/auth/login");
     } catch (err) {
@@ -68,13 +70,10 @@ const Registration = () => {
       name: "",
       phone: "",
       email: "",
+      certNo: "",
       password: "",
       confirmPassword: "",
       agree: false,
-      certNo: "",
-      specialization: "",
-      experience: "",
-      bio: "",
     });
   };
 
@@ -112,15 +111,15 @@ const Registration = () => {
 
           <ul className="space-y-3 text-black mb-6">
             <li className="flex items-center gap-2">
-            <MdVerified className="w-5 h-5 rounded-full" alt="" />
+            <MdVerified className="w-5 h-5 rounded-full text-blue-500" alt="" />
               Verified lawyers and secure client matching.
             </li>
             <li className="flex items-center gap-2">
-              <MdVerified className="w-5 h-5 rounded-full" alt="" />
+              <MdVerified className="w-5 h-5 rounded-full text-blue-500" alt="" />
               Effortless appointment scheduling & management.
             </li>
             <li className="flex items-center gap-2">
-             <MdVerified className="w-5 h-5 rounded-full" alt="" />
+             <MdVerified className="w-5 h-5 rounded-full text-blue-500" alt="" />
               Secure document sharing and mesaaging.
             </li>
           </ul>
