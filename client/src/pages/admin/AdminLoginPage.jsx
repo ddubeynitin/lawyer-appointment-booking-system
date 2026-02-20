@@ -12,13 +12,13 @@ const AdminLoginPage = () => {
     const handleAdminLogin = (e) => {
         e.preventDefault();
 
-        if (!email || !password) {
+        if (!email || !password) { 
             alert("Please fill in all fields");
             return;
         }
         
-        // ensure role is sent explicitly instead of relying on async state
-        console.log("Admin Email:", email);
+        // ensure role is sent explicitly instead of relying on async statef
+        console.log("Admin Email:", email);                 
         console.log("Admin Password:", password);
 
         axios.post(`${VITE_API_BASE_URL}/api/auth/login`, { email, password, role: "admin" })
@@ -26,7 +26,7 @@ const AdminLoginPage = () => {
                 // Handle successful login, e.g., store token, redirect to dashboard
                 console.log("Login successful:", response.data);
                 alert("Login successful");
-                // Redirect to admin dashboard
+                // Redirect to admin dashboard  
                 navigate('/admin/admin-dashboard');
             })
             .catch(error => {
