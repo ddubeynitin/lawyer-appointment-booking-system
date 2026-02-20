@@ -1,3 +1,4 @@
+const cloudinary = require("../config/cloudinary");
 const Lawyer = require("../models/lawyer.model");
 
 const getAllLawyers = async (req, res) => {
@@ -40,10 +41,22 @@ const completeLawyerProfile = async (req, res) => {
   try {
     const {profileImage, location, education, specializations, feesByCategory, experience, rating, totalReviews, verification} = req.body;
 
+    let imageUrl = "";
+
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "lawyers",
+      });
+      imageUrl = result.secure_url;
+    }
+
     const lawyer = await Lawyer.findByIdAndUpdate(
       req.params.id,
       {
-        profileImage,
+        profileImage: {
+          url: imageUrl,
+          public_id: req.file ? req.file.filename : null,
+        },
         location,
         education,
         specializations,

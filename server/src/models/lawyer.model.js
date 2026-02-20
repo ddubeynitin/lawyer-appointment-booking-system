@@ -32,7 +32,7 @@ const lawyerSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    
+
     role: {
       type: String,
       enum: ["lawyer"],
@@ -40,9 +40,10 @@ const lawyerSchema = new mongoose.Schema(
     },
 
     // Additional fields for lawyer profile
-    
+
     profileImage: {
-      type: String,
+      url: String,
+      public_id: String,
     },
 
     location: {
@@ -58,7 +59,6 @@ const lawyerSchema = new mongoose.Schema(
         year: Number,
       },
     ],
-
 
     specializations: [
       {
@@ -108,7 +108,7 @@ const lawyerSchema = new mongoose.Schema(
 
     isProfileComplete: {
       type: Boolean,
-      default: false 
+      default: false,
     },
 
     isActive: {

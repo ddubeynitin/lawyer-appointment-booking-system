@@ -2,6 +2,17 @@ const User = require("../models/user.model");
 const Lawyer = require("../models/lawyer.model");
 const Admin = require("../models/admin.model");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const env = require("../config/env");
+
+const generateToken = (user) => {
+  
+  return jwt.sign(
+    { id: user._id, email: user.email, role: user.role },
+    env.JWT_SECRET,
+    { expiresIn: env.JWT_EXPIRES_IN || "7d" }
+  );
+};
 
 const registerUser = async (req, res) => {
   try {
@@ -65,8 +76,11 @@ const registerUser = async (req, res) => {
       });
     }
 
+    const token = generateToken(newUser);
+
     res.status(201).json({
       message: "User registered successfully",
+      token,
       user: {
         id: newUser._id,
         name: newUser.name,
@@ -93,15 +107,31 @@ const loginUser = async (req, res) => {
     }
     
     // Check if user exists
-    if (!user) return res.status(400).json({ error: "Invalid credentials" });
+    if (!user) return res.status(400).json({ error: "Invalid email" });
 
     // Check password
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) return res.status(400).json({ error: "Invalid credentials" });
-    res.json(user);
+    // const isMatch = await user.comparePassword(password);
+    // if (!isMatch) return res.status(400).json({ error: "Invalid credentials" });
+
+      if( user.password !== password ){
+        return res.status(400).json({error: "Invalid credentials"});
+      }
+      
+    const token = generateToken(user);
+
+    res.json({ 
+      message: "Login Successful", 
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      }
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-module.exports = { registerUser, loginUser };
+module.exports = { registerUser, loginUser, generateToken };
