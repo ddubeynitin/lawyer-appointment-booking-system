@@ -8,9 +8,11 @@ import { RiLockPasswordFill } from "react-icons/ri";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-  
+
+const API_URL = import.meta.env.VITE_API_BASE_URL;
+
 function LoginPage() {
-  const [role, setRole] = useState("client");
+  const [role, setRole] = useState("user");
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
@@ -20,7 +22,7 @@ function LoginPage() {
   const navigate = useNavigate();
 
   const validateEmail = (value) => {
-    const re = /^\S+@\S+\.\S+$/;              
+    const re = /^\S+@\S+\.\S+$/;
     if (!value || !re.test(value)) {
       setEmailError("Please enter a valid email address");
       return false;
@@ -39,32 +41,36 @@ function LoginPage() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    const emailOk = validateEmail(email);
-    const passwordOk = validatePassword(password);
-    if (!emailOk || !passwordOk) return;
-    
-    const res = await axios.post("http://localhost:3000/api/auth/login", { 
-      email, 
-      password,
-      role: role === "client" ? "user" : role
-    })
-    .then((res) => {
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("role", res.data.role);
-      //check if lawyer profile isComplete false then redirect to complete-profile page
-      if(res.data.role === "lawyer" && !res.data.isComplete){
-        navigate("/complete-profile");
-      } else {
-        navigate(res.data.role === "user" ? "/client/client-dashboard" : "/lawyer/lawyer-dashboard");
+    try {
+      e.preventDefault();
+      const emailOk = validateEmail(email);
+      const passwordOk = validatePassword(password);
+
+      if (!emailOk || !passwordOk) return;
+
+      const res = await axios.post(`${API_URL}/api/auth/login`, {
+        email,
+        password,
+        role,
+      });
+
+      if (res.status === 200) {
+        localStorage.setItem("token", res.data.token);
+        localStorage.setItem("role", res.data.user.role);
+        
+        //check if lawyer profile isComplete false then redirect to complete-profile page
+        if (res.data.user.role === "lawyer" && !res.data.user.isProfileComplete) {
+          navigate("/complete-profile");
+        } else {
+          navigate(res.data.user.role === "user" ? "/client/client-dashboard" : "/lawyer/lawyer-dashboard");
+        }
       }
-    })
-    .catch((err) => {
+    } catch (err) {
       alert("Login failed: " + (err.response?.data?.message || "Invalid credentials"));
-    }); 
+    }
   };
 
-  
+
 
   return (
     <div className="h-screen flex shadow-lg rounded-lg overflow-hidden">
@@ -111,9 +117,9 @@ function LoginPage() {
             />
 
             <button
-              onClick={() => setRole("client")}
-              aria-pressed={role === "client"}
-              className={`relative z-10 flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-colors duration-300 ${role === "client" ? "text-white" : "text-gray-500"
+              onClick={() => setRole("user")}
+              aria-pressed={role === "user"}
+              className={`relative z-10 flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-colors duration-300 ${role === "user" ? "text-white" : "text-gray-500"
                 }`}
             >
               <FaUser />
@@ -137,7 +143,7 @@ function LoginPage() {
               <label className="block text-sm mb-1">Email address</label>
 
               <div className="flex justify-around items-center w-full bg-gray-100 rounded-lg hover:ring-2 hover:ring-blue-500">
-                <MdEmail className="text-2xl m-2 text-blue-900"/>
+                <MdEmail className="text-2xl m-2 text-blue-900" />
 
                 <input
                   type="email"
@@ -179,11 +185,11 @@ function LoginPage() {
 
                 <button
                   type="button"
-                  onClick={() => setShowPassword((s) => !s)}        
+                  onClick={() => setShowPassword((s) => !s)}
                   aria-label={showPassword ? "Hide password" : "Show password"}
                   className="p-2 m-2 text-blue-900"
                 >
-                  {showPassword ?  <AiOutlineEye/> : <AiOutlineEyeInvisible />}
+                  {showPassword ? <AiOutlineEye /> : <AiOutlineEyeInvisible />}
                 </button>
               </div>
 
@@ -191,7 +197,7 @@ function LoginPage() {
                 <p className="text-red-600 text-sm mt-1">{passwordError}</p>
               )}
 
-              
+
 
 
             </div>
@@ -201,7 +207,7 @@ function LoginPage() {
               type="submit"
               className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 transition"
             >
-              <CgLogIn className="inline mr-2 text-2xl mb-1"/>
+              <CgLogIn className="inline mr-2 text-2xl mb-1" />
               Log In
             </button>
           </form>
@@ -216,7 +222,7 @@ function LoginPage() {
             Don’t have an account?{" "}
             <Link to="/auth/register">
               <span className="text-blue-600 cursor-pointer hover:underline">
-                Sign up 
+                Sign up
               </span>
             </Link>
           </p>

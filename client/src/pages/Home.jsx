@@ -23,7 +23,7 @@ const Home = () => {
           </div>
 
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
-            <Link to="/" className="hover:text-blue-600 transition">
+            <Link to="/client/lawyer-list" className="hover:text-blue-600 transition">
               Find a Lawyer
             </Link>
             <Link to="/for-lawyers" className="hover:text-blue-600 transition">
