@@ -1,9 +1,9 @@
 const User = require("../models/user.model");
 const Lawyer = require("../models/lawyer.model");
 const Admin = require("../models/admin.model");
-const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const env = require("../config/env");
+
 
 const generateToken = (user) => {
   
@@ -110,12 +110,12 @@ const loginUser = async (req, res) => {
     if (!user) return res.status(400).json({ error: "Invalid email" });
 
     // Check password
-    // const isMatch = await user.comparePassword(password);
-    // if (!isMatch) return res.status(400).json({ error: "Invalid credentials" });
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) return res.status(400).json({ error: "Invalid credentials" });
 
-      if( user.password !== password ){
-        return res.status(400).json({error: "Invalid credentials"});
-      }
+      // if( user.password !== password ){
+      //   return res.status(400).json({error: "Invalid credentials"});
+      // }
       
     const token = generateToken(user);
 
@@ -127,6 +127,7 @@ const loginUser = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        idProfileComplete: user.isProfileComplete,
       }
     });
   } catch (err) {
