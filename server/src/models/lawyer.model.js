@@ -52,6 +52,16 @@ const lawyerSchema = new mongoose.Schema(
       state: String,
     },
 
+    bio: {
+      type: String,
+      trim: true,
+    },
+
+    practiceCourt: {
+      type: String,
+      trim: true,
+    },
+
     education: [
       {
         degree: String,
