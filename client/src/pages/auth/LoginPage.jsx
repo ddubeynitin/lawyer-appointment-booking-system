@@ -8,6 +8,7 @@ import { RiLockPasswordFill } from "react-icons/ri";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useAuth } from "../../context/AuthContext.jsx";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -20,6 +21,7 @@ function LoginPage() {
   const [passwordError, setPasswordError] = useState("");
 
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const validateEmail = (value) => {
     const re = /^\S+@\S+\.\S+$/;
@@ -57,9 +59,13 @@ function LoginPage() {
       if (res.status === 200) {
         localStorage.setItem("token", res.data.token);
         localStorage.setItem("role", res.data.user.role);
+        localStorage.setItem("user", JSON.stringify(res.data.user));
+        login({ token: res.data.token, user: res.data.user });
         
         //check if lawyer profile isComplete false then redirect to complete-profile page
-        if (res.data.user.role === "lawyer" && !res.data.user.isProfileComplete) {
+        const isProfileComplete =
+          res.data.user.isProfileComplete ?? res.data.user.idProfileComplete;
+        if (res.data.user.role === "lawyer" && !isProfileComplete) {
           navigate("/complete-profile");
         } else {
           navigate(res.data.user.role === "user" ? "/client/client-dashboard" : "/lawyer/lawyer-dashboard");

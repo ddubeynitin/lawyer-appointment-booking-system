@@ -9,14 +9,28 @@ import {
   FaVideo,
 } from "react-icons/fa";
 import { LuBellRing } from "react-icons/lu";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 const LawyerDashboard = () => {
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+  const profileRef = useRef(null);
 
   const hour = new Date().getHours();
   const greeting =
     hour < 12 ? "Good Morning" : hour < 18 ? "Good Afternoon" : "Good Evening";
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setShowProfile(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200">
@@ -60,11 +74,54 @@ const LawyerDashboard = () => {
               </div>
             )}
 
-            <img
-              src="https://i.pravatar.cc/40?img=12"
-              alt="profile"
-              className="w-9 h-9 rounded-full ring-2 ring-blue-500"
-            />
+            {/* Profile */}
+            <div className="relative" ref={profileRef}>
+              <img
+                src="https://i.pravatar.cc/40?img=12"
+                alt="profile"
+                onClick={() => setShowProfile(!showProfile)}
+                className="w-9 h-9 rounded-full ring-2 ring-blue-500 cursor-pointer"
+              />
+
+              {/* Profile Popup */}
+              <div
+                className={`absolute right-0 mt-3 w-72 bg-white rounded-2xl shadow-2xl border border-gray-100 p-5 transition-all duration-300 ease-out z-50 ${
+                  showProfile
+                    ? "opacity-100 scale-100 translate-y-0"
+                    : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
+                }`}
+              >
+                <div className="flex items-center gap-4 mb-4">
+                  <img
+                    src="https://i.pravatar.cc/80?img=12"
+                    alt="lawyer"
+                    className="w-14 h-14 rounded-full"
+                  />
+                  <div>
+                    <h4 className="font-semibold text-gray-800">
+                      Harvey Specter
+                    </h4>
+                    <p className="text-sm text-gray-500">
+                      Senior Corporate Lawyer
+                    </p>
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-100 my-3"></div>
+
+                <div className="space-y-2 text-sm">
+                  <button className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 transition">
+                    View Profile
+                  </button>
+                  <button className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 transition">
+                    Account Settings
+                  </button>
+                  <button className="w-full text-left px-3 py-2 rounded-lg hover:bg-red-50 text-red-600 transition">
+                    Logout
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </header>
@@ -210,6 +267,7 @@ const LawyerDashboard = () => {
 };
 
 /* ================= REUSABLE COMPONENTS ================= */
+
 const StatCard = ({ title, value, sub, icon }) => (
   <div className="bg-white rounded-xl p-4 shadow-sm">
     <div className="flex justify-between items-center mb-2">
