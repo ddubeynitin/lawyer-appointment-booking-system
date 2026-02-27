@@ -1,5 +1,13 @@
 import React, { useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
+import {
+  CheckCircle2,
+  Calendar,
+  Clock,
+  MapPin,
+  FileText,
+  Download,
+} from "lucide-react";
 
 export default function MyAppointment() {
   const [selectedTime, setSelectedTime] = useState("10:00 AM");
@@ -79,7 +87,6 @@ export default function MyAppointment() {
       <Toaster position="top-right" />
 
       <div className="max-w-7xl mx-auto">
-        {/* HEADER */}
         <h1 className="text-4xl font-bold text-gray-900">
           Schedule Your Consultation
         </h1>
@@ -87,7 +94,6 @@ export default function MyAppointment() {
           Secure your appointment with our legal experts in just a few steps.
         </p>
 
-        {/* Progress */}
         <div className="flex items-center gap-4 mt-8">
           <div className="flex-1 h-2 bg-blue-600 rounded-full"></div>
           <div className="flex-1 h-2 bg-blue-400 rounded-full"></div>
@@ -96,7 +102,7 @@ export default function MyAppointment() {
 
         <div className="grid lg:grid-cols-3 gap-8 mt-10">
 
-          {/* LEFT */}
+          {/* LEFT SIDE */}
           <div className="lg:col-span-2 space-y-8">
 
             {/* Attorney Card */}
@@ -247,29 +253,74 @@ export default function MyAppointment() {
         </div>
       </div>
 
-      {/* SUCCESS MODAL */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
-          <div className="bg-white rounded-2xl p-8 shadow-2xl w-96 text-center animate-scaleIn">
-            <h2 className="text-2xl font-bold text-green-600 mb-4">
-              Booking Confirmed!
-            </h2>
-            <p className="text-gray-600">
-              Your reference number:
-            </p>
-            <p className="text-lg font-semibold mt-2">
-              {bookingRef}
-            </p>
+      {/* CONFIRMATION POPUP */}
+{/* SUCCESS MODAL */}
+{showModal && (
+  <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
+    <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-3xl flex flex-col md:flex-row gap-6">
 
-            <button
-              onClick={() => setShowModal(false)}
-              className="mt-6 bg-blue-600 text-white px-6 py-2 rounded-lg"
-            >
-              Close
-            </button>
+      {/* Left Icon */}
+      <div className="flex flex-col items-center justify-center flex-shrink-0">
+        <div className="relative">
+          <div className="absolute inset-0 bg-green-400/20 rounded-full blur-xl animate-pulse"></div>
+          <div className="relative bg-green-100 p-5 rounded-full">
+            <CheckCircle2 className="w-12 h-12 text-green-600" />
           </div>
         </div>
-      )}
+        <span className="mt-4 text-green-700 font-semibold">
+          Booking Confirmed!
+        </span>
+      </div>
+
+      {/* Right Side */}
+      <div className="flex-1">
+
+        {/* Attorney Photo */}
+        <div className="flex items-center gap-4 mb-6">
+          <img
+            src="https://randomuser.me/api/portraits/women/44.jpg"
+            alt="Attorney"
+            className="w-16 h-16 rounded-full border-2 border-blue-500 shadow"
+          />
+          <div>
+            <h2 className="text-xl font-semibold">
+              Sarah Jenkins, Esq.
+            </h2>
+            <p className="text-blue-600 text-sm">
+              Family Law Specialist
+            </p>
+          </div>
+        </div>
+
+        {/* Details */}
+        <div className="grid grid-cols-2 gap-4 text-sm text-gray-700 mb-6">
+          <DetailRow icon={<Calendar size={18} />} label="Date" value="Oct 24, 2023" />
+          <DetailRow icon={<Clock size={18} />} label="Time" value={selectedTime} />
+          <DetailRow icon={<MapPin size={18} />} label="Location" value="123 Legal Ave, NY" />
+          <DetailRow icon={<FileText size={18} />} label="Ref ID" value={bookingRef} />
+        </div>
+
+        <button
+          onClick={() => setShowModal(false)}
+          className="w-full bg-blue-600 text-white py-2 rounded-xl"
+        >
+          Close
+        </button>
+
+      </div>
+    </div>
+  </div>
+)}
+    </div>
+  );
+}
+
+function DetailRow({ icon, label, value }) {
+  return (
+    <div className="flex items-center gap-2">
+      <div className="text-gray-500">{icon}</div>
+      <span className="font-medium">{label}:</span>
+      <span className="ml-auto font-semibold">{value}</span>
     </div>
   );
 }
