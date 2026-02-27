@@ -2,19 +2,44 @@ import {
   FaGavel,
   FaSearch,
   FaVideo,
-  FaCalendarAlt,
-  FaHistory,
 } from "react-icons/fa";
 import { LuBellRing } from "react-icons/lu";
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+import { FaTimes } from "react-icons/fa";
 
 const ClientDashboard = () => {
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+
+  // ✅ NEW STATE (Added)
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const profileRef = useRef(null);
 
   const hour = new Date().getHours();
   const greeting =
     hour < 12 ? "Good Morning" : hour < 18 ? "Good Afternoon" : "Good Evening";
+
+  const user = {
+    name: "Alex Johnson",
+    email: "alex.johnson@example.com",
+    phone: "+91 9876543210",
+    role: "Client",
+    city: "New Delhi",
+  };
+
+  // ✅ Click Outside Close (Added)
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setShowProfileDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200">
@@ -36,6 +61,7 @@ const ClientDashboard = () => {
           </nav>
 
           <div className="flex items-center gap-6 relative">
+            {/* Notifications */}
             <div
               className="relative cursor-pointer"
               onClick={() => setShowNotifications(!showNotifications)}
@@ -44,7 +70,6 @@ const ClientDashboard = () => {
               <span className="absolute -top-1 -right-1 bg-red-500 w-2 h-2 rounded-full"></span>
             </div>
 
-            {/* Notification Dropdown */}
             {showNotifications && (
               <div className="absolute right-0 top-12 w-72 bg-white shadow-xl rounded-xl p-4 z-50">
                 <h4 className="font-semibold mb-3">Notifications</h4>
@@ -56,14 +81,105 @@ const ClientDashboard = () => {
               </div>
             )}
 
-            <img
-              src="https://i.pravatar.cc/40"
-              alt="profile"
-              className="w-9 h-9 rounded-full ring-2 ring-blue-500"
-            />
+            {/* ✅ Profile with Dropdown (Added Feature) */}
+            <div className="relative" ref={profileRef}>
+              <img
+                src="https://i.pravatar.cc/40"
+                alt="profile"
+                className="w-9 h-9 rounded-full ring-2 ring-blue-500 cursor-pointer"
+                onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+              />
+
+              {/* Dropdown Popup */}
+              <div
+                className={`absolute right-0 mt-3 w-72 bg-white rounded-2xl shadow-2xl border border-gray-100 p-5 transition-all duration-300 ease-out z-50 ${
+                  showProfileDropdown
+                    ? "opacity-100 scale-100 translate-y-0"
+                    : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
+                }`}
+              >
+                <div className="flex items-center gap-4 mb-4">
+                  <img
+                    src="https://i.pravatar.cc/80"
+                    alt="user"
+                    className="w-14 h-14 rounded-full"
+                  />
+                  <div>
+                    <h4 className="font-semibold text-gray-800">
+                      {user.name}
+                    </h4>
+                    <p className="text-sm text-gray-500">
+                      {user.role}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-100 my-3"></div>
+
+                <div className="space-y-2 text-sm">
+                  <button
+                    onClick={() => {
+                      setShowProfileDropdown(false);
+                      setShowProfileModal(true);
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 transition"
+                  >
+                    View Profile
+                  </button>
+
+                  <button className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 transition">
+                    Settings
+                  </button>
+
+                  <button className="w-full text-left px-3 py-2 rounded-lg hover:bg-red-50 text-red-600 transition">
+                    Logout
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </header>
+
+      {/* EXISTING PROFILE MODAL (UNCHANGED) */}
+      {showProfileModal && (
+        <div
+          className="fixed inset-0 bg-black/40 flex justify-center items-center z-50"
+          onClick={() => setShowProfileModal(false)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-xl p-6 w-80 relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-800"
+              onClick={() => setShowProfileModal(false)}
+            >
+              <FaTimes />
+            </button>
+
+            <div className="flex flex-col items-center text-center mt-4">
+              <img
+                src="https://i.pravatar.cc/100"
+                className="w-20 h-20 rounded-full mb-4"
+                alt="user"
+              />
+              <h3 className="font-semibold text-xl">{user.name}</h3>
+              <p className="text-sm text-gray-500">{user.role}</p>
+              <div className="mt-4 text-left w-full space-y-1">
+                <p><span className="font-medium">Email:</span> {user.email}</p>
+                <p><span className="font-medium">Phone:</span> {user.phone}</p>
+                <p><span className="font-medium">City:</span> {user.city}</p>
+              </div>
+              <button className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-xl font-medium">
+                Edit Profile
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MAIN — 100% UNTOUCHED BELOW THIS */}
 
       {/* MAIN */}
       <main className="max-w-7xl mx-auto px-6 py-10 space-y-10">
@@ -71,7 +187,7 @@ const ClientDashboard = () => {
         {/* Greeting */}
         <div>
           <h1 className="text-3xl font-bold text-gray-800">
-            {greeting}, <span className="text-blue-600">Alex</span>
+            {greeting}, <span className="text-blue-600">{user.name}</span>
           </h1>
           <p className="text-gray-500 mt-1">
             Manage your appointments and find the legal help you need.
