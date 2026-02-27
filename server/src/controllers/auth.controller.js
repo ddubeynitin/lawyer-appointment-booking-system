@@ -96,7 +96,7 @@ const registerUser = async (req, res) => {
 const loginUser = async (req, res) => {
   try {
     const { email, password, role } = req.body;
-
+    console.log(req.body);
     let user;
     if (role === "lawyer") {
       user = await Lawyer.findOne({ email });
@@ -127,7 +127,7 @@ const loginUser = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        idProfileComplete: user.isProfileComplete,
+        isProfileComplete: user.isProfileComplete,
       }
     });
   } catch (err) {

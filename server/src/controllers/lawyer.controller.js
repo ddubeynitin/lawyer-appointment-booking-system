@@ -39,7 +39,34 @@ const updateLawyer = async (req, res) => {
 
 const completeLawyerProfile = async (req, res) => {
   try {
-    const {profileImage, location, education, specializations, feesByCategory, experience, rating, totalReviews, verification} = req.body;
+    const {
+      location,
+      education,
+      specializations,
+      feesByCategory,
+      experience,
+      bio,
+      practiceCourt,
+      rating,
+      totalReviews,
+      verification,
+    } = req.body;
+
+    const parseJson = (value, fallback) => {
+      if (typeof value === "string") {
+        try {
+          return JSON.parse(value);
+        } catch {
+          return fallback;
+        }
+      }
+      return value ?? fallback;
+    };
+
+    const parsedLocation = parseJson(location, undefined);
+    const parsedEducation = parseJson(education, []);
+    const parsedSpecializations = parseJson(specializations, []);
+    const parsedFeesByCategory = parseJson(feesByCategory, []);
 
     let imageUrl = "";
 
@@ -50,25 +77,30 @@ const completeLawyerProfile = async (req, res) => {
       imageUrl = result.secure_url;
     }
 
-    const lawyer = await Lawyer.findByIdAndUpdate(
-      req.params.id,
-      {
-        profileImage: {
-          url: imageUrl,
-          public_id: req.file ? req.file.filename : null,
-        },
-        location,
-        education,
-        specializations,
-        feesByCategory,
-        experience,
-        rating,
-        totalReviews,
-        verification,
-        isProfileComplete: true
-      },
-      { new: true },
-    );
+    const updateDoc = {
+      isProfileComplete: true,
+    };
+
+    if (req.file) {
+      updateDoc.profileImage = {
+        url: imageUrl,
+        public_id: req.file.filename,
+      };
+    }
+
+    if (parsedLocation) updateDoc.location = parsedLocation;
+    if (Array.isArray(parsedEducation)) updateDoc.education = parsedEducation;
+    if (Array.isArray(parsedSpecializations)) updateDoc.specializations = parsedSpecializations;
+    if (Array.isArray(parsedFeesByCategory)) updateDoc.feesByCategory = parsedFeesByCategory;
+
+    if (experience !== undefined) updateDoc.experience = Number(experience);
+    if (bio !== undefined) updateDoc.bio = bio;
+    if (practiceCourt !== undefined) updateDoc.practiceCourt = practiceCourt;
+    if (rating !== undefined) updateDoc.rating = Number(rating);
+    if (totalReviews !== undefined) updateDoc.totalReviews = Number(totalReviews);
+    if (verification !== undefined) updateDoc.verification = verification;
+
+    const lawyer = await Lawyer.findByIdAndUpdate(req.params.id, updateDoc, { new: true });
 
     if (!lawyer || !lawyer.isActive) {
       return res.status(404).json({ message: "Lawyer not found or inactive" });
