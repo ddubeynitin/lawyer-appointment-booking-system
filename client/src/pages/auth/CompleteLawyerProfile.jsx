@@ -5,6 +5,10 @@ import {
   FaBuilding,
   FaGraduationCap,
 } from "react-icons/fa";
+import axios from 'axios';
+import { useAuth } from "../../context/AuthContext.jsx";
+
+const API_URL = import.meta.env.VITE_API_BASE_URL;
 
 const specializationOptions = [
   "Criminal",
@@ -16,6 +20,7 @@ const specializationOptions = [
 
 const CompleteLawyerProfile = () => {
   const navigate = useNavigate();
+  const { user, token } = useAuth();
   const [step, setStep] = useState(1);
 
   const [formData, setFormData] = useState({
@@ -34,6 +39,7 @@ const CompleteLawyerProfile = () => {
   });
 
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // ================= BASIC INPUT =================
   const handleChange = (e) => {
@@ -190,27 +196,114 @@ const CompleteLawyerProfile = () => {
 
   const prevStep = () => setStep((prev) => prev - 1);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const validationErrors = validateStep();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
+  const handleSubmit = async (e) => {
+    try {
+      e.preventDefault();
+      const validationErrors = validateStep();
+      if (Object.keys(validationErrors).length > 0) {
+        setErrors(validationErrors);
+        return;
+      }
+
+      if (!user?.id && !user?._id) {
+        alert("Missing user info. Please log in again.");
+        return;
+      }
+
+      setIsSubmitting(true);
+
+      const lawyerId = user.id || user._id;
+      const payload = new FormData();
+
+      if (formData.profileImage) {
+        payload.append("profileImage", formData.profileImage);
+      }
+
+      const location = {
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+      };
+
+      const education = formData.education.map((edu) => ({
+        degree: edu.degree,
+        university: edu.university,
+        year: Number(edu.passingYear),
+      }));
+
+      const feesByCategory = formData.specializations.map((spec) => ({
+        category: spec,
+        fee: Number(formData.fees[spec] || 0),
+      }));
+
+      payload.append("location", JSON.stringify(location));
+      payload.append("education", JSON.stringify(education));
+      payload.append("specializations", JSON.stringify(formData.specializations));
+      payload.append("feesByCategory", JSON.stringify(feesByCategory));
+      payload.append("experience", String(formData.experience || 0));
+      payload.append("bio", formData.bio);
+      payload.append("practiceCourt", formData.practiceCourt);
+
+      const res = await axios.patch(
+        `${API_URL}/api/lawyers/complete-profile/${lawyerId}`,
+        payload,
+        {
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        },
+      );
+      
+      if(res.status === 200){
+        alert("Profile Completed Successfully!");
+        navigate("/lawyer/lawyer-dashboard");
+      }
+
+    } catch (error) {
+        console.log(error,"Error Occurred: Handler Function not working?");
+    } finally {
+        setIsSubmitting(false);
     }
 
-    console.log(formData);
-    alert("Profile Completed Successfully!");
-    navigate("/lawyer/lawyer-dashboard");
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 py-20 px-6">
-      <div className="max-w-5xl mx-auto bg-white rounded-3xl shadow-2xl p-12 border border-slate-200">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-white to-slate-100 py-5 px-6">
+      {isSubmitting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm">
+          <div className="w-[320px] rounded-3xl bg-white/90 p-6 shadow-2xl ring-1 ring-slate-200">
+            <div className="flex items-center justify-between">
+              <div className="text-lg font-semibold text-slate-800">
+                Finalizing Profile
+              </div>
+              <div className="h-3 w-3 rounded-full bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.8)]" />
+            </div>
+            <p className="mt-2 text-sm text-slate-500">
+              Securing your details and polishing your public profile.
+            </p>
+            <div className="mt-5 h-2 w-full overflow-hidden rounded-full bg-slate-200">
+              <div className="h-full w-1/2 animate-pulse rounded-full bg-linear-to-r from-blue-600 via-indigo-500 to-emerald-400" />
+            </div>
+            <div className="mt-6 grid grid-cols-3 gap-3 text-xs text-slate-500">
+              <div className="rounded-xl border border-slate-200 bg-white/70 px-3 py-2 text-center">
+                Uploading
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white/70 px-3 py-2 text-center">
+                Verifying
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white/70 px-3 py-2 text-center">
+                Publishing
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      <div className="max-w-5xl mx-auto bg-white rounded-3xl shadow-2xl p-5 border border-slate-200">
 
-        <h2 className="text-4xl font-bold text-center mb-4">
+        <h2 className="text-4xl font-bold text-center mb-2">
           Complete Your Professional Profile
         </h2>
-        <p className="text-center text-slate-500 mb-10">
+        <p className="text-center text-slate-500 mb-2">
           Step {step} of 3
         </p>
 
@@ -251,7 +344,7 @@ const CompleteLawyerProfile = () => {
                 error={errors.practiceCourt}
               />
 
-              <NextBtn onClick={nextStep} />
+              <NextBtn onClick={nextStep} disabled={isSubmitting} />
             </SectionCard>
           )}
 
@@ -304,7 +397,8 @@ const CompleteLawyerProfile = () => {
                 <button
                   type="button"
                   onClick={prevStep}
-                  className="flex-1 bg-gray-300 py-3 rounded-xl font-semibold text-center"
+                  className="flex-1 bg-gray-300 py-3 rounded-xl font-semibold text-center disabled:opacity-60"
+                  disabled={isSubmitting}
                 >
                   Back
                 </button>
@@ -312,7 +406,8 @@ const CompleteLawyerProfile = () => {
                 <button
                   type="button"
                   onClick={nextStep}
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-xl font-semibold text-center"
+                  className="flex-1 bg-linear-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-xl font-semibold text-center disabled:opacity-60"
+                  disabled={isSubmitting}
                 >
                   Next
                 </button>
@@ -425,10 +520,11 @@ const CompleteLawyerProfile = () => {
               />
 
               <div className="flex gap-4 mt-8">
-                <BackBtn onClick={prevStep} />
+                <BackBtn onClick={prevStep} disabled={isSubmitting} />
                 <button
                   type="submit"
-                  className="w-1/2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-xl"
+                  className="w-1/2 bg-linear-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-xl disabled:opacity-60"
+                  disabled={isSubmitting}
                 >
                   Complete Profile
                 </button>
@@ -495,7 +591,7 @@ const FileInput = ({ label, error, ...props }) => (
     <label className="font-semibold block mb-2">
       {label}
     </label>
-    <input type="file" {...props} />
+    <input type="file" {...props} className="w-full bg-blue-500 text-white p-2 rounded-md"/>
     {error && (
       <p className="text-red-500 text-sm mt-1">
         {error}
@@ -504,21 +600,23 @@ const FileInput = ({ label, error, ...props }) => (
   </div>
 );
 
-const NextBtn = ({ onClick }) => (
+const NextBtn = ({ onClick, disabled }) => (
   <button
     type="button"
     onClick={onClick}
-    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-xl mt-6"
+    className="w-full bg-linear-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-xl mt-6 disabled:opacity-60"
+    disabled={disabled}
   >
     Next
   </button>
 );
 
-const BackBtn = ({ onClick }) => (
+const BackBtn = ({ onClick, disabled }) => (
   <button
     type="button"
     onClick={onClick}
-    className="w-1/2 bg-gray-300 py-3 rounded-xl"
+    className="w-1/2 bg-gray-300 py-3 rounded-xl disabled:opacity-60"
+    disabled={disabled}
   >
     Back
   </button>
