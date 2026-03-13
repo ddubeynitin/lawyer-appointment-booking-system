@@ -3,7 +3,7 @@ import { FaGavel } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import  useFetch  from "../../hooks/useFetch";
 import LawyerCard from "../../components/common/LawyerCard";
-const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+import { API_URL } from "../../utils/api";
 
 // const lawyers = [
 //   {
@@ -92,7 +92,7 @@ const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 function LawyerList() {
   const [lawyers, setLawyers] = React.useState([]);
-  const { data, loading, error } = useFetch(`${API_URL}/api/lawyers`);
+  const { data, loading, error } = useFetch(`${API_URL}/lawyers`);
   console.log("Data:", data);
   console.log("Loading:", loading);
   console.log("Error:", error);

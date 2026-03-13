@@ -9,8 +9,7 @@ import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext.jsx";
-
-const API_URL = import.meta.env.VITE_API_BASE_URL;
+import { API_URL } from "../../utils/api";
 
 function LoginPage() {
   const [role, setRole] = useState("user");
@@ -50,7 +49,7 @@ function LoginPage() {
 
       if (!emailOk || !passwordOk) return;
 
-      const res = await axios.post(`${API_URL}/api/auth/login`, {
+      const res = await axios.post(`${API_URL}/auth/login`, {
         email,
         password,
         role,
