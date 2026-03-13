@@ -112,7 +112,7 @@ const lawyerSchema = new mongoose.Schema(
 
     verification: {
       type: String,
-      enum: ["Pending", "Approved", "Under Review"],
+      enum: ["Pending", "Approved", "Rejected"],
       default: "Pending",
     },
 

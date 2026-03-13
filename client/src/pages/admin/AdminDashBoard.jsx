@@ -8,6 +8,44 @@ import { IoGitNetwork } from "react-icons/io5";
 
 const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 
+const normalizeBaseUrl = (url = "") => url.trim().replace(/\/+$/, "");
+
+const API_BASE_CANDIDATES = Array.from(
+  new Set(
+    [
+      normalizeBaseUrl(VITE_API_BASE_URL),
+      normalizeBaseUrl(window.location.origin),
+      "http://localhost:3000",
+      "http://127.0.0.1:3000",
+      "http://localhost:5000",
+      "http://127.0.0.1:5000",
+    ].filter(Boolean)
+  )
+);
+
+const requestWithFallback = async (method, path, payload) => {
+  let lastError;
+
+  for (const baseUrl of API_BASE_CANDIDATES) {
+    try {
+      const response = await axios({
+        method,
+        url: `${baseUrl}${path}`,
+        data: payload,
+      });
+      return response;
+    } catch (error) {
+      lastError = error;
+      const isNetworkError = !error?.response;
+      if (!isNetworkError) {
+        throw error;
+      }
+    }
+  }
+
+  throw lastError;
+};
+
 export default function Dashboard() {
   const [activeMenu, setActiveMenu] = useState("overview");
   const [showAllApplications, setShowAllApplications] = useState(false);
@@ -48,7 +86,7 @@ export default function Dashboard() {
     { id: "financials", label: "Financials", icon: DollarSign },
     { id: "appointments", label: "Appointments", icon: CalendarDays },
     { id: "reports", label: "Reports", icon: CalendarDays },
-  ];    
+  ];          
 
   const handleMenuClick = (menuId) => {   
     setActiveMenu(menuId);
@@ -61,17 +99,35 @@ export default function Dashboard() {
 
   const fetchUsers = async () => {
     try {
-      const response = await axios.get(`${VITE_API_BASE_URL}/api/users`);
+      const response = await requestWithFallback("get", "/api/users");
       setUsers(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error("Failed to fetch users:", error);
       alert("Failed to load users");
     }
   };
+  
+  const [AllLawyers, setAllLawyers] = useState([]);
+  const fetchLawyers = async () => {
+    try {
+      const res = await requestWithFallback("get", "/api/lawyers");
+      setAllLawyers(Array.isArray(res.data) ? res.data : []);
+    } catch (error) {
+      console.error("Failed to fetch lawyers:", error);
+      setAllLawyers([])
+    }
+  };
+
+  useEffect(()=>{
+    fetchLawyers();
+  },[]);  
 
   useEffect(() => {
     if (activeMenu === "users") {
       fetchUsers();
+    }
+    if (activeMenu === "verification") {
+      fetchLawyers();
     }
   }, [activeMenu]);
 
@@ -96,7 +152,7 @@ export default function Dashboard() {
     }
 
     try {
-      await axios.post(`${VITE_API_BASE_URL}/api/auth/register`, {
+      await requestWithFallback("post", "/api/auth/register", {
         name: userName,
         email: userEmail,
         phone: userPhone,
@@ -122,7 +178,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#F7F9FC] font-sans">
+    <div className="flex h-screen bg-[#F7F9FC] font-sans">
       {/* Sidebar */}                       
       <aside className="w-65 bg-white border-r border-gray-200 px-6 py-6 flex flex-col justify-between overflow-y-auto max-h-screen" style={{"scrollbarWidth": "thin", "scrollbarColor": "#d1d5db #f3f4f6"}}>
         <div>
@@ -208,7 +264,7 @@ export default function Dashboard() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-8">
+      <main className="flex-1 p-8 overflow-x-scroll">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl font-semibold">
@@ -465,7 +521,7 @@ export default function Dashboard() {
 
             {/* Add User Form - Animated */}
             {formType === "user" && (
-              <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-8 rounded-xl shadow-lg border-2 border-blue-200 animate-in fade-in slide-in-from-top duration-300">
+              <div className="bg-linear-to-br from-blue-50 to-blue-100 p-8 rounded-xl shadow-lg border-2 border-blue-200 animate-in fade-in slide-in-from-top duration-300">
                 <h2 className="text-2xl font-semibold mb-6 text-blue-900">Create New User</h2>
                 <div className="grid grid-cols-2 gap-6 mb-6">
                   <div>
@@ -565,7 +621,7 @@ export default function Dashboard() {
 
             {/* Add Lawyer Form - Animated */}
             {formType === "lawyer" && (
-              <div className="bg-gradient-to-br from-green-50 to-green-100 p-8 rounded-xl shadow-lg border-2 border-green-200 animate-in fade-in slide-in-from-top duration-300">
+              <div className="bg-line ar-to-br from-green-50 to-green-100 p-8 rounded-xl shadow-lg border-2 border-green-200 animate-in fade-in slide-in-from-top duration-300">
                 <h2 className="text-2xl font-semibold mb-6 text-green-900">Create New Lawyer</h2>
                 
                 {/* Row 1 */}
@@ -954,7 +1010,7 @@ export default function Dashboard() {
                 <div>
                   <table className="w-full">
                     <thead>
-                      <tr className="bg-gradient-to-r from-blue-50 to-blue-100">
+                      <tr className="bg-linear-to-r from-blue-50 to-blue-100">
                         <th className="text-left py-4 px-6 font-bold text-gray-700 text-sm uppercase tracking-wide">
                           <div className="flex items-center gap-2">👤 User Name</div>
                         </th>
@@ -1031,7 +1087,7 @@ export default function Dashboard() {
                 <div>
                   <table className="w-full">
                     <thead>
-                      <tr className="bg-gradient-to-r from-green-50 to-green-100">
+                      <tr className="bg-linear-to-r from-green-50 to-green-100">
                         <th className="text-left py-4 px-6 font-bold text-gray-700 text-sm uppercase tracking-wide">
                           <div className="flex items-center gap-2">⚖️ Lawyer Name</div>
                         </th>
@@ -1106,9 +1162,86 @@ export default function Dashboard() {
 
         {/* Verification Queue Content */}
         {activeMenu === "verification" && (
-          <div className="bg-gray-50 p-6 rounded-xl shadow-md">
-            <h2 className="text-xl font-semibold mb-4">Verification Queue</h2>
-            <p className="text-gray-500">Verification queue content will be displayed here.</p>
+          <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-100">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-xl font-semibold text-gray-800">Verification Queue</h2>
+              <span className="px-3 py-1 text-xs font-semibold bg-blue-100 text-blue-700 rounded-full">
+                {AllLawyers.length} Lawyers
+              </span>
+            </div>
+            {AllLawyers.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-10 text-center">
+                <p className="text-gray-500">No lawyers found in verification queue.</p>
+              </div>
+            ) : (
+              <div className="overflow-hidden rounded-xl border border-gray-200">
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-230">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Lawyer</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Category</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Location</th>
+                        <th className=      "px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Verification</th>
+                        <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {AllLawyers.map((lawyer) => {
+                        const verificationStatus = lawyer?.verification || "Pending";
+                        const statusClasses =
+                          verificationStatus === "Approved"
+                            ? "bg-green-100 text-green-700"
+                            : verificationStatus === "Under Review"
+                              ? "bg-amber-100 text-amber-700"
+                              : "bg-blue-100 text-blue-700";
+
+                        return (
+                          <tr key={lawyer._id} className="hover:bg-blue-50/40 transition-colors">
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-3">
+                                <img
+                                  src={lawyer?.profileImage?.url || "https://i.pravatar.cc/40"}
+                                  alt={lawyer?.name || "Lawyer"}
+                                  className="h-10 w-10 rounded-full object-cover ring-2 ring-white shadow-sm"
+                                />
+                                <div>
+                                  <p className="font-medium text-gray-900">{lawyer?.name || "-"}</p>
+                                  <p className="text-xs text-gray-500">{lawyer?.email || "-"}</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-700">
+                              {Array.isArray(lawyer?.specializations) && lawyer.specializations.length > 0
+                                ? lawyer.specializations.join(", ")
+                                : "-"}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-700">
+                              {[lawyer?.location?.city, lawyer?.location?.state].filter(Boolean).join(", ") || "-"}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusClasses}`}>
+                                {verificationStatus}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex justify-end gap-2">
+                                <button className="px-3 py-1.5 text-xs font-semibold text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors">
+                                  Approve
+                                </button>
+                                <button className="px-3 py-1.5 text-xs font-semibold text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors">
+                                  Reject
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
