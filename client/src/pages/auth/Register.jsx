@@ -7,10 +7,10 @@ import { IoAlertOutline } from "react-icons/io5";
 import Logo from "../../assets/images/logo.png";
 import Feature1 from "../../assets/images/registerpage.png";
 import Feature2 from "../../assets/images/registerpage1.png";
+const API_URL = import.meta.env.VITE_API_BASE_URL;
 
 const Registration = () => {
   const navigate = useNavigate();
-
   const [role, setRole] = useState("client");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -47,7 +47,7 @@ const Registration = () => {
 
     try {
       setLoading(true);
-      await axios.post("http://localhost:3000/api/auth/register", {
+      await axios.post(`${API_URL}/auth/register`, {
         name: formData.name,
         phone: formData.phone,
         email: formData.email,
