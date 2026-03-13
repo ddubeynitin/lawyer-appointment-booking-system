@@ -11,7 +11,7 @@ import {
 
 const Home = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 text-slate-800">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-white to-slate-100 text-slate-800">
 
       {/* ================= PREMIUM HEADER ================= */}
       <header className="sticky top-0 z-50 backdrop-blur-md bg-white/80 border-b border-slate-200">
@@ -23,15 +23,15 @@ const Home = () => {
           </div>
 
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
-            <Link to="/client/lawyer-list" className="hover:text-blue-600 transition">
-              Find a Lawyer
+            <Link to="/client/lawyer-list" className="hover:text-blue-600 transition flex items-center gap-3">
+              <FaSearch/> Find a Lawyer
             </Link>
-            <Link to="/for-lawyers" className="hover:text-blue-600 transition">
+            {/* <Link to="/for-lawyers" className="hover:text-blue-600 transition">
               For Lawyers
             </Link>
             <Link to="/specializations" className="hover:text-blue-600 transition">
               Specializations
-            </Link>
+            </Link> */}
             <Link to="/about" className="hover:text-blue-600 transition">
               About
             </Link>
@@ -46,7 +46,7 @@ const Home = () => {
             </Link>
             <Link
               to="/auth/register"
-              className="px-5 py-2 rounded-xl text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow-md hover:shadow-lg hover:scale-105 transition"
+              className="px-5 py-2 rounded-xl text-sm font-medium text-white bg-linear-to-r from-blue-600 to-indigo-600 shadow-md hover:shadow-lg hover:scale-105 transition"
             >
               Get Started
             </Link>
@@ -64,7 +64,7 @@ const Home = () => {
 
           <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6">
             Find the Right{" "}
-            <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            <span className="bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
               Legal Expert
             </span>{" "}
             Today
@@ -96,7 +96,7 @@ const Home = () => {
               />
             </div>
 
-            <button className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-10 py-4 text-sm font-semibold hover:scale-105 transition">
+            <button className="bg-linear-to-r from-blue-600 to-indigo-600 text-white px-10 py-4 text-sm font-semibold hover:scale-105 transition">
               Search Now
             </button>
           </div>

@@ -202,7 +202,7 @@ const Registration = () => {
         {/* Help Links */}
         <div className="text-center mt-4 text-sm text-gray-500">
           <div className="flex justify-end  gap-6">
-          <Link
+          {/* <Link
             to="/help-center"
           className="hover:text-blue-600 transition"
           >
@@ -214,7 +214,7 @@ const Registration = () => {
         className="hover:text-blue-600 transition"
         >
         Contact Support
-        </Link>
+        </Link> */}
       </div>
     </div>
 

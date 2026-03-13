@@ -83,7 +83,7 @@ export default function MyAppointment() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 px-6 py-10">
+    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 px-6 py-10">
       <Toaster position="top-right" />
 
       <div className="max-w-7xl mx-auto">
@@ -240,7 +240,7 @@ export default function MyAppointment() {
 
               <button
                 onClick={handleSubmit}
-                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:opacity-90 text-white py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg"
+                className="w-full bg-linear-to-r from-blue-600 to-blue-700 hover:opacity-90 text-white py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg"
               >
                 Confirm Booking →
               </button>
@@ -260,7 +260,7 @@ export default function MyAppointment() {
     <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-3xl flex flex-col md:flex-row gap-6">
 
       {/* Left Icon */}
-      <div className="flex flex-col items-center justify-center flex-shrink-0">
+      <div className="flex flex-col items-center justify-center shrink-0">
         <div className="relative">
           <div className="absolute inset-0 bg-green-400/20 rounded-full blur-xl animate-pulse"></div>
           <div className="relative bg-green-100 p-5 rounded-full">

@@ -42,7 +42,7 @@ const ClientDashboard = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200">
+    <div className="min-h-screen bg-linear-to-br from-gray-100 to-gray-200">
 
       {/* HEADER */}
       <header className="bg-white/70 backdrop-blur-lg border-b border-gray-200 sticky top-0 z-50">
@@ -195,7 +195,7 @@ const ClientDashboard = () => {
         </div>
 
         {/* Search Section */}
-        <div className="bg-gradient-to-b from-blue-700 to-blue-950 rounded-xl p-10 text-white shadow-xl">
+        <div className="bg-linear-to-b from-blue-700 to-blue-950 rounded-xl p-10 text-white shadow-xl">
           <h2 className="text-2xl font-semibold text-center mb-3">
             Find the right legal help today
           </h2>
@@ -338,7 +338,7 @@ const ClientDashboard = () => {
             </div>
 
             {/* CTA */}
-            <div className="bg-gradient-to-b from-blue-700 to-blue-900 text-white rounded-3xl p-6 text-center shadow-xl">
+            <div className="bg-linear-to-b from-blue-700 to-blue-900 text-white rounded-3xl p-6 text-center shadow-xl">
               <h4 className="font-semibold mb-2 flex justify-center">Need urgent help?</h4>
               <p className="text-sm mb-4 flex justify-center">
                 Get matched with a lawyer in under 30 minutes.

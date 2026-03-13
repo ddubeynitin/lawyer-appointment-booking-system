@@ -10,11 +10,11 @@ import {
 
 export default function AppointmentConfirmation() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center px-4 py-6">
+    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 flex items-center justify-center px-4 py-6">
       <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl p-8 w-full max-w-3xl flex flex-col md:flex-row gap-6 transition-all">
 
         {/* Left: Confirmation Icon */}
-        <div className="flex flex-col items-center justify-center flex-shrink-0">
+        <div className="flex flex-col items-center justify-center shrink-0">
           <div className="relative">
             <div className="absolute inset-0 bg-green-400/20 rounded-full blur-xl animate-pulse"></div>
             <div className="relative bg-green-100 p-5 rounded-full">
@@ -55,7 +55,7 @@ export default function AppointmentConfirmation() {
 
           {/* Action Buttons */}
           <div className="flex gap-4">
-            <button className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:opacity-90 text-white py-2 rounded-xl font-semibold shadow transition">
+            <button className="flex-1 bg-linear-to-r from-blue-600 to-blue-700 hover:opacity-90 text-white py-2 rounded-xl font-semibold shadow transition">
               Add to Calendar
             </button>
             <button className="flex-1 border border-gray-300 hover:bg-gray-100 py-2 rounded-xl font-semibold transition">
