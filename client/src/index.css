@@ -1,4 +1,10 @@
+@import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
+
+@theme {
+  --font-bebas: "Bebas Neue", sans-serif;
+  --font-barlow: "Barlow", sans-serif;
+}
 
 /* Custom Scrollbar Styling */
 ::-webkit-scrollbar {
