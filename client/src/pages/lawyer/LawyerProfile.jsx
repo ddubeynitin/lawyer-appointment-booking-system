@@ -14,7 +14,7 @@ import {
 
 const LawyerProfile = () => {
   return (
-    <div className="bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen pb-16">
+    <div className="bg-linear-to-br from-slate-50 to-slate-100 min-h-screen pb-16">
       
       {/* Container */}
       <div className="max-w-7xl mx-auto px-6 pt-10">
@@ -184,7 +184,7 @@ const LawyerProfile = () => {
               </div>
             </div>
 
-            <button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-xl font-medium shadow-md hover:shadow-lg hover:scale-[1.02] transition">
+            <button className="w-full bg-linear-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-xl font-medium shadow-md hover:shadow-lg hover:scale-[1.02] transition">
               Book Now
             </button>
 
