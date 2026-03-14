@@ -2,6 +2,9 @@ import { useState } from "react";
 import { FaGavel, FaUser, FaUserTie } from "react-icons/fa";
 import { MdEmail } from "react-icons/md";
 import legalImg from "../../assets/images/legal.jpg";
+import legalImg1 from "../../assets/images/logo.png";
+import legalImg2 from "../../assets/images/registerpage.png";
+import legalImg3 from "../../assets/images/registerpage1.png";
 import { CgLogIn } from "react-icons/cg";
 
 import { RiLockPasswordFill } from "react-icons/ri";
@@ -11,6 +14,29 @@ import axios from "axios";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { API_URL } from "../../utils/api";
 
+const legalSlides = [
+  {
+    img: legalImg,
+    quote: "Efficiency is doing things right; effectiveness is doing the right things.",
+    author: "Peter Drucker",
+  },
+  {
+    img: legalImg1,
+    quote: "Injustice anywhere is a threat to justice everywhere.",
+    author: "Martin Luther King Jr.",
+  },
+  {
+    img: legalImg2,
+    quote: "Justice delayed is justice denied.",
+    author: "William E. Gladstone",
+  },
+  {
+    img: legalImg3,
+    quote: "The good lawyer is the great salesman.",
+    author: "Janet Reno",
+  },
+];
+
 function LoginPage() {
   const [role, setRole] = useState("user");
   const [showPassword, setShowPassword] = useState(false);
@@ -19,6 +45,9 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
 
+  const [slide] = useState(
+  legalSlides[Math.floor(Math.random() * legalSlides.length)]
+);
   const navigate = useNavigate();
   const { login } = useAuth();
 
@@ -81,19 +110,18 @@ function LoginPage() {
     <div className="h-screen flex shadow-lg rounded-lg overflow-hidden">
       {/* Left Image Section */}
       <div className="hidden lg:flex w-1/2 relative">
-        <img
-          src={legalImg}
-          alt="Justice"
-          className="w-full h-190 object-cover"
-        />
+<img
+  src={slide.img}
+  alt="Justice"
+  className="w-full h-190 object-cover"
+/>
         <div className="absolute inset-0 bg-black/40 flex items-end p-10">
           <p className="text-white text-lg max-w-md">
-            “Efficiency is doing things right; effectiveness is doing the right
-            things.”
-            <span className="block mt-2 text-sm opacity-80">
-              — Peter Drucker
-            </span>
-          </p>
+  “{slide.quote}”
+  <span className="block mt-2 text-sm opacity-80">
+    — {slide.author}
+  </span>
+</p>
         </div>
       </div>
 
