@@ -4,29 +4,42 @@ import {
   FaVideo,
 } from "react-icons/fa";
 import { LuBellRing } from "react-icons/lu";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import { FaTimes } from "react-icons/fa";
+import { useAuth } from "../../context/AuthContext";
+import userImg from "../../assets/gifs/icons8-user.gif";
+import axios from "axios";
+import {API_URL} from "../../utils/api";
 
 const ClientDashboard = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
-
+  const [appointmentHistory, setAppointmentHistory] = useState([]);
   // ✅ NEW STATE (Added)
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const profileRef = useRef(null);
+
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
 
   const hour = new Date().getHours();
   const greeting =
     hour < 12 ? "Good Morning" : hour < 18 ? "Good Afternoon" : "Good Evening";
 
-  const user = {
-    name: "Alex Johnson",
-    email: "alex.johnson@example.com",
-    phone: "+91 9876543210",
-    role: "Client",
-    city: "New Delhi",
-  };
+ const fetchAppointmentHistory = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/api/appointments/user/${user.id}`);
+      setAppointmentHistory(response.data);
+    } catch (error) {
+      console.error("Error fetching appointment history:", error);
+    }
+  }
 
   // ✅ Click Outside Close (Added)
   useEffect(() => {
@@ -41,6 +54,13 @@ const ClientDashboard = () => {
       document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (user?.id) {
+      fetchAppointmentHistory();
+    }
+  }, [user?.id]); // Fetch appointment history when user ID is available
+
+
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-100 to-gray-200">
 
@@ -50,7 +70,7 @@ const ClientDashboard = () => {
 
           <div className="flex items-center gap-2">
             <FaGavel className="text-blue-700 text-xl" />
-            <span className="font-bold text-xl text-gray-800">Esue</span>
+            <span className="font-bold text-xl text-gray-800">Justif<span className="text-blue-500">Ai</span> </span>
           </div>
 
           <nav className="hidden md:flex items-center gap-8 font-medium text-gray-600">
@@ -84,7 +104,7 @@ const ClientDashboard = () => {
             {/* ✅ Profile with Dropdown (Added Feature) */}
             <div className="relative" ref={profileRef}>
               <img
-                src="https://i.pravatar.cc/40"
+                src={user.profilePicture || userImg}
                 alt="profile"
                 className="w-9 h-9 rounded-full ring-2 ring-blue-500 cursor-pointer"
                 onClick={() => setShowProfileDropdown(!showProfileDropdown)}
@@ -100,7 +120,7 @@ const ClientDashboard = () => {
               >
                 <div className="flex items-center gap-4 mb-4">
                   <img
-                    src="https://i.pravatar.cc/80"
+                    src={user.profilePicture || userImg}
                     alt="user"
                     className="w-14 h-14 rounded-full"
                   />
@@ -109,7 +129,7 @@ const ClientDashboard = () => {
                       {user.name}
                     </h4>
                     <p className="text-sm text-gray-500">
-                      {user.role}
+                      {user.role === "user" ? "Client" : user.role}
                     </p>
                   </div>
                 </div>
@@ -131,7 +151,7 @@ const ClientDashboard = () => {
                     Settings
                   </button>
 
-                  <button className="w-full text-left px-3 py-2 rounded-lg hover:bg-red-50 text-red-600 transition">
+                  <button onClick={handleLogout} className="w-full text-left px-3 py-2 rounded-lg hover:bg-red-50 text-red-600 transition">
                     Logout
                   </button>
                 </div>
@@ -160,16 +180,15 @@ const ClientDashboard = () => {
 
             <div className="flex flex-col items-center text-center mt-4">
               <img
-                src="https://i.pravatar.cc/100"
+                src={user.profilePicture || userImg}
                 className="w-20 h-20 rounded-full mb-4"
                 alt="user"
               />
-              <h3 className="font-semibold text-xl">{user.name}</h3>
-              <p className="text-sm text-gray-500">{user.role}</p>
+              <h3 className="font-semibold text-xl uppercase">{user.name}</h3>
+              <p className="text-sm text-gray-500">{user.role === "user" ? "Client" : user.role}</p>
               <div className="mt-4 text-left w-full space-y-1">
                 <p><span className="font-medium">Email:</span> {user.email}</p>
                 <p><span className="font-medium">Phone:</span> {user.phone}</p>
-                <p><span className="font-medium">City:</span> {user.city}</p>
               </div>
               <button className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-xl font-medium">
                 Edit Profile
@@ -187,7 +206,7 @@ const ClientDashboard = () => {
         {/* Greeting */}
         <div>
           <h1 className="text-3xl font-bold text-gray-800">
-            {greeting}, <span className="text-blue-600">{user.name}</span>
+            {greeting}, <span className="text-blue-600 uppercase">{user.name}</span>
           </h1>
           <p className="text-gray-500 mt-1">
             Manage your appointments and find the legal help you need.
@@ -267,39 +286,51 @@ const ClientDashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr className="bg-white hover:bg-gray-50">
-                    <td className="text-center py-4">Oct 12, 2023</td>
-                    <td className="text-center">Michael Ross</td>
-                    <td className="text-center">Estate Planning</td>
-                    <td className="text-center">
-                      <span className="bg-green-100 text-green-600 px-2 py-1 rounded-full text-xs">
-                        Completed
-                      </span>
-                    </td>
-                    <td className="text-center text-blue-600 cursor-pointer">View Notes</td>
-                  </tr>
-                  <tr className="bg-gray-50 hover:bg-gray-100">
-                    <td className="text-center py-4">Sept 05, 2023</td>
-                    <td className="text-center">Jessica Pearson</td>
-                    <td className="text-center">Contract Review</td>
-                    <td className="text-center">
-                      <span className="bg-green-100 text-green-600 px-2 py-1 rounded-full text-xs">
-                        Completed
-                      </span>
-                    </td>
-                    <td className="text-center text-blue-600 cursor-pointer">Book Again</td>
-                  </tr>
-                  <tr className="bg-white hover:bg-gray-50">
-                    <td className="text-center py-4">Aug 18, 2023</td>
-                    <td className="text-center">Louis Litt</td>
-                    <td className="text-center">Real Estate</td>
-                    <td className="text-center">
-                      <span className="bg-gray-100 text-gray-500 px-2 py-1 rounded-full text-xs">
-                        Cancelled
-                      </span>
-                    </td>
-                    <td className="text-center text-gray-400 cursor-not-allowed">No Action</td>
-                  </tr>
+                  {appointmentHistory.length > 0 ? (
+                    appointmentHistory.map((appointment, index) => (
+                      <tr key={appointment._id || index} className={index % 2 === 0 ? "bg-white hover:bg-gray-50" : "bg-gray-50 hover:bg-gray-100"}>
+                        <td className="text-center py-4">
+                          {new Date(appointment.date).toLocaleDateString('en-US', { 
+                            year: 'numeric', 
+                            month: 'short', 
+                            day: 'numeric' 
+                          })}
+                        </td>
+                        <td className="text-center">{appointment.lawyerName}</td>
+                        <td className="text-center">{appointment.caseCategory}</td>
+                        <td className="text-center">
+                          <span className={`px-2 py-1 rounded-full text-xs ${
+                            appointment.status === 'Completed' 
+                              ? 'bg-green-100 text-green-600' 
+                              : appointment.status === 'Pending' 
+                              ? 'bg-yellow-100 text-yellow-600' 
+                              : appointment.status === 'Approved' 
+                              ? 'bg-blue-100 text-blue-600' 
+                              : appointment.status === 'Rejected' 
+                              ? 'bg-red-100 text-red-600' 
+                              : 'bg-gray-100 text-gray-500'
+                          }`}>
+                            {appointment.status}
+                          </span>
+                        </td>
+                        <td className="text-center">
+                          {appointment.status === 'Completed' ? (
+                            <span className="text-blue-600 cursor-pointer">View Notes</span>
+                          ) : appointment.status === 'Approved' ? (
+                            <span className="text-blue-600 cursor-pointer">Book Again</span>
+                          ) : (
+                            <span className="text-gray-400 cursor-not-allowed">No Action</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="5" className="text-center py-8 text-gray-500">
+                        No appointment history found
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </section>

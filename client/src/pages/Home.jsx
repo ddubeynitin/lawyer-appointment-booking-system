@@ -80,8 +80,8 @@ const Home = () => {
       <section className="py-24 text-center">
         <div className="max-w-5xl mx-auto px-6">
 
-          <span className="inline-block mb-6 px-4 py-1 text-xs font-medium bg-blue-100 text-blue-600 rounded-full">
-            TRUSTED BY 10,000+ CLIENTS
+          <span className="inline-block mb-6 px-4 py-1 text-xs font-medium bg-blue-100 text-blue-600 rounded-full text-uppercase tracking-wide">
+            Trusted by 100% Genuine Clients            
           </span>
 
           <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6">
