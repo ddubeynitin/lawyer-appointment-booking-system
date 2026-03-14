@@ -34,10 +34,12 @@ const ClientDashboard = () => {
 
  const fetchAppointmentHistory = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/appointments/user/${user.id}`);
-      setAppointmentHistory(response.data);
+      const response = await axios.get(`${API_URL}/appointments/user/${user.id}`);
+      console.log("API Response:", response.data); // Debug log
+      setAppointmentHistory(response.data.appointments || []);
     } catch (error) {
       console.error("Error fetching appointment history:", error);
+      setAppointmentHistory([]); // Set empty array on error
     }
   }
 
