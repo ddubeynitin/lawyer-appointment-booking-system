@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Appointment = require("../models/appointment.model");
 
 const createAppointment = async (req, res) => {
@@ -48,4 +49,23 @@ const deleteAppointment = async (req, res) => {
   }
 };
 
-module.exports = { createAppointment, getAllAppointments, getAppointmentById, updateAppointment, deleteAppointment };
+const getAllLawyerAppointments = async (req, res) => {
+  try {
+    const appointments = await Appointment.find({ lawyerId: req.params.id });
+    res.json({ message: "Appointments retrieved successfully", appointments });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+const getAllUserAppointments = async (req, res) => {
+  try {
+    const appointments = await Appointment.find({ userId: req.params.id });
+    
+    res.json({ message: "Appointments retrieved successfully", appointments });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+module.exports = { createAppointment, getAllAppointments, getAppointmentById, updateAppointment, deleteAppointment, getAllLawyerAppointments, getAllUserAppointments };
