@@ -7,7 +7,7 @@ import { IoAlertOutline } from "react-icons/io5";
 import Logo from "../../assets/images/logo.png";
 import Feature1 from "../../assets/images/registerpage.png";
 import Feature2 from "../../assets/images/registerpage1.png";
-const API_URL = import.meta.env.VITE_API_BASE_URL;
+import { API_URL } from "../../utils/api";
 
 const Registration = () => {
   const navigate = useNavigate();
@@ -55,7 +55,11 @@ const Registration = () => {
         password: formData.password,
         role: role === "client" ? "user" : role,
       });
-      navigate("/auth/login");
+      if (role === "client") {
+        navigate("/auth/login");
+      } else {
+        navigate("/complete-lawyer-profile");
+      }
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed");
     } finally {
@@ -351,31 +355,6 @@ const ClientRegform = ({ formData, handleChange, handleSubmit, error, loading })
 };
 
 const LawyerRegform = ({ formData, handleChange, handleSubmit, error, loading }) => {
-  const navigate = useNavigate();
-
-  const handleLawyerSubmit = (e) => {
-    e.preventDefault();
-
-    if (
-      !formData.name ||
-      !formData.email ||
-      !formData.phone ||
-      !formData.certNo ||
-      !formData.password ||
-      !formData.confirmPassword
-    ) {
-      alert("Please fill all required fields");
-      return;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match");
-      return;
-    }
-
-    // After successful basic register
-    navigate("/complete-lawyer-profile");
-  };
   return (
     <form onSubmit={handleSubmit} className="mt-4">
 
