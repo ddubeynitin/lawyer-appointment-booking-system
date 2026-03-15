@@ -7,8 +7,7 @@ import {
 } from "react-icons/fa";
 import axios from 'axios';
 import { useAuth } from "../../context/AuthContext.jsx";
-
-const API_URL = import.meta.env.VITE_API_BASE_URL;
+import { API_URL } from "../../utils/api";
 
 const specializationOptions = [
   "Criminal",
@@ -245,7 +244,7 @@ const CompleteLawyerProfile = () => {
       payload.append("practiceCourt", formData.practiceCourt);
 
       const res = await axios.patch(
-        `${API_URL}/api/lawyers/complete-profile/${lawyerId}`,
+        `${API_URL}/lawyers/complete-profile/${lawyerId}`,
         payload,
         {
           headers: {
