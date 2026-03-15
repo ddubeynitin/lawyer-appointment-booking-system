@@ -5,8 +5,8 @@ const { getAllLawyers, getLawyerById, updateLawyer, completeLawyerProfile, delet
 
 // lawyer routes
 router.get('/', getAllLawyers);
-router.get('/:id', getLawyerById);
 router.get('/featured', getFeaturedLawyers);
+router.get('/:id', getLawyerById);
 router.patch('/featured/:id', updateFeaturedLawyerStatus);
 router.put('/update-lawyer/:id', updateLawyer);
 router.patch('/complete-profile/:id', upload.single("profileImage"), completeLawyerProfile);
