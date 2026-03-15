@@ -87,7 +87,7 @@ const Registration = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-[url('./assets/images/bg-white.jpg')] bg-cover bg-center font-barlow overflow-hidden">
+    <div className="h-screen flex flex-col bg-[url('./assets/images/bg-white.jpg')] bg-cover bg-center font-barlow lg:overflow-hidden">
       <header className="w-full shadow-sm px-4 sm:px-10 py-2 flex justify-between items-center">
         <div className="flex items-center gap-2">
           <FaGavel />
@@ -96,23 +96,23 @@ const Registration = () => {
           </span>
         </div>
         <Link to="/auth/login" className="flex items-center gap-2">
-          <p className="text-blue-600 font-barlow ">Already have account?</p>
+          <p className="text-blue-600 font-barlow lg:text-lg text-[10px]">Already have account?</p>
           <button className="text-white bg-linear-to-r from-blue-600 to-indigo-600 rounded-lg text-sm font-medium hover:underline border px-4 py-2  ">
             Login
           </button>
         </Link>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 w-full max-w-6xl mx-auto flex-1 overflow-hidden">
+      <div className="grid grid-cols-1 lg:grid-cols-2 w-full max-w-6xl mx-auto flex-1 lg:overflow-hidden">
         {/* Circular Loading */}
         {loading && (
           <div className="absolute w-full h-screen top-[50%] left-[50%] bg-white/30 transform -translate-x-1/2 -translate-y-1/2 flex justify-center items-center z-20">
             <LoadingFallback />
           </div>
         )}
-        <div className="flex flex-col justify-center items-center px-6 sm:px-12 lg:px-20 py-10">
-          <div className="bg-[url('./assets/images/professional-peoples.png')] drop-shadow-lg drop-shadow-black/80 mask-b-from-65% mask-b-to-100% p-5 flex justify-end items-end  bg-cover bg-no-repeat aspect-auto w-full h-60 rounded-lg"></div>
-          <h1 className="text-3xl sm:text-4xl font-bold mb-4">
+        <div className="flex flex-col justify-center items-center px-2 sm:px-12 lg:px-20 lg:py-10 py-3">
+          <div className="bg-[url('./assets/images/professional-peoples.png')] lg:w-full lg:h-60 h-50 w-full drop-shadow-lg drop-shadow-black/80 mask-b-from-65% mask-b-to-100% p-5 flex justify-end items-end  bg-cover bg-no-repeat aspect-auto  rounded-lg"></div>
+          <h1 className="text-3xl sm:text-4xl font-bold mb-4"> 
             Connect with top <br /> legal professionals
           </h1>
 
