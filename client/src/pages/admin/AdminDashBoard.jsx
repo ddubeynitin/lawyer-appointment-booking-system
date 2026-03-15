@@ -76,10 +76,22 @@ export default function Dashboard() {
   const [lawyers, setLawyers] = useState([]);
   const [lawyerErrors, setLawyerErrors] = useState({});
   const [formType, setFormType] = useState(null); 
+  const [verificationLoading, setVerificationLoading] = useState({ id: null, action: null });
+  const [AllLawyers, setAllLawyers] = useState([]);
+
+  const pendingVerificationCount = Array.isArray(AllLawyers)
+    ? AllLawyers.filter((lawyer) => lawyer?.verification !== "Approved").length
+    : 0;
+
   const menuItems = [
     { id: "overview", label: "Overview", icon: GoLaw },
-    { id: "users", label: "User Management", icon: Users }, 
-    { id: "verification", label: "Verification Queue", icon: ShieldCheck, badge: "12" },
+    { id: "users", label: "User Management", icon: Users },
+    {
+      id: "verification",
+      label: "Verification Queue",
+      icon: ShieldCheck,
+      badge: pendingVerificationCount > 0 ? String(pendingVerificationCount) : null,
+    },
   ];  
 
   const operationItems = [  
@@ -100,7 +112,6 @@ export default function Dashboard() {
     }
   };
   
-  const [AllLawyers, setAllLawyers] = useState([]);
   const fetchLawyers = async () => {
     try {         
       const res = await requestWithFallback("get", "/api/lawyers");
@@ -116,6 +127,7 @@ export default function Dashboard() {
 
   useEffect(()=>{
     fetchLawyers();
+    fetchUsers();
   },[]);  
 
   useEffect(() => {
@@ -259,7 +271,7 @@ export default function Dashboard() {
       alert(apiError);
     }
   };
-
+    
   const handleInactiveUser = async (userId) => {
     if (!userId) {
       alert("User id not found");
@@ -284,12 +296,64 @@ export default function Dashboard() {
     }
   };
 
+  const handleApproveLawyer = async (lawyerId) => {
+    if (!lawyerId) {
+      alert("Lawyer id not found");
+      return;
+    }
+
+    setVerificationLoading({ id: lawyerId, action: "approve" });
+    try {
+      await requestWithFallback("put", `/api/lawyers/update-lawyer/${lawyerId}`, {
+        verification: "Approved",
+      });
+      setAllLawyers((prev) =>
+        prev.map((lawyer) =>
+          lawyer._id === lawyerId ? { ...lawyer, verification: "Approved" } : lawyer
+        )
+      );
+      setLawyers((prev) =>
+        prev.map((lawyer) =>
+          lawyer._id === lawyerId ? { ...lawyer, verification: "Approved" } : lawyer
+        )
+      );
+      alert("Lawyer approved successfully");
+    } catch (error) {
+      console.error("Failed to approve lawyer:", error);
+      const apiError = error?.response?.data?.message || error?.response?.data?.error || "Failed to approve lawyer";
+      alert(apiError);
+    } finally {
+      setVerificationLoading({ id: null, action: null });
+    }
+  };
+
+  const handleRejectLawyer = async (lawyerId) => {
+    if (!lawyerId) {
+      alert("Lawyer id not found");
+      return;
+    }
+
+    setVerificationLoading({ id: lawyerId, action: "reject" });
+    try {
+      await requestWithFallback("delete", `/api/lawyers/delete-lawyer/${lawyerId}`);
+      setAllLawyers((prev) => prev.filter((lawyer) => lawyer._id !== lawyerId));
+      setLawyers((prev) => prev.filter((lawyer) => lawyer._id !== lawyerId));
+      alert("Lawyer rejected successfully");
+    } catch (error) {
+      console.error("Failed to reject lawyer:", error);
+      const apiError = error?.response?.data?.message || error?.response?.data?.error || "Failed to reject lawyer";
+      alert(apiError);
+    } finally {
+      setVerificationLoading({ id: null, action: null });
+    }
+  };
+
   return (
-    <div className="flex h-screen bg-[#F7F9FC] font-sans">
+    <div className="flex min-h-screen flex-col bg-[#F7F9FC] font-sans lg:flex-row overflow-hidden">
       {/* Sidebar */}                       
-      <aside className="w-65 bg-white border-r border-gray-200 px-6 py-6 flex flex-col justify-between overflow-y-auto max-h-screen" style={{"scrollbarWidth": "thin", "scrollbarColor": "#d1d5db #f3f4f6"}}>
+      <aside className="w-full bg-white border-b border-gray-200 px-6 py-6 flex flex-col justify-between lg:w-65 lg:border-b-0 lg:border-r lg:max-h-screen lg:overflow-y-auto" style={{"scrollbarWidth": "thin", "scrollbarColor": "#d1d5db #f3f4f6"}}>
         <div>
-          <div className="flex items-center gap-2 mb-10">
+          <div className="flex items-center gap-2 mb-6 lg:mb-10">
             <div className="w-9 h-9 rounded-lg bg-blue-600 text-white flex items-center justify-center font-semibold">
              <GoLaw />
             </div>
@@ -355,7 +419,7 @@ export default function Dashboard() {
           </nav>
         </div>
 
-        <div>
+        <div className="mt-6 lg:mt-0">
           <div
             onClick={() => handleMenuClick("settings")}
             className={`flex items-center gap-2 text-sm cursor-pointer px-3 py-2 rounded-lg transition-all ${
@@ -371,10 +435,10 @@ export default function Dashboard() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-8 overflow-x-scroll">
+      <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-hidden">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-semibold">
+        <div className="flex flex-col gap-4 mb-6 lg:mb-8 lg:flex-row lg:justify-between lg:items-center">
+          <h1 className="text-xl sm:text-2xl font-semibold">
             {activeMenu === "overview" && "Dashboard Overview"}
             {activeMenu === "users" && "User Management"}
             {activeMenu === "verification" && "Verification Queue"}
@@ -384,11 +448,11 @@ export default function Dashboard() {
             {activeMenu === "settings" && "Settings"}
           </h1>
 
-          <div className="flex items-center gap-4 ">
-            <div className="relative">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+            <div className="relative w-full sm:w-auto">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-hover:text-blue-500 transition" />
               <input
-                className="pl-9 pr-4 py-2 text-sm border  border-gray-200 rounded-lg w-[320px] hover:border-blue-500 hover:ring-2 hover:ring-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"     
+                className="pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg w-full sm:w-[320px] hover:border-blue-500 hover:ring-2 hover:ring-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"     
                 placeholder="Search for clients, lawyers or invoices"
               />
             </div>
@@ -411,7 +475,17 @@ export default function Dashboard() {
         </div>
 
         {/* Overview Content */}
-        {activeMenu === "overview" && <Overview />}
+        {activeMenu === "overview" && (
+          <Overview
+            usersCount={Array.isArray(users) ? users.length : 0}
+            lawyersCount={Array.isArray(lawyers) ? lawyers.length : 0}
+            activeLawyersCount={
+              Array.isArray(lawyers)
+                ? lawyers.filter((lawyer) => lawyer?.verification === "Approved").length
+                : 0
+            }
+          />
+        )}
 
         {/* User Management Content */}
         {activeMenu === "users" && (
@@ -471,7 +545,15 @@ export default function Dashboard() {
           />
         )}
         {/* Verification Queue Content */}
-        {activeMenu === "verification" && <VerificationQueue allLawyers={AllLawyers} />}
+        {activeMenu === "verification" && (
+          <VerificationQueue
+            allLawyers={AllLawyers}
+            onApprove={handleApproveLawyer}
+            onReject={handleRejectLawyer}
+            processingId={verificationLoading.id}
+            processingAction={verificationLoading.action}
+          />
+        )}
 
         {/* Financials Content */}
         {activeMenu === "financials" && <Financials />}
