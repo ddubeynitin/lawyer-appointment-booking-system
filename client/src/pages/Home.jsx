@@ -8,9 +8,60 @@ import {
   FaGavel,
   FaHome,
 } from "react-icons/fa";
+import { useEffect, useState } from "react";
+import useFetch from "../hooks/useFetch";
+import {API_URL} from '../utils/api';
 
 /* ================= FULL LANDING PAGE ================= */
 const Home = () => {
+  const {data, loading, error} = useFetch(`${API_URL}/lawyers/featured`);
+  const [featuredLawyers, setFeaturedLawyers] = useState([]);
+
+  const featuredLawyersOffline = [{
+    name: "Alice Johnson",
+    specialization: "Family Law",
+    experience: 10,
+    profileImage: "/assets/images/professional-peoples.png",
+    averageRating: 5,
+  }, {
+    name: "Michael Lee",
+    specialization: "Corporate Law",
+    experience: 15,
+    profileImage: "/assets/images/professional-peoples.png",
+    averageRating: 4,
+  }, {
+    name: "Sophia Davis",
+    specialization: "Criminal Defense",
+    experience: 12,
+    profileImage: "/assets/images/professional-peoples.png",
+    averageRating: 5,
+  }];
+
+  const getFeaturedLawyers = () => {
+    // Avoid showing fallback while the request is still in progress
+    if (loading) return;
+
+    if (error || !Array.isArray(data)) {
+      console.error("Error fetching featured lawyers:", error);
+      setFeaturedLawyers(featuredLawyersOffline);
+      return;
+    }
+
+    const normalized = data.map((lawyer) => ({
+      name: lawyer.name,
+      specialization: Array.isArray(lawyer.specializations) ? lawyer.specializations[0] : "Lawyer",
+      experience: lawyer.experience,
+      profileImage: lawyer.profileImage?.url || "/assets/images/professional-peoples.png",
+      averageRating: lawyer.rating || 0,
+    }));
+
+    setFeaturedLawyers(normalized);
+  }
+
+  useEffect(() => {
+    getFeaturedLawyers();
+  }, [data, loading, error]);
+
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-50 via-white to-slate-100 text-slate-800">
 
@@ -179,9 +230,15 @@ const Home = () => {
           </h2>
 
           <div className="grid md:grid-cols-3 gap-8">
-            <LawyerCard name="Alice Johnson" specialization="Family Law" rating={5} />
-            <LawyerCard name="Michael Lee" specialization="Corporate Law" rating={4} />
-            <LawyerCard name="Sophia Davis" specialization="Criminal Defense" rating={5} />
+            {featuredLawyers.map((lawyer) => (
+              <LawyerCard
+                key={lawyer.name}
+                name={lawyer.name}
+                specialization={lawyer.specialization}
+                rating={lawyer.averageRating}
+                photo={lawyer.profileImage}
+              />
+            ))}
           </div>
         </div>
       </section>
@@ -300,14 +357,14 @@ const SpecCard = ({ title }) => (
   </div>
 );
 
-const LawyerCard = ({ name, specialization, rating, photo, address }) => (
+const LawyerCard = ({ name, specialization, rating, photo }) => (
   <div className="bg-white rounded-2xl shadow-md border border-slate-100 hover:shadow-2xl hover:scale-105 transition-transform duration-300 overflow-hidden">
     
     {/* Lawyer Photo */}
-    <div className="h-48 w-full overflow-hidden">
+    <div className="h-80 w-full overflow-hidden">
       <img 
         src={photo} 
-        alt={name} 
+        alt={name}
         className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
       />
     </div>
@@ -318,9 +375,6 @@ const LawyerCard = ({ name, specialization, rating, photo, address }) => (
 
       {/* Specialization */}
       <p className="text-sm text-slate-500 mb-1">{specialization}</p>
-
-      {/* Address */}
-      <p className="text-xs text-slate-400 mb-2">{address}</p>
 
       {/* Rating */}
       <div className="flex justify-center gap-1 text-yellow-400">
