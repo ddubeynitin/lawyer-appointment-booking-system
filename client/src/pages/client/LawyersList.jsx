@@ -1,8 +1,10 @@
 import React from "react";
-import { FaGavel } from "react-icons/fa";
+import { FaGavel, FaSearch } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import { Pagination } from "@heroui/pagination";
 import useFetch from "../../hooks/useFetch";
 import LawyerCard from "../../components/common/LawyerCard";
+import LawyerCardSkeleton from "../../components/layout/LawyerCardSkeleton";
 import { API_URL } from "../../utils/api";
 
 // const lawyers = [
@@ -95,13 +97,16 @@ function LawyerList() {
   const [searchTerm, setSearchTerm] = React.useState("");
   const [practiceFilters, setPracticeFilters] = React.useState([]); // e.g. ['Family Law']
   const [availabilityFilters, setAvailabilityFilters] = React.useState([]); // e.g. ['today','next3']
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const itemsPerPage = 9;
 
-  const { data, loading, error } = useFetch(`${API_URL}/api/lawyers`);
+  const { data, loading, error } = useFetch(`${API_URL}/lawyers`);
   console.log("Data:", data);
   console.log("Loading:", loading);
   console.log("Error:", error);
   React.useEffect(() => {
     if (data) {
+
       setLawyers(data);
     }
   }, [data]);
@@ -138,19 +143,28 @@ function LawyerList() {
     });
   }, [lawyers, searchTerm, practiceFilters, availabilityFilters]);
 
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredLawyers.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedLawyers = filteredLawyers.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, practiceFilters, availabilityFilters]);
+
   return (
-  <div className="min-h-screen bg-linear-to-br from-slate-50 via-white to-slate-100">
+  <div className="min-h-screen bg-linear-to-br from-slate-50 via-white to-slate-100 font-barlow">
 
     {/* HEADER */}
     <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 px-10 py-4 flex justify-between items-center sticky top-0 z-50">
-      <h2 className="text-2xl font-bold text-slate-800 tracking-tight">
-        Esue
+      <h2 className="text-2xl font-bold text-slate-800 tracking-tight flex items-center ">
+      <FaGavel className="text-blue-700 lg:text-2xl sm:text-sm" />
+        Justif<span className="text-blue-700">Ai</span>
       </h2>
 
       <nav className="flex items-center gap-6">
-        <span className="text-slate-600 hover:text-blue-700 font-medium cursor-pointer transition">
-          Find a Lawyer
-        </span>
         <span className="text-slate-600 hover:text-blue-700 font-medium cursor-pointer transition">
           For Lawyers
         </span>
@@ -170,8 +184,8 @@ function LawyerList() {
     </header>
 
     {/* HERO SEARCH */}
-    <section className="px-10 py-12">
-      <div className="max-w-6xl mx-auto bg-linear-to-r from-blue-700 to-blue-800 rounded-3xl p-10 text-white shadow-2xl">
+    <section className="px-10 py-5">
+      <div className="max-w-6xl mx-auto bg-linear-to-r from-blue-700 to-blue-800 rounded-3xl p-3 text-white shadow-2xl">
 
         <div className="flex flex-col lg:flex-row justify-between gap-10 items-center">
           <div>
@@ -192,7 +206,8 @@ function LawyerList() {
               placeholder="Search by name or practice area..."
               className="flex-1 px-5 py-3 outline-none text-slate-700"
             />
-            <button className="bg-blue-700 hover:bg-blue-800 text-white px-8 font-semibold transition">
+            <button className="flex justify-center items-center gap-2  bg-blue-700 hover:bg-blue-800 text-white px-8 font-semibold transition">
+              <FaSearch className="text-lg" />
               Search
             </button>
           </div>
@@ -205,7 +220,7 @@ function LawyerList() {
     <div className="px-10 pb-16 flex flex-col lg:flex-row gap-10">
 
       {/* FILTERS */}
-      <aside className="w-full lg:w-72 bg-white rounded-3xl shadow-xl p-8 h-fit border border-slate-100">
+      <aside className="w-full lg:w-72 bg-white rounded-3xl shadow-xl p-6 h-fit border border-slate-100">
 
         <div className="flex justify-between items-center mb-6">
           <h3 className="font-semibold text-lg text-slate-800">
@@ -298,19 +313,34 @@ function LawyerList() {
       </aside>
 
       {/* LAWYERS */}
-      <main className="flex-1 bg-white/70 backdrop-blur-md rounded-3xl p-10 shadow-xl border border-slate-100">
+      <main className="flex-1 bg-white/70 backdrop-blur-md rounded-3xl p-6 shadow-xl border border-slate-100">
 
-        <p className="mb-8 text-slate-600 text-lg">
-          Showing{" "}
-          <span className="font-semibold text-slate-900">
-            {filteredLawyers.length}
-          </span>{" "}
-          legal professionals
+        <p className="mb-4 text-slate-600 text-lg">
+          {loading ? (
+            "Loading legal professionals..."
+          ) : (
+            <>
+              Showing{" "}
+              <span className="font-semibold text-slate-900">
+                {paginatedLawyers.length}
+              </span>{" "}
+              of{" "}
+              <span className="font-semibold text-slate-900">
+                {filteredLawyers.length}
+              </span>{" "}
+              legal professionals
+            </>
+          )}
         </p>
 
         <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-8">
-          {filteredLawyers.length ? (
-            filteredLawyers.map((lawyer) => (
+          {loading ? (
+            // Show skeletons while loading
+            Array.from({ length: 9 }).map((_, index) => (
+              <LawyerCardSkeleton key={`skeleton-${index}`} />
+            ))
+          ) : paginatedLawyers.length ? (
+            paginatedLawyers.map((lawyer) => (
               <LawyerCard key={lawyer._id} lawyer={lawyer} />
             ))
           ) : (
@@ -319,6 +349,21 @@ function LawyerList() {
             </p>
           )}
         </div>
+
+        {/* Pagination */}
+        {!loading && filteredLawyers.length > itemsPerPage && (
+          <div className="flex justify-center mt-8">
+            <Pagination
+              total={totalPages}
+              page={currentPage}
+              onChange={setCurrentPage}
+              showControls
+              showShadow
+              color="primary"
+              size="lg"
+            />
+          </div>
+        )}
 
       </main>
     </div>

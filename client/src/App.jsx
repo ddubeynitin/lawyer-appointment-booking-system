@@ -4,6 +4,7 @@ import "./App.css";
 import LoadingFallback from "./components/LoadingFallback";
 import PageNotFound from "./pages/PageNotFound";
 import CustomCursor from "./components/layout/CustomCursor";
+import LawyerCardSkeleton from "./components/layout/LawyerCardSkeleton";
 
 // Lazy load components
 const Registration = lazy(() => import("./pages/auth/Register"));
@@ -31,9 +32,9 @@ const App = () => {
         <Routes>
           <Route path="*" element={<PageNotFound/>} />
           <Route path="/" element={<Home />} />
+          <Route path="/complete-profile" element={<CompleteLawyerProfile />} />
           <Route path="/auth/login" element={<LoginPage />} />
           <Route path="/auth/register" element={<Registration />} />
-          <Route path="/complete-profile" element={<CompleteLawyerProfile />} />
 
           <Route
             path="/client/client-dashboard"
@@ -53,14 +54,14 @@ const App = () => {
             path="/lawyer/lawyer-dashboard"
             element={<LawyerDashboard />}
           />
-          <Route path="/lawyer/lawyer-profile" element={<LoadingFallback/>} />
+          <Route path="/lawyer/lawyer-profile/:id" element={<LawyerProfile />} />
 
           <Route path="/admin/admin-login" element={<AdminLoginPage />} />
           <Route path="/admin/admin-dashboard" element={<AdminDashBoard />} />
           <Route path="/admin/manage-users" element={<div>Manage Users</div>} />
           <Route
             path="/admin/manage-lawyers"
-            element={<div>Manage Lawyers</div>}
+            element={<LawyerCardSkeleton/>||<div>Manage Lawyers</div>}
           />
         </Routes>
       </Router>
