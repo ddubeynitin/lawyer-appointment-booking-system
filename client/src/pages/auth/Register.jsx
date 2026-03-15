@@ -14,10 +14,8 @@ import {
 } from "react-icons/fa";
 import { MdVerified } from "react-icons/md";
 import { IoAlertOutline } from "react-icons/io5";
-import Logo from "../../assets/images/logo.png";
-import Feature1 from "../../assets/images/registerpage.png";
-import Feature2 from "../../assets/images/registerpage1.png";
 import { API_URL } from "../../utils/api";
+import LoadingFallback from "../../components/LoadingFallback";
 
 const Registration = () => {
   const navigate = useNavigate();
@@ -66,11 +64,7 @@ const Registration = () => {
         password: formData.password,
         role: role === "client" ? "user" : role,
       });
-      if (role === "client") {
-        navigate("/auth/login");
-      } else {
-        navigate("/complete-lawyer-profile");
-      }
+      navigate("/auth/login");
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed");
     } finally {
@@ -93,7 +87,7 @@ const Registration = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[url('./assets/images/bg-white.jpg')] bg-cover bg-center font-barlow">
+    <div className="h-screen flex flex-col bg-[url('./assets/images/bg-white.jpg')] bg-cover bg-center font-barlow overflow-hidden">
       <header className="w-full shadow-sm px-4 sm:px-10 py-2 flex justify-between items-center">
         <div className="flex items-center gap-2">
           <FaGavel />
@@ -109,11 +103,15 @@ const Registration = () => {
         </Link>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 w-full max-w-6xl mx-auto flex-1">
-        <div className="flex flex-col justify-center items-center px-6 sm:px-12 lg:px-20 py-10">
-          <div className="bg-[url('./assets/images/professional-peoples.png')] drop-shadow-lg drop-shadow-black/80 mask-b-from-65% mask-b-to-100% p-5 flex justify-end items-end  bg-cover bg-no-repeat aspect-auto w-full h-60 rounded-lg">
-
+      <div className="grid grid-cols-1 lg:grid-cols-2 w-full max-w-6xl mx-auto flex-1 overflow-hidden">
+        {/* Circular Loading */}
+        {loading && (
+          <div className="absolute w-full h-screen top-[50%] left-[50%] bg-white/30 transform -translate-x-1/2 -translate-y-1/2 flex justify-center items-center z-20">
+            <LoadingFallback />
           </div>
+        )}
+        <div className="flex flex-col justify-center items-center px-6 sm:px-12 lg:px-20 py-10">
+          <div className="bg-[url('./assets/images/professional-peoples.png')] drop-shadow-lg drop-shadow-black/80 mask-b-from-65% mask-b-to-100% p-5 flex justify-end items-end  bg-cover bg-no-repeat aspect-auto w-full h-60 rounded-lg"></div>
           <h1 className="text-3xl sm:text-4xl font-bold mb-4">
             Connect with top <br /> legal professionals
           </h1>
@@ -158,15 +156,13 @@ const Registration = () => {
               Get started in less than a minute
             </p>
 
-            <div
-              className="flex gap-3 rounded-lg p-1  bg-white relative"
-            >
+            <div className="flex gap-3 rounded-lg p-1  bg-white relative">
               <div
-              className="absolute top-1 bottom-1 left-1 lg:w-59 sm:w-34 rounded-md transition-transform duration-400 ease-in-out"
-              style={{
-                transform:
-                  role === "lawyer" ? "translateX(100%)" : "translateX(0%)",
-              }}
+                className="absolute top-1 bottom-1 left-1 lg:w-59 sm:w-34 rounded-md transition-transform duration-400 ease-in-out"
+                style={{
+                  transform:
+                    role === "lawyer" ? "translateX(100%)" : "translateX(0%)",
+                }}
               />
               <button
                 type="button"
@@ -177,8 +173,8 @@ const Registration = () => {
                 //     : "bg-gray-100 text-blue-500"
                 // }`}
                 className={`relative z-10 flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-colors duration-300 ${
-                role === "client" ? "text-white bg-blue-500" : "text-black"
-              }`}
+                  role === "client" ? "text-white bg-blue-500" : "text-black"
+                }`}
               >
                 <FaUser /> I am a Client
               </button>
@@ -191,9 +187,9 @@ const Registration = () => {
                 //     ? "bg-blue-600 text-white"
                 //     : "bg-gray-100 text-blue-500"
                 // }`}
-               className={`relative z-10 flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-colors duration-300 ${
-                role === "lawyer" ? "text-white bg-blue-500" : "text-black"
-              }`}
+                className={`relative z-10 flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-colors duration-300 ${
+                  role === "lawyer" ? "text-white bg-blue-500" : "text-black"
+                }`}
               >
                 <FaUserTie /> I am a Lawyer
               </button>
@@ -529,7 +525,7 @@ const LawyerRegform = ({
         disabled={loading}
         className="w-full mt-6 bg-blue-800 text-white py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition flex justify-center items-center gap-2"
       >
-        {loading ? "Creating Account..." : "Create Account"}
+        Create Account
         <FaArrowRight />
       </button>
     </form>
