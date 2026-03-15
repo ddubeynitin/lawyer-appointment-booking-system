@@ -40,14 +40,15 @@ const Home = () => {
   const getFeaturedLawyers = () => {
     // Avoid showing fallback while the request is still in progress
     if (loading) return;
-
-    if (error || !Array.isArray(data)) {
+    console.log(data);
+    
+    if (error || !data || !Array.isArray(data.lawyers)) {
       console.error("Error fetching featured lawyers:", error);
       setFeaturedLawyers(featuredLawyersOffline);
       return;
     }
 
-    const normalized = data.map((lawyer) => ({
+    const normalized = data.lawyers.map((lawyer) => ({
       name: lawyer.name,
       specialization: Array.isArray(lawyer.specializations) ? lawyer.specializations[0] : "Lawyer",
       experience: lawyer.experience,
@@ -235,7 +236,7 @@ const Home = () => {
                 key={lawyer.name}
                 name={lawyer.name}
                 specialization={lawyer.specialization}
-                rating={lawyer.averageRating}
+                rating={lawyer.averageRating || 5}
                 photo={lawyer.profileImage}
               />
             ))}
