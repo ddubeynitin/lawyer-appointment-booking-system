@@ -4,10 +4,12 @@ import {
   FaUserTie,
   FaBuilding,
   FaGraduationCap,
+  FaImage,
 } from "react-icons/fa";
-import axios from 'axios';
+import axios from "axios";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { API_URL } from "../../utils/api";
+import LoadingFallback from "../../components/LoadingFallback.jsx";
 
 const specializationOptions = [
   "Criminal",
@@ -29,9 +31,7 @@ const CompleteLawyerProfile = () => {
     practiceCourt: "",
     specializations: [],
     fees: {},
-    education: [
-      { degree: "", university: "", passingYear: "" },
-    ],
+    education: [{ degree: "", university: "", passingYear: "" }],
     address: "",
     city: "",
     state: "",
@@ -100,9 +100,7 @@ const CompleteLawyerProfile = () => {
   };
 
   const removeEducation = (index) => {
-    const updated = formData.education.filter(
-      (_, i) => i !== index
-    );
+    const updated = formData.education.filter((_, i) => i !== index);
     setFormData({ ...formData, education: updated });
   };
 
@@ -114,51 +112,40 @@ const CompleteLawyerProfile = () => {
       if (!formData.profileImage)
         newErrors.profileImage = "Profile image required";
 
-      if (!formData.bio.trim())
-        newErrors.bio = "Bio required";
+      if (!formData.bio.trim()) newErrors.bio = "Bio required";
       else if (formData.bio.length < 20)
-        newErrors.bio =
-          "Bio must be at least 20 characters";
+        newErrors.bio = "Bio must be at least 20 characters";
 
-      if (!formData.experience)
-        newErrors.experience = "Experience required";
+      if (!formData.experience) newErrors.experience = "Experience required";
       else if (Number(formData.experience) < 0)
-        newErrors.experience =
-          "Experience cannot be negative";
+        newErrors.experience = "Experience cannot be negative";
 
       if (!formData.practiceCourt.trim())
-        newErrors.practiceCourt =
-          "Practice court required";
+        newErrors.practiceCourt = "Practice court required";
     }
 
     if (step === 2) {
       if (formData.specializations.length === 0)
-        newErrors.specializations =
-          "Select at least one specialization";
+        newErrors.specializations = "Select at least one specialization";
 
       formData.specializations.forEach((spec) => {
         if (!formData.fees[spec])
-          newErrors[`fee_${spec}`] =
-            "Fee required for " + spec;
+          newErrors[`fee_${spec}`] = "Fee required for " + spec;
         else if (Number(formData.fees[spec]) <= 0)
-          newErrors[`fee_${spec}`] =
-            "Fee must be positive";
+          newErrors[`fee_${spec}`] = "Fee must be positive";
       });
     }
 
     if (step === 3) {
       if (formData.education.length === 0)
-        newErrors.education =
-          "At least one education required";
+        newErrors.education = "At least one education required";
 
       formData.education.forEach((edu, index) => {
         if (!edu.degree.trim())
-          newErrors[`degree_${index}`] =
-            "Degree required";
+          newErrors[`degree_${index}`] = "Degree required";
 
         if (!edu.university.trim())
-          newErrors[`university_${index}`] =
-            "University required";
+          newErrors[`university_${index}`] = "University required";
 
         if (!edu.passingYear)
           newErrors[`passingYear_${index}`] = "Passing out year required";
@@ -166,18 +153,16 @@ const CompleteLawyerProfile = () => {
           const year = Number(edu.passingYear);
           const currentYear = new Date().getFullYear();
           if (year < 1900 || year > currentYear)
-            newErrors[`passingYear_${index}`] = `Year must be between 1900 and ${currentYear}`;
+            newErrors[`passingYear_${index}`] =
+              `Year must be between 1900 and ${currentYear}`;
         }
       });
 
-      if (!formData.address.trim())
-        newErrors.address = "Address required";
+      if (!formData.address.trim()) newErrors.address = "Address required";
 
-      if (!formData.city.trim())
-        newErrors.city = "City required";
+      if (!formData.city.trim()) newErrors.city = "City required";
 
-      if (!formData.state.trim())
-        newErrors.state = "State required";
+      if (!formData.state.trim()) newErrors.state = "State required";
     }
 
     return newErrors;
@@ -237,7 +222,10 @@ const CompleteLawyerProfile = () => {
 
       payload.append("location", JSON.stringify(location));
       payload.append("education", JSON.stringify(education));
-      payload.append("specializations", JSON.stringify(formData.specializations));
+      payload.append(
+        "specializations",
+        JSON.stringify(formData.specializations),
+      );
       payload.append("feesByCategory", JSON.stringify(feesByCategory));
       payload.append("experience", String(formData.experience || 0));
       payload.append("bio", formData.bio);
@@ -252,96 +240,72 @@ const CompleteLawyerProfile = () => {
           },
         },
       );
-      
-      if(res.status === 200){
+
+      if (res.status === 200) {
         alert("Profile Completed Successfully!");
         navigate("/lawyer/lawyer-dashboard");
       }
-
     } catch (error) {
-        console.log(error,"Error Occurred: Handler Function not working?");
+      console.log(error, "Error Occurred: Handler Function not working?");
     } finally {
-        setIsSubmitting(false);
+      setIsSubmitting(false);
     }
-
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-50 via-white to-slate-100 py-5 px-6">
+    <div className="h-screen bg-[url('./assets/images/bg-white.jpg')] bg-cover bg-center py-5 px-6 overflow-scroll font-barlow">
       {isSubmitting && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm">
-          <div className="w-[320px] rounded-3xl bg-white/90 p-6 shadow-2xl ring-1 ring-slate-200">
-            <div className="flex items-center justify-between">
-              <div className="text-lg font-semibold text-slate-800">
-                Finalizing Profile
-              </div>
-              <div className="h-3 w-3 rounded-full bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.8)]" />
-            </div>
-            <p className="mt-2 text-sm text-slate-500">
-              Securing your details and polishing your public profile.
-            </p>
-            <div className="mt-5 h-2 w-full overflow-hidden rounded-full bg-slate-200">
-              <div className="h-full w-1/2 animate-pulse rounded-full bg-linear-to-r from-blue-600 via-indigo-500 to-emerald-400" />
-            </div>
-            <div className="mt-6 grid grid-cols-3 gap-3 text-xs text-slate-500">
-              <div className="rounded-xl border border-slate-200 bg-white/70 px-3 py-2 text-center">
-                Uploading
-              </div>
-              <div className="rounded-xl border border-slate-200 bg-white/70 px-3 py-2 text-center">
-                Verifying
-              </div>
-              <div className="rounded-xl border border-slate-200 bg-white/70 px-3 py-2 text-center">
-                Publishing
-              </div>
-            </div>
-          </div>
+        <div className="absolute w-full h-screen top-[50%] left-[50%] bg-white/40 transform -translate-x-1/2 -translate-y-1/2 flex justify-center items-center z-20">
+          <LoadingFallback/>
         </div>
-      )}
+       )} 
       <div className="max-w-5xl mx-auto bg-white rounded-3xl shadow-2xl p-5 border border-slate-200">
-
         <h2 className="text-4xl font-bold text-center mb-2">
           Complete Your Professional Profile
         </h2>
-        <p className="text-center text-slate-500 mb-2">
-          Step {step} of 3
-        </p>
+        <p className="text-center text-slate-500 mb-2">Step {step} of 3</p>
 
         <form onSubmit={handleSubmit} className="space-y-10">
-
           {/* ================= STEP 1 ================= */}
           {step === 1 && (
             <SectionCard icon={<FaUserTie />} title="Basic Information">
-
               <FileInput
-                label="Profile Image"
+                label="Upload Profile Image"
                 onChange={handleImageChange}
                 error={errors.profileImage}
               />
 
               <TextArea
                 label="Bio / About"
+                placeholder="Write a brief bio about yourself, your legal philosophy, or anything you'd like potential clients to know."
                 name="bio"
                 value={formData.bio}
                 onChange={handleChange}
                 error={errors.bio}
               />
 
+              <div className="flex justify-between`">
+
+
               <Input
                 label="Years of Experience"
+                placeholder="e.g. 5"
                 type="number"
                 name="experience"
                 value={formData.experience}
                 onChange={handleChange}
                 error={errors.experience}
-              />
+                />
 
               <Input
                 label="Practice Court"
+                placeholder="e.g. Supreme Court, High Court, etc."
                 name="practiceCourt"
                 value={formData.practiceCourt}
                 onChange={handleChange}
                 error={errors.practiceCourt}
               />
+                </div>
 
               <NextBtn onClick={nextStep} disabled={isSubmitting} />
             </SectionCard>
@@ -350,7 +314,6 @@ const CompleteLawyerProfile = () => {
           {/* ================= STEP 2 ================= */}
           {step === 2 && (
             <SectionCard icon={<FaBuilding />} title="Professional Details">
-
               <div>
                 <label className="font-semibold block mb-3">
                   Specializations
@@ -361,9 +324,7 @@ const CompleteLawyerProfile = () => {
                       <input
                         type="checkbox"
                         checked={formData.specializations.includes(spec)}
-                        onChange={() =>
-                          handleSpecializationChange(spec)
-                        }
+                        onChange={() => handleSpecializationChange(spec)}
                       />
                       {spec}
                     </label>
@@ -383,9 +344,7 @@ const CompleteLawyerProfile = () => {
                     label={`${spec} Fee`}
                     type="number"
                     value={formData.fees[spec] || ""}
-                    onChange={(e) =>
-                      handleFeeChange(spec, e.target.value)
-                    }
+                    onChange={(e) => handleFeeChange(spec, e.target.value)}
                     error={errors[`fee_${spec}`]}
                   />
                 </div>
@@ -416,28 +375,22 @@ const CompleteLawyerProfile = () => {
 
           {/* ================= STEP 3 ================= */}
           {step === 3 && (
-            <SectionCard icon={<FaGraduationCap />} title="Education & Office Details">
-
+            <SectionCard
+              icon={<FaGraduationCap />}
+              title="Education & Office Details"
+            >
               {/* Education */}
               <div>
-                <label className="font-semibold block mb-4">
-                  Education
-                </label>
+                <label className="font-semibold block mb-4">Education</label>
 
                 {formData.education.map((edu, index) => (
-                  <div key={index} className="border p-4 rounded-xl mb-4">
-
+                  <div key={index} className="border border-gray-300 p-4 rounded-xl mb-4">
                     <div className="grid md:grid-cols-3 gap-4">
-
                       <Input
                         placeholder="Degree"
                         value={edu.degree}
                         onChange={(e) =>
-                          handleEducationChange(
-                            index,
-                            "degree",
-                            e.target.value
-                          )
+                          handleEducationChange(index, "degree", e.target.value)
                         }
                         error={errors[`degree_${index}`]}
                       />
@@ -449,7 +402,7 @@ const CompleteLawyerProfile = () => {
                           handleEducationChange(
                             index,
                             "university",
-                            e.target.value
+                            e.target.value,
                           )
                         }
                         error={errors[`university_${index}`]}
@@ -465,7 +418,7 @@ const CompleteLawyerProfile = () => {
                           handleEducationChange(
                             index,
                             "passingYear",
-                            e.target.value
+                            e.target.value,
                           )
                         }
                         error={errors[`passingYear_${index}`]}
@@ -475,9 +428,7 @@ const CompleteLawyerProfile = () => {
                     {formData.education.length > 1 && (
                       <button
                         type="button"
-                        onClick={() =>
-                          removeEducation(index)
-                        }
+                        onClick={() => removeEducation(index)}
                         className="text-red-500 text-sm mt-3"
                       >
                         Remove
@@ -498,25 +449,31 @@ const CompleteLawyerProfile = () => {
               {/* Office */}
               <Input
                 label="Office Address"
+                placeholder="e.g. 123 Main St, Suite 400"
                 name="address"
                 value={formData.address}
                 onChange={handleChange}
                 error={errors.address}
               />
+              <div className="flex">
+
               <Input
                 label="City"
+                placeholder="e.g. Surat"
                 name="city"
                 value={formData.city}
                 onChange={handleChange}
                 error={errors.city}
-              />
+                />
               <Input
                 label="State"
+                placeholder="e.g. Gujarat"
                 name="state"
                 value={formData.state}
                 onChange={handleChange}
                 error={errors.state}
-              />
+                />
+                </div>
 
               <div className="flex gap-4 mt-8">
                 <BackBtn onClick={prevStep} disabled={isSubmitting} />
@@ -548,54 +505,36 @@ const SectionCard = ({ icon, title, children }) => (
   </div>
 );
 
-const Input = ({ label, error, ...props }) => (
-  <div>
-    {label && (
-      <label className="font-semibold block mb-2">
-        {label}
-      </label>
-    )}
-    <input
-      {...props}
-      className="w-full bg-gray-100 p-3 rounded-xl"
-    />
-    {error && (
-      <p className="text-red-500 text-sm mt-1">
-        {error}
-      </p>
-    )}
+const Input = ({ label, error, placeholder, ...props }) => (
+  <div className="w-full mr-3 font-barlow">
+    {label && <label className="font-semibold block mb-2">{label}</label>}
+    <input {...props} className="w-full bg-gray-100 p-3 rounded-xl" placeholder={placeholder}/>
+    {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
   </div>
 );
 
 const TextArea = ({ label, error, ...props }) => (
   <div>
-    <label className="font-semibold block mb-2">
-      {label}
-    </label>
+    <label className="font-semibold block mb-2">{label}</label>
     <textarea
       {...props}
       rows="4"
       className="w-full bg-gray-100 p-3 rounded-xl"
     />
-    {error && (
-      <p className="text-red-500 text-sm mt-1">
-        {error}
-      </p>
-    )}
+    {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
   </div>
 );
 
 const FileInput = ({ label, error, ...props }) => (
-  <div>
-    <label className="font-semibold block mb-2">
-      {label}
-    </label>
-    <input type="file" {...props} className="w-full bg-blue-500 text-white p-2 rounded-md"/>
-    {error && (
-      <p className="text-red-500 text-sm mt-1">
-        {error}
-      </p>
-    )}
+  <div className="bg-[url('./assets/images/pattern-bg.jpg')]  flex flex-col items-center justify-center gap-3 border-2 border-dashed border-gray-300 rounded-xl p-6 cursor-pointer hover:bg-gray-50 transition">
+    <FaImage className="text-gray-400 text-3xl mb-2" />
+    <label className="font-semibold block mb-2 text-center">{label}</label>
+    <input
+      type="file"
+      {...props}
+      className="w-50  bg-linear-to-r from-blue-600 to-indigo-600 text-white p-2 rounded-md text-sm cursor-pointer hover:bg-blue-600 transition"
+    />
+    {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
   </div>
 );
 
