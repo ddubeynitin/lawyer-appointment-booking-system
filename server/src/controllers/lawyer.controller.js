@@ -26,10 +26,8 @@ const getFeaturedLawyers = async (req, res) => {
   try {
     const lawyers = await Lawyer.find({
       isFeatured: true,
-      isApproved: true,
-      isAvailable: true
     })
-      .select("name specialization experience profileImage averageRating")
+      .select("name specializations experience profileImage rating")
       .limit(4);
 
     res.status(200).json({
