@@ -1,6 +1,15 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Bell, Settings, Users, ShieldCheck, DollarSign, CalendarDays, Search } from "lucide-react";
+import {
+  Bell,
+  Settings,
+  Users,
+  ShieldCheck,
+  DollarSign,
+  CalendarDays,
+  Search,
+  ChevronDown,
+} from "lucide-react";
 import { GoLaw } from "react-icons/go";
 import UserManagement from "../../components/UserManagement";
 import Overview from "../../components/Overview";
@@ -23,8 +32,8 @@ const API_BASE_CANDIDATES = Array.from(
       "http://127.0.0.1:3000",
       "http://localhost:5000",
       "http://127.0.0.1:5000",
-    ].filter(Boolean)
-  )
+    ].filter(Boolean),
+  ),
 );
 
 const requestWithFallback = async (method, path, payload) => {
@@ -69,14 +78,23 @@ export default function Dashboard() {
   const [lawyerPassword, setLawyerPassword] = useState("");
   const [lawyerConfirmPassword, setLawyerConfirmPassword] = useState("");
   const [lawyerSpecializations, setLawyerSpecializations] = useState([]);
-  const [lawyerProfileImage, setLawyerProfileImage] = useState("");
-  const [lawyerFees, setLawyerFees] = useState([{ category: "", fee: "" }]);                          
-  const [lawyerEducation, setLawyerEducation] = useState([{ degree: "", university: "", year: "" }]);
-  const [lawyerLocation, setLawyerLocation] = useState({ address: "", city: "", state: "" });
+  const [lawyerProfileImage, setLawyerProfileImage] = useState({ file: null, previewUrl: "" });
+  const [lawyerFees, setLawyerFees] = useState([{ category: "", fee: "" }]);
+  const [lawyerEducation, setLawyerEducation] = useState([
+    { degree: "", university: "", year: "" },
+  ]);
+  const [lawyerLocation, setLawyerLocation] = useState({
+    address: "",
+    city: "",
+    state: "",
+  });
   const [lawyers, setLawyers] = useState([]);
   const [lawyerErrors, setLawyerErrors] = useState({});
-  const [formType, setFormType] = useState(null); 
-  const [verificationLoading, setVerificationLoading] = useState({ id: null, action: null });
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [verificationLoading, setVerificationLoading] = useState({
+    id: null,
+    action: null,
+  });
   const [AllLawyers, setAllLawyers] = useState([]);
 
   const pendingVerificationCount = Array.isArray(AllLawyers)
@@ -85,24 +103,30 @@ export default function Dashboard() {
 
   const menuItems = [
     { id: "overview", label: "Overview", icon: GoLaw },
-    { id: "users", label: "User Management", icon: Users },
     {
       id: "verification",
       label: "Verification Queue",
       icon: ShieldCheck,
-      badge: pendingVerificationCount > 0 ? String(pendingVerificationCount) : null,
+      badge:
+        pendingVerificationCount > 0 ? String(pendingVerificationCount) : null,
     },
-  ];  
+  ];
 
-  const operationItems = [  
+  const operationItems = [
     { id: "financials", label: "Financials", icon: DollarSign },
     { id: "appointments", label: "Appointments", icon: CalendarDays },
     { id: "reports", label: "Reports", icon: CalendarDays },
-  ];          
+  ];
 
-  const handleMenuClick = (menuId) => {   
+  const handleMenuClick = (menuId) => {
+    if (menuId === "users" || menuId === "lawyers") {
+      setIsUserMenuOpen(true);
+    } else {
+      setIsUserMenuOpen(false);
+    }
     setActiveMenu(menuId);
-  };  const fetchUsers = async () => {
+  };
+  const fetchUsers = async () => {
     try {
       const response = await requestWithFallback("get", "/api/users");
       setUsers(Array.isArray(response.data) ? response.data : []);
@@ -111,9 +135,9 @@ export default function Dashboard() {
       alert("Failed to load users");
     }
   };
-  
+
   const fetchLawyers = async () => {
-    try {         
+    try {
       const res = await requestWithFallback("get", "/api/lawyers");
       const lawyerList = Array.isArray(res.data) ? res.data : [];
       setAllLawyers(lawyerList);
@@ -125,14 +149,17 @@ export default function Dashboard() {
     }
   };
 
-  useEffect(()=>{
+  useEffect(() => {
     fetchLawyers();
     fetchUsers();
-  },[]);  
+  }, []);
 
   useEffect(() => {
     if (activeMenu === "users") {
       fetchUsers();
+      fetchLawyers();
+    }
+    if (activeMenu === "lawyers") {
       fetchLawyers();
     }
     if (activeMenu === "verification") {
@@ -148,7 +175,8 @@ export default function Dashboard() {
     if (!userPhone.trim()) errors.userPhone = "Phone number is required";
     if (!userRole.trim()) errors.userRole = "Role is required";
     if (!userPassword.trim()) errors.userPassword = "Password is required";
-    if (!userConfirmPassword.trim()) errors.userConfirmPassword = "Confirm password is required";
+    if (!userConfirmPassword.trim())
+      errors.userConfirmPassword = "Confirm password is required";
 
     if (Object.keys(errors).length > 0) {
       setUserErrors(errors);
@@ -156,7 +184,10 @@ export default function Dashboard() {
     }
 
     if (userPassword !== userConfirmPassword) {
-      setUserErrors({ ...errors, userConfirmPassword: "Passwords do not match!" });
+      setUserErrors({
+        ...errors,
+        userConfirmPassword: "Passwords do not match!",
+      });
       return;
     }
 
@@ -207,9 +238,11 @@ export default function Dashboard() {
     if (!lawyerName.trim()) errors.lawyerName = "Lawyer name is required";
     if (!lawyerEmail.trim()) errors.lawyerEmail = "Email is required";
     if (!lawyerPhone.trim()) errors.lawyerPhone = "Phone number is required";
-    if (!lawyerLicense.trim()) errors.lawyerLicense = "License number is required";
+    if (!lawyerLicense.trim())
+      errors.lawyerLicense = "License number is required";
     if (!lawyerPassword.trim()) errors.lawyerPassword = "Password is required";
-    if (!lawyerConfirmPassword.trim()) errors.lawyerConfirmPassword = "Confirm password is required";
+    if (!lawyerConfirmPassword.trim())
+      errors.lawyerConfirmPassword = "Confirm password is required";
 
     if (Object.keys(errors).length > 0) {
       setLawyerErrors(errors);
@@ -217,12 +250,15 @@ export default function Dashboard() {
     }
 
     if (lawyerPassword !== lawyerConfirmPassword) {
-      setLawyerErrors({ ...errors, lawyerConfirmPassword: "Passwords do not match!" });
+      setLawyerErrors({
+        ...errors,
+        lawyerConfirmPassword: "Passwords do not match!",
+      });
       return;
     }
 
     try {
-      await requestWithFallback("post", "/api/auth/register", {
+      const response = await requestWithFallback("post", "/api/auth/register", {
         name: lawyerName,
         email: lawyerEmail,
         phone: lawyerPhone,
@@ -231,12 +267,70 @@ export default function Dashboard() {
         licenseNo: lawyerLicense,
       });
 
+      const createdLawyerId = response?.data?.user?.id;
+      const cleanedSpecializations = (lawyerSpecializations || []).filter(Boolean);
+      const cleanedFees = (lawyerFees || [])
+        .map((fee) => ({
+          category: fee.category?.trim(),
+          fee: fee.fee === "" || fee.fee === null || fee.fee === undefined ? undefined : Number(fee.fee),
+        }))
+        .filter((fee) => fee.category && Number.isFinite(fee.fee));
+      const cleanedEducation = (lawyerEducation || [])
+        .map((ed) => ({
+          degree: ed.degree?.trim() || "",
+          university: ed.university?.trim() || "",
+          year: ed.year === "" || ed.year === null || ed.year === undefined ? undefined : Number(ed.year),
+        }))
+        .filter((ed) => ed.degree || ed.university || Number.isFinite(ed.year));
+      const hasLocation =
+        lawyerLocation &&
+        Object.values(lawyerLocation).some((value) => value && String(value).trim().length > 0);
+      const hasProfileDetails =
+        !!lawyerProfileImage?.file ||
+        cleanedSpecializations.length > 0 ||
+        cleanedFees.length > 0 ||
+        cleanedEducation.length > 0 ||
+        hasLocation ||
+        (lawyerDescription && lawyerDescription.trim().length > 0) ||
+        (lawyerExperience !== "" && lawyerExperience !== null && lawyerExperience !== undefined);
+
+      if (createdLawyerId && hasProfileDetails) {
+        const formData = new FormData();
+        if (lawyerProfileImage?.file) {
+          formData.append("profileImage", lawyerProfileImage.file);
+        }
+        if (hasLocation) {
+          formData.append("location", JSON.stringify(lawyerLocation));
+        }
+        if (cleanedEducation.length > 0) {
+          formData.append("education", JSON.stringify(cleanedEducation));
+        }
+        if (cleanedSpecializations.length > 0) {
+          formData.append("specializations", JSON.stringify(cleanedSpecializations));
+        }
+        if (cleanedFees.length > 0) {
+          formData.append("feesByCategory", JSON.stringify(cleanedFees));
+        }
+        if (lawyerExperience !== "" && lawyerExperience !== null && lawyerExperience !== undefined) {
+          formData.append("experience", String(lawyerExperience));
+        }
+        if (lawyerDescription && lawyerDescription.trim().length > 0) {
+          formData.append("bio", lawyerDescription.trim());
+        }
+
+        await requestWithFallback(
+          "patch",
+          `/api/lawyers/complete-profile/${createdLawyerId}`,
+          formData,
+        );
+      }
+
       setLawyerName("");
       setLawyerEmail("");
       setLawyerPhone("");
       setLawyerLicense("");
       setLawyerSpecializations([]);
-      setLawyerProfileImage("");
+      setLawyerProfileImage({ file: null, previewUrl: "" });
       setLawyerFees([{ category: "", fee: "" }]);
       setLawyerEducation([{ degree: "", university: "", year: "" }]);
       setLawyerLocation({ address: "", city: "", state: "" });
@@ -250,7 +344,10 @@ export default function Dashboard() {
       alert(`Lawyer "${lawyerName}" added successfully!`);
     } catch (error) {
       console.error("Failed to create lawyer:", error);
-      const apiError = error?.response?.data?.error || error?.response?.data?.message || "Failed to create lawyer";
+      const apiError =
+        error?.response?.data?.error ||
+        error?.response?.data?.message ||
+        "Failed to create lawyer";
       alert(apiError);
     }
   };
@@ -267,11 +364,14 @@ export default function Dashboard() {
       alert("User deleted successfully");
     } catch (error) {
       console.error("Failed to delete user:", error);
-      const apiError = error?.response?.data?.message || error?.response?.data?.error || "Failed to delete user";
+      const apiError =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        "Failed to delete user";
       alert(apiError);
     }
   };
-    
+
   const handleInactiveUser = async (userId) => {
     if (!userId) {
       alert("User id not found");
@@ -279,7 +379,9 @@ export default function Dashboard() {
     }
 
     try {
-      await requestWithFallback("put", `/api/users/${userId}`, { isActive: false });
+      await requestWithFallback("put", `/api/users/${userId}`, {
+        isActive: false,
+      });
       await fetchUsers();
       alert("User marked as inactive");
     } catch (error) {
@@ -291,7 +393,10 @@ export default function Dashboard() {
       }
 
       console.error("Failed to inactivate user:", error);
-      const apiError = error?.response?.data?.message || error?.response?.data?.error || "Failed to inactivate user";
+      const apiError =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        "Failed to inactivate user";
       alert(apiError);
     }
   };
@@ -304,23 +409,34 @@ export default function Dashboard() {
 
     setVerificationLoading({ id: lawyerId, action: "approve" });
     try {
-      await requestWithFallback("put", `/api/lawyers/update-lawyer/${lawyerId}`, {
-        verification: "Approved",
-      });
+      await requestWithFallback(
+        "put",
+        `/api/lawyers/update-lawyer/${lawyerId}`,
+        {
+          verification: "Approved",
+        },
+      );
       setAllLawyers((prev) =>
         prev.map((lawyer) =>
-          lawyer._id === lawyerId ? { ...lawyer, verification: "Approved" } : lawyer
-        )
+          lawyer._id === lawyerId
+            ? { ...lawyer, verification: "Approved" }
+            : lawyer,
+        ),
       );
       setLawyers((prev) =>
         prev.map((lawyer) =>
-          lawyer._id === lawyerId ? { ...lawyer, verification: "Approved" } : lawyer
-        )
+          lawyer._id === lawyerId
+            ? { ...lawyer, verification: "Approved" }
+            : lawyer,
+        ),
       );
       alert("Lawyer approved successfully");
     } catch (error) {
       console.error("Failed to approve lawyer:", error);
-      const apiError = error?.response?.data?.message || error?.response?.data?.error || "Failed to approve lawyer";
+      const apiError =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        "Failed to approve lawyer";
       alert(apiError);
     } finally {
       setVerificationLoading({ id: null, action: null });
@@ -335,13 +451,19 @@ export default function Dashboard() {
 
     setVerificationLoading({ id: lawyerId, action: "reject" });
     try {
-      await requestWithFallback("delete", `/api/lawyers/delete-lawyer/${lawyerId}`);
+      await requestWithFallback(
+        "delete",
+        `/api/lawyers/delete-lawyer/${lawyerId}`,
+      );
       setAllLawyers((prev) => prev.filter((lawyer) => lawyer._id !== lawyerId));
       setLawyers((prev) => prev.filter((lawyer) => lawyer._id !== lawyerId));
       alert("Lawyer rejected successfully");
     } catch (error) {
       console.error("Failed to reject lawyer:", error);
-      const apiError = error?.response?.data?.message || error?.response?.data?.error || "Failed to reject lawyer";
+      const apiError =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        "Failed to reject lawyer";
       alert(apiError);
     } finally {
       setVerificationLoading({ id: null, action: null });
@@ -349,13 +471,16 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#F7F9FC] font-sans lg:flex-row overflow-hidden">
-      {/* Sidebar */}                       
-      <aside className="w-full bg-white border-b border-gray-200 px-6 py-6 flex flex-col justify-between lg:w-65 lg:border-b-0 lg:border-r lg:max-h-screen lg:overflow-y-auto" style={{"scrollbarWidth": "thin", "scrollbarColor": "#d1d5db #f3f4f6"}}>
+    <div className="flex h-screen flex-col bg-[#F7F9FC] font-sans lg:flex-row overflow-auto lg:overflow-hidden">
+      {/* Sidebar */}
+      <aside
+        className="w-full bg-white border-b border-gray-200 px-6 py-6 flex flex-col justify-between lg:w-65 lg:border-b-0 lg:border-r lg:max-h-screen lg:overflow-y-auto"
+        style={{ scrollbarWidth: "thin", scrollbarColor: "#d1d5db #f3f4f6" }}
+      >
         <div>
           <div className="flex items-center gap-2 mb-6 lg:mb-10">
             <div className="w-9 h-9 rounded-lg bg-blue-600 text-white flex items-center justify-center font-semibold">
-             <GoLaw />
+              <GoLaw />
             </div>
             <div>
               <p className="font-semibold leading-none">EsueBook</p>
@@ -392,6 +517,60 @@ export default function Dashboard() {
                     </li>
                   );
                 })}
+                <li>
+                  <div
+                    onClick={() =>
+                      setIsUserMenuOpen((prev) => {
+                        const next = !prev;
+                        if (
+                          next &&
+                          activeMenu !== "users" &&
+                          activeMenu !== "lawyers"
+                        ) {
+                          setActiveMenu("users");
+                        }
+                        return next;
+                      })
+                    }
+                    className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all ${
+                      activeMenu === "users" || activeMenu === "lawyers"
+                        ? "bg-blue-50 text-blue-600 font-medium"
+                        : "text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Users size={18} /> Management
+                    </div>
+                    <ChevronDown
+                      size={16}
+                      className={`transition-transform ${isUserMenuOpen ? "rotate-180" : ""}`}
+                    />
+                  </div>
+                  {isUserMenuOpen && (
+                    <ul className="mt-2 space-y-1">
+                      <li
+                        onClick={() => handleMenuClick("users")}
+                        className={`ml-6 flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all ${
+                          activeMenu === "users"
+                            ? "bg-blue-50 text-blue-600 font-medium"
+                            : "text-gray-600 hover:bg-gray-100"
+                        }`}
+                      >
+                        User Management
+                      </li>
+                      <li
+                        onClick={() => handleMenuClick("lawyers")}
+                        className={`ml-6 flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all ${
+                          activeMenu === "lawyers"
+                            ? "bg-blue-50 text-blue-600 font-medium"
+                            : "text-gray-600 hover:bg-gray-100"
+                        }`}
+                      >
+                        Lawyer Management
+                      </li>
+                    </ul>
+                  )}
+                </li>
               </ul>
             </div>
 
@@ -430,17 +609,28 @@ export default function Dashboard() {
           >
             <Settings size={16} /> Settings
           </div>
-          <p className="text-xs text-green-600 mt-2">● All systems operational</p>
+          <p className="text-xs text-green-600 mt-2">
+            ● All systems operational
+          </p>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-hidden">
+      <main
+        className={`flex-1 p-4 sm:p-6 lg:p-8 pb-10 ${
+          activeMenu === "lawyers"
+            ? "overflow-hidden"
+            : activeMenu === "users"
+              ? "overflow-visible"
+              : "overflow-auto"
+        }`}
+      >
         {/* Header */}
         <div className="flex flex-col gap-4 mb-6 lg:mb-8 lg:flex-row lg:justify-between lg:items-center">
           <h1 className="text-xl sm:text-2xl font-semibold">
             {activeMenu === "overview" && "Dashboard Overview"}
             {activeMenu === "users" && "User Management"}
+            {activeMenu === "lawyers" && "Lawyer Management"}
             {activeMenu === "verification" && "Verification Queue"}
             {activeMenu === "financial" && "Financial"}
             {activeMenu === "appointments" && "Appointments"}
@@ -450,18 +640,21 @@ export default function Dashboard() {
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
             <div className="relative w-full sm:w-auto">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-hover:text-blue-500 transition" />
+              <Search
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-hover:text-blue-500 transition"
+              />
               <input
-                className="pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg w-full sm:w-[320px] hover:border-blue-500 hover:ring-2 hover:ring-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"     
+                className="pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg w-full sm:w-[320px] hover:border-blue-500 hover:ring-2 hover:ring-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                 placeholder="Search for clients, lawyers or invoices"
               />
             </div>
-              <div className="relative">
-                <div className="bg-blue-100 p-2 rounded-full inline-flex items-center justify-center">
-                  <Bell className="text-blue-600" />
-                </div>
+            <div className="relative">
+              <div className="bg-blue-100 p-2 rounded-full inline-flex items-center justify-center">
+                <Bell className="text-blue-600" />
               </div>
-              <div className="flex items-center gap-2"> 
+            </div>
+            <div className="flex items-center gap-2">
               <img
                 src="https://i.pravatar.cc/40"
                 className="rounded-full w-9 h-9 cursor-pointer hover:shadow-lg hover:scale-110 transition-all duration-200"
@@ -481,7 +674,9 @@ export default function Dashboard() {
             lawyersCount={Array.isArray(lawyers) ? lawyers.length : 0}
             activeLawyersCount={
               Array.isArray(lawyers)
-                ? lawyers.filter((lawyer) => lawyer?.verification === "Approved").length
+                ? lawyers.filter(
+                    (lawyer) => lawyer?.verification === "Approved",
+                  ).length
                 : 0
             }
           />
@@ -490,8 +685,62 @@ export default function Dashboard() {
         {/* User Management Content */}
         {activeMenu === "users" && (
           <UserManagement
-            formType={formType}
-            setFormType={setFormType}
+            mode="users"
+            userName={userName}
+            setUserName={setUserName}
+            userEmail={userEmail}
+            setUserEmail={setUserEmail}
+            userPhone={userPhone}
+            setUserPhone={setUserPhone}
+            userRole={userRole}
+            setUserRole={setUserRole}
+            userPassword={userPassword}
+            setUserPassword={setUserPassword}
+            userConfirmPassword={userConfirmPassword}
+            setUserConfirmPassword={setUserConfirmPassword}
+            userErrors={userErrors}
+            setUserErrors={setUserErrors}
+            handleCreateUser={handleCreateUser}
+            handleDeleteUser={handleDeleteUser}
+            handleInactiveUser={handleInactiveUser}
+            handleCreateLawyer={handleCreateLawyer}
+            lawyerName={lawyerName}
+            setLawyerName={setLawyerName}
+            lawyerEmail={lawyerEmail}
+            setLawyerEmail={setLawyerEmail}
+            lawyerPhone={lawyerPhone}
+            setLawyerPhone={setLawyerPhone}
+            lawyerLicense={lawyerLicense}
+            setLawyerLicense={setLawyerLicense}
+            lawyerSpecializations={lawyerSpecializations}
+            setLawyerSpecializations={setLawyerSpecializations}
+            lawyerExperience={lawyerExperience}
+            setLawyerExperience={setLawyerExperience}
+            lawyerProfileImage={lawyerProfileImage}
+            setLawyerProfileImage={setLawyerProfileImage}
+            lawyerFees={lawyerFees}
+            setLawyerFees={setLawyerFees}
+            lawyerEducation={lawyerEducation}
+            setLawyerEducation={setLawyerEducation}
+            lawyerLocation={lawyerLocation}
+            setLawyerLocation={setLawyerLocation}
+            lawyerDescription={lawyerDescription}
+            setLawyerDescription={setLawyerDescription}
+            lawyerPassword={lawyerPassword}
+            setLawyerPassword={setLawyerPassword}
+            lawyerConfirmPassword={lawyerConfirmPassword}
+            setLawyerConfirmPassword={setLawyerConfirmPassword}
+            lawyerErrors={lawyerErrors}
+            setLawyerErrors={setLawyerErrors}
+            lawyers={lawyers}
+            setLawyers={setLawyers}
+            users={users}
+            setUsers={setUsers}
+          />
+        )}
+        {activeMenu === "lawyers" && (
+          <UserManagement
+            mode="lawyers"
             userName={userName}
             setUserName={setUserName}
             userEmail={userEmail}
@@ -570,5 +819,3 @@ export default function Dashboard() {
     </div>
   );
 }
-
-
