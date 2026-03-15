@@ -1,0 +1,27 @@
+body {
+  cursor: none; /* Hide default cursor */
+}
+
+.custom-cursor {
+  position: fixed;
+  width: 20px;
+  height: 20px;
+  background: rgba(255, 0, 0, 0.7);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+/* Click effect */
+.custom-cursor.clicked {
+  transform: translate(-50%, -50%) scale(0.8);
+  background: rgba(255, 0, 0, 0.9);
+}
+
+/* Hover effect */
+.custom-cursor.hovered {
+  transform: translate(-50%, -50%) scale(1.5);
+  background: rgba(0, 150, 255, 0.7);
+}

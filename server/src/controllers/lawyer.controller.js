@@ -128,10 +128,31 @@ const deleteLawyer = async (req, res) => {
   }
 };
 
+const verificationLawyer = async (req, res) => {
+  try {
+    const { verificationStatus } = req.body;
+
+    const lawyer = await Lawyer.findByIdAndUpdate(
+      req.params.id,
+      { verification: verificationStatus },
+      { new: true },
+    );
+    if (!lawyer) {
+      return res.status(404).json({ message: "Lawyer not found" });
+    }
+    res.status(200).json({ message: "Lawyer Verified successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+
 module.exports = {
   getAllLawyers,
   getLawyerById,
   updateLawyer,
   completeLawyerProfile,
   deleteLawyer,
+  verificationLawyer,
 };

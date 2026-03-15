@@ -9,6 +9,7 @@ const lawyerRoutes = require("./src/routes/lawyer.routes");
 const appointmentRoutes = require("./src/routes/appointment.routes");
 const availabilityRoutes = require("./src/routes/availability.routes");
 const reviewRoutes = require("./src/routes/review.routes");
+const testRoutes = require("./src/routes/test.routes");
 
 const app = express();
 app.use(express.json());
@@ -38,5 +39,7 @@ app.use("/api/lawyers", lawyerRoutes);
 app.use("/api/appointments", appointmentRoutes);
 app.use("/api/availability", availabilityRoutes);
 app.use("/api/reviews", reviewRoutes);
+app.use("/api/test", testRoutes);
+
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

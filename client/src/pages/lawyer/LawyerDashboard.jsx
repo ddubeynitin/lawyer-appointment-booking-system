@@ -33,7 +33,7 @@ const LawyerDashboard = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200">
+    <div className="min-h-screen bg-linear-to-br from-gray-100 to-gray-200">
       {/* ================= HEADER ================= */}
       <header className="bg-white/70 backdrop-blur-lg border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -139,7 +139,7 @@ const LawyerDashboard = () => {
         </div>
 
         {/* Search Section */}
-        <div className="bg-gradient-to-b from-blue-700 to-blue-950 rounded-xl p-10 text-white shadow-xl">
+        <div className="bg-linear-to-b from-blue-700 to-blue-950 rounded-xl p-10 text-white shadow-xl">
           <h2 className="text-2xl font-semibold text-center mb-3">
             Search Clients or Cases
           </h2>
@@ -246,7 +246,7 @@ const LawyerDashboard = () => {
             </div>
 
             {/* CTA */}
-            <div className="bg-gradient-to-b from-blue-700 to-blue-900 text-white rounded-3xl p-6 text-center shadow-xl">
+            <div className="bg-linear-to-b from-blue-700 to-blue-900 text-white rounded-3xl p-6 text-center shadow-xl">
               <h4 className="font-semibold mb-2 flex justify-center">
                 Need urgent assistance?
               </h4>
