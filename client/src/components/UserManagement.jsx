@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { ShieldCheck, Users } from "lucide-react";
 
 export default function UserManagement(props) {
@@ -57,12 +57,17 @@ export default function UserManagement(props) {
     setUsers,
   } = props;
 
+  const [listType, setListType] = useState("users");
+
   return (
 <div className="space-y-6">
             {/* Toggle Buttons */}
             <div className="flex gap-4">
               <button
-                onClick={() => setFormType(formType === "user" ? null : "user")}
+                onClick={() => {
+                  setFormType(formType === "user" ? null : "user");
+                  setListType("users");
+                }}
                 className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 flex items-center gap-2 ${
                   formType === "user"
                     ? "bg-blue-600 text-white shadow-lg scale-105"
@@ -73,7 +78,10 @@ export default function UserManagement(props) {
                 Add New User
               </button>
               <button
-                onClick={() => setFormType(formType === "lawyer" ? null : "lawyer")}
+                onClick={() => {
+                  setFormType(formType === "lawyer" ? null : "lawyer");
+                  setListType("lawyers");
+                }}
                 className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 flex items-center gap-2 ${
                   formType === "lawyer"
                     ? "bg-green-600 text-white shadow-lg scale-105"
@@ -507,7 +515,8 @@ export default function UserManagement(props) {
             )}
 
             {/* Users Table */}
-            <div className="bg-white p-8 rounded-2xl shadow-lg border border-blue-100 animate-in fade-in duration-300">
+            {listType === "users" && (
+              <div className="bg-white p-8 rounded-2xl shadow-lg border border-blue-100 animate-in fade-in duration-300">
                 <div className="flex items-center justify-between mb-6 pb-4 border-b-2 border-blue-100">
                   <h3 className="text-xl font-bold text-gray-800 flex items-center gap-3">
                     <div className="bg-blue-100 p-2 rounded-lg">
@@ -517,8 +526,8 @@ export default function UserManagement(props) {
                     <span className="ml-2 bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold">{users.length}</span>
                   </h3>
                 </div>
-                <div>
-                  <table className="w-full">
+                <div className="w-full overflow-x-auto max-h-[420px] overflow-y-auto">
+                  <table className="w-full min-w-[900px]">
                     <thead>
                       <tr className="bg-linear-to-r from-blue-50 to-blue-100">
                         <th className="text-left py-4 px-6 font-bold text-gray-700 text-sm uppercase tracking-wide">
@@ -595,9 +604,10 @@ export default function UserManagement(props) {
                   </table>
                 </div>
               </div>
+            )}
 
             {/* Lawyers Table */}
-            {lawyers.length > 0 && (
+            {listType === "lawyers" && lawyers.length > 0 && (
               <div className="bg-white p-8 rounded-2xl shadow-lg border border-green-100 animate-in fade-in duration-300">
                 <div className="flex items-center justify-between mb-6 pb-4 border-b-2 border-green-100">
                   <h3 className="text-xl font-bold text-gray-800 flex items-center gap-3">
@@ -608,8 +618,8 @@ export default function UserManagement(props) {
                     <span className="ml-2 bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">{lawyers.length}</span>
                   </h3>
                 </div>
-                <div>
-                  <table className="w-full">
+                <div className="w-full overflow-x-auto max-h-[420px] overflow-y-auto">
+                  <table className="w-full min-w-[1100px]">
                     <thead>
                       <tr className="bg-linear-to-r from-green-50 to-green-100">
                         <th className="text-left py-4 px-6 font-bold text-gray-700 text-sm uppercase tracking-wide">
@@ -679,6 +689,11 @@ export default function UserManagement(props) {
                     </tbody>
                   </table>
                 </div>
+              </div>
+            )}
+            {listType === "lawyers" && lawyers.length === 0 && (
+              <div className="bg-white p-6 rounded-xl border border-green-100 text-sm text-gray-500">
+                No lawyers found yet.
               </div>
             )}
           </div>

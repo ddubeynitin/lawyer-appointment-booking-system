@@ -3,7 +3,7 @@ import Registration from './pages/auth/Register'
 import ClientDashboard from './pages/client/ClientDasshboard'
 import AdminDashBoard from './pages/admin/AdminDashBoard'
 
-import React from 'react'
+
 import './App.css'
 import LoginPage from './pages/auth/LoginPage'
 import AdminLoginPage from './pages/admin/AdminLoginPage';  

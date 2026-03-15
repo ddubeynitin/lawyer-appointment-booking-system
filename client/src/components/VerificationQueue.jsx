@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function VerificationQueue({ allLawyers }) {
+export default function VerificationQueue({ allLawyers, onApprove, onReject, processingId, processingAction }) {
   return (
     <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-100">
       <div className="flex items-center justify-between mb-5">
@@ -28,6 +28,8 @@ export default function VerificationQueue({ allLawyers }) {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {allLawyers.map((lawyer) => {
+                  const isApproving = processingId === lawyer._id && processingAction === "approve";
+                  const isRejecting = processingId === lawyer._id && processingAction === "reject";
                   const verificationStatus = lawyer?.verification || "Pending";
                   const statusClasses =
                     verificationStatus === "Approved"
@@ -66,11 +68,29 @@ export default function VerificationQueue({ allLawyers }) {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex justify-end gap-2">
-                          <button className="px-3 py-1.5 text-xs font-semibold text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors">
-                            Approve
+                          <button
+                            type="button"
+                            onClick={() => onApprove?.(lawyer._id)}
+                            disabled={isApproving || isRejecting}
+                            className={`px-3 py-1.5 text-xs font-semibold text-white rounded-md transition-colors ${
+                              isApproving
+                                ? "bg-green-400 cursor-not-allowed"
+                                : "bg-green-600 hover:bg-green-700"
+                            }`}
+                          >
+                            {isApproving ? "Approving..." : "Approve"}
                           </button>
-                          <button className="px-3 py-1.5 text-xs font-semibold text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors">
-                            Reject
+                          <button
+                            type="button"
+                            onClick={() => onReject?.(lawyer._id)}
+                            disabled={isApproving || isRejecting}
+                            className={`px-3 py-1.5 text-xs font-semibold text-white rounded-md transition-colors ${
+                              isRejecting
+                                ? "bg-red-400 cursor-not-allowed"
+                                : "bg-red-600 hover:bg-red-700"
+                            }`}
+                          >
+                            {isRejecting ? "Rejecting..." : "Reject"}
                           </button>
                         </div>
                       </td>
