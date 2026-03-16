@@ -3,7 +3,6 @@ import React, { Suspense, lazy } from "react";
 import "./App.css";
 import LoadingFallback from "./components/LoadingFallback";
 import PageNotFound from "./pages/PageNotFound";
-import CustomCursor from "./components/layout/CustomCursor";
 import LawyerCardSkeleton from "./components/layout/LawyerCardSkeleton";
 
 // Lazy load components
@@ -27,7 +26,6 @@ const LawyerProfile = lazy(() => import("./pages/lawyer/LawyerProfile"));
 const App = () => {
   return (
     <Suspense fallback={<LoadingFallback />}>
-      <CustomCursor/>
       <Router>
         <Routes>
           <Route path="*" element={<PageNotFound/>} />
