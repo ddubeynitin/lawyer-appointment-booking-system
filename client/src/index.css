@@ -24,3 +24,22 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #9ca3af;
 }
+@keyframes starFall {
+  0% {
+    transform: translateY(-20px) scale(0.8);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(420px) scale(0.6);
+    opacity: 0;
+  }
+}
+
+.star-fall {
+  animation-name: starFall;
+  animation-timing-function: ease-out;
+  animation-fill-mode: forwards;
+}
