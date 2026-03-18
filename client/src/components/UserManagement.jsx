@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 
 export default function UserManagement(props) {
   const { mode } = props;
@@ -60,6 +60,39 @@ export default function UserManagement(props) {
   const lawyerFormRef = useRef(null);
   const [isUserFormAtEnd, setIsUserFormAtEnd] = useState(false);
   const [isLawyerFormAtEnd, setIsLawyerFormAtEnd] = useState(false);
+  
+  // Search states
+  const [userSearchQuery, setUserSearchQuery] = useState("");
+  const [lawyerSearchQuery, setLawyerSearchQuery] = useState("");
+  
+  // Filtered users based on search
+  const filteredUsers = useMemo(() => {
+    if (!Array.isArray(users)) return [];
+    if (!userSearchQuery) return users;
+    const search = userSearchQuery.toLowerCase();
+    return users.filter(user => 
+      user?.name?.toLowerCase().includes(search) ||
+      user?.userName?.toLowerCase().includes(search) ||
+      user?.email?.toLowerCase().includes(search) ||
+      user?.userEmail?.toLowerCase().includes(search) ||
+      user?.phone?.toLowerCase().includes(search) ||
+      user?.userPhone?.toLowerCase().includes(search)
+    );
+  }, [users, userSearchQuery]);
+  
+  // Filtered lawyers based on search
+  const filteredLawyers = useMemo(() => {
+    if (!Array.isArray(lawyers)) return [];
+    if (!lawyerSearchQuery) return lawyers;
+    const search = lawyerSearchQuery.toLowerCase();
+    return lawyers.filter(lawyer => 
+      lawyer?.name?.toLowerCase().includes(search) ||
+      lawyer?.lawyerName?.toLowerCase().includes(search) ||
+      lawyer?.email?.toLowerCase().includes(search) ||
+      lawyer?.lawyerEmail?.toLowerCase().includes(search) ||
+      lawyer?.specializations?.some(s => s.toLowerCase().includes(search))
+    );
+  }, [lawyers, lawyerSearchQuery]);
 
   const handleListView = () => {
     setShowForm(false);
@@ -123,13 +156,13 @@ export default function UserManagement(props) {
             onScroll={() =>
               checkScrollEnd(userFormRef.current, setIsUserFormAtEnd)
             }
-            className="max-h-[70vh] overflow-y-auto px-8 pt-8 pb-4"
+            className="max-h-[70vh] overflow-y-auto px-4 pt-6 pb-4 sm:px-6 lg:px-8"
             style={{ scrollbarWidth: "thin" }}
           >
             <h2 className="text-2xl font-semibold mb-6 text-blue-900">
               Create New User
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 lg:gap-6 mb-6">
               <div>
                 <label className="block text-sm font-semibold text-blue-900 mb-3">
                   User Name
@@ -298,17 +331,45 @@ export default function UserManagement(props) {
         </div>
       )}
       {mode === "users" && !showForm && (
-        <div className="bg-linear-to-br from-blue-50 to-blue-100 rounded-xl shadow-lg border-2 border-blue-200 animate-in fade-in slide-in-from-top duration-300">
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 animate-in fade-in slide-in-from-top duration-300">
+          {/* Header with Search */}
+          <div className="p-4 border-b border-gray-200">
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-800">
+                User List
+              </h2>
+              <div className="flex flex-wrap gap-2">
+                <span className="px-3 py-1 text-xs font-semibold bg-blue-100 text-blue-700 rounded-full">
+                  {Array.isArray(users) ? users.length : 0} Total
+                </span>
+                <span className="px-3 py-1 text-xs font-semibold bg-green-100 text-green-700 rounded-full">
+                  {Array.isArray(users) ? users.filter(u => u?.isActive !== false).length : 0} Active
+                </span>
+                <span className="px-3 py-1 text-xs font-semibold bg-red-100 text-red-700 rounded-full">
+                  {Array.isArray(users) ? users.filter(u => u?.isActive === false).length : 0} Inactive
+                </span>
+              </div>
+            </div>
+            {/* Search Bar */}
+            <div className="mt-4 relative">
+              <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input
+                type="text"
+                placeholder="Search users by name, email, phone..."
+                value={userSearchQuery}
+                onChange={(e) => setUserSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg hover:border-blue-500 hover:ring-2 hover:ring-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+              />
+            </div>
+          </div>
+          
           <div
-            className="max-h-[70vh] overflow-y-auto px-8 py-6"
+            className="max-h-[70vh] overflow-y-auto"
             style={{ scrollbarWidth: "thin" }}
           >
-            <h2 className="text-2xl font-semibold mb-6 text-blue-900">
-              User List
-            </h2>
-            {Array.isArray(users) && users.length > 0 ? (
-              <div className="space-y-4">
-                {users.map((user, idx) => {
+            {Array.isArray(filteredUsers) && filteredUsers.length > 0 ? (
+              <div className="divide-y divide-gray-100">
+                {filteredUsers.map((user, idx) => {
                   const userId = user?._id ?? user?.id;
                   const isActive =
                     user?.isActive === undefined || user?.isActive === null
@@ -506,6 +567,7 @@ export default function UserManagement(props) {
                 </label>
                 <select
                   multiple
+                  size={5}
                   value={lawyerSpecializations}
                   onChange={(e) => {
                     const options = Array.from(e.target.selectedOptions).map(
@@ -529,6 +591,9 @@ export default function UserManagement(props) {
                   <option value="Family">Family</option>
                   <option value="Property">Property</option>
                 </select>
+                <p className="text-xs text-green-700/70 mt-2">
+                  Select one or more specializations.
+                </p>
                 {lawyerErrors.lawyerSpecializations && (
                   <p className="text-red-600 text-xs mt-2 font-semibold">
                     {lawyerErrors.lawyerSpecializations}
@@ -563,27 +628,29 @@ export default function UserManagement(props) {
                 <label className="block text-sm font-semibold text-green-900 mb-3">
                   Profile Image
                 </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files && e.target.files[0];
-                    if (file) {
-                      const previewUrl = URL.createObjectURL(file);
-                      setLawyerProfileImage({ file, previewUrl });
-                    } else {
-                      setLawyerProfileImage({ file: null, previewUrl: "" });
-                    }
-                  }}
-                  className="w-full"
-                />
-                {lawyerProfileImage?.previewUrl && (
-                  <img
-                    src={lawyerProfileImage.previewUrl}
-                    alt="preview"
-                    className="mt-3 w-28 h-28 object-cover rounded-md"
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files && e.target.files[0];
+                      if (file) {
+                        const previewUrl = URL.createObjectURL(file);
+                        setLawyerProfileImage({ file, previewUrl });
+                      } else {
+                        setLawyerProfileImage({ file: null, previewUrl: "" });
+                      }
+                    }}
+                    className="w-full text-sm"
                   />
-                )}
+                  {lawyerProfileImage?.previewUrl && (
+                    <img
+                      src={lawyerProfileImage.previewUrl}
+                      alt="preview"
+                      className="h-20 w-20 rounded-md object-cover"
+                    />
+                  )}
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-semibold text-green-900 mb-3">
@@ -591,7 +658,7 @@ export default function UserManagement(props) {
                 </label>
                 <div className="space-y-2">
                   {lawyerFees.map((f, idx) => (
-                    <div key={idx} className="flex gap-2">
+                    <div key={idx} className="flex flex-col gap-2 sm:flex-row">
                       <select
                         value={f.category}
                         onChange={(e) => {
@@ -617,13 +684,13 @@ export default function UserManagement(props) {
                           setLawyerFees(newFees);
                         }}
                         placeholder="Fee"
-                        className="w-28 px-3 py-2 border rounded"
+                        className="w-full px-3 py-2 border rounded sm:w-28"
                       />
                       <button
                         onClick={() =>
                           setLawyerFees(lawyerFees.filter((_, i) => i !== idx))
                         }
-                        className="px-2 bg-red-500 text-white rounded"
+                        className="px-2 py-2 bg-red-500 text-white rounded"
                         type="button"
                       >
                         Remove
@@ -635,7 +702,7 @@ export default function UserManagement(props) {
                       setLawyerFees([...lawyerFees, { category: "", fee: "" }])
                     }
                     type="button"
-                    className="mt-2 px-3 py-2 bg-green-600 text-white rounded"
+                    className="mt-2 w-full px-3 py-2 bg-green-600 text-white rounded sm:w-auto"
                   >
                     Add Fee
                   </button>
@@ -740,7 +807,7 @@ export default function UserManagement(props) {
                               lawyerEducation.filter((_, i) => i !== idx),
                             )
                           }
-                          className="px-2 bg-red-500 text-white rounded"
+                          className="px-2 py-2 bg-red-500 text-white rounded"
                         >
                           Remove
                         </button>
@@ -755,7 +822,7 @@ export default function UserManagement(props) {
                         { degree: "", university: "", year: "" },
                       ])
                     }
-                    className="mt-2 px-3 py-2 bg-green-600 text-white rounded"
+                    className="mt-2 w-full px-3 py-2 bg-green-600 text-white rounded sm:w-auto"
                   >
                     Add Education
                   </button>
@@ -766,7 +833,7 @@ export default function UserManagement(props) {
                   )}
                 </div>
               </div>
-              <div className="col-span-2">
+              <div className="md:col-span-2">
                 <label className="block text-sm font-semibold text-green-900 mb-3">
                   Description
                 </label>
@@ -842,7 +909,7 @@ export default function UserManagement(props) {
                 )}
               </div>
             </div>
-            <div className="sticky bottom-0 mt-6 pb-6 bg-green-50/80 border-t border-green-100">
+            <div className="sticky bottom-0 mt-6 pb-6 bg-green-50/80 border-t border-green-100 px-4 sm:px-6 lg:px-8">
               {!isLawyerFormAtEnd && (
                 <p className="text-xs text-green-700/70 mb-2">
                   Scroll to the bottom to enable Add Lawyer
@@ -851,7 +918,7 @@ export default function UserManagement(props) {
               <button
                 onClick={handleCreateLawyer}
                 disabled={!isLawyerFormAtEnd}
-                className={`w-full px-6 py-3 rounded-lg transition-all duration-200 font-semibold ${
+                className={`w-full px-6 py-3 pb-8 rounded-lg transition-all duration-200 font-semibold ${
                   isLawyerFormAtEnd
                     ? "bg-green-600 text-white hover:bg-green-700 hover:shadow-lg"
                     : "bg-green-300 text-white/70 cursor-not-allowed"
@@ -864,22 +931,45 @@ export default function UserManagement(props) {
         </div>
       )}
       {mode === "lawyers" && !showForm && (
-        <div className="bg-linear-to-br from-green-50 to-green-100 rounded-xl shadow-lg border-2 border-green-200 animate-in fade-in slide-in-from-top duration-300">
-          <div
-            className="max-h-[70vh] overflow-y-auto px-8 py-6"
-            style={{ scrollbarWidth: "thin" }}
-          >
-            <div className="mb-6 flex flex-wrap items-center gap-3">
-              <h2 className="text-2xl font-semibold text-green-900">
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 animate-in fade-in slide-in-from-top duration-300">
+          {/* Header with Search */}
+          <div className="p-4 border-b border-gray-200">
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-800">
                 Lawyer List
               </h2>
-              <span className="rounded-full bg-green-200 px-3 py-1 text-xs font-semibold text-green-800">
-                {Array.isArray(lawyers) ? lawyers.length : 0} Lawyers
-              </span>
+              <div className="flex flex-wrap gap-2">
+                <span className="px-3 py-1 text-xs font-semibold bg-green-100 text-green-700 rounded-full">
+                  {Array.isArray(lawyers) ? lawyers.length : 0} Total
+                </span>
+                <span className="px-3 py-1 text-xs font-semibold bg-blue-100 text-blue-700 rounded-full">
+                  {Array.isArray(lawyers) ? lawyers.filter(l => l?.verification === "Approved").length : 0} Active
+                </span>
+                <span className="px-3 py-1 text-xs font-semibold bg-amber-100 text-amber-700 rounded-full">
+                  {Array.isArray(lawyers) ? lawyers.filter(l => l?.verification !== "Approved").length : 0} Pending
+                </span>
+              </div>
             </div>
-            {Array.isArray(lawyers) && lawyers.length > 0 ? (
-              <div className="space-y-4">
-                {lawyers.map((lawyer, idx) => {
+            {/* Search Bar */}
+            <div className="mt-4 relative">
+              <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input
+                type="text"
+                placeholder="Search lawyers by name, email, specialization..."
+                value={lawyerSearchQuery}
+                onChange={(e) => setLawyerSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg hover:border-green-500 hover:ring-2 hover:ring-green-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+              />
+            </div>
+          </div>
+          
+          <div
+            className="max-h-[70vh] overflow-y-auto"
+            style={{ scrollbarWidth: "thin" }}
+          >
+            {Array.isArray(filteredLawyers) && filteredLawyers.length > 0 ? (
+              <div className="divide-y divide-gray-100">
+                {filteredLawyers.map((lawyer, idx) => {
                   const lawyerId = lawyer?._id ?? lawyer?.id;
                   const specializationList = Array.isArray(
                     lawyer?.specializations,

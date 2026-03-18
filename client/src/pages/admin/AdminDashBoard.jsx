@@ -9,6 +9,8 @@ import {
   CalendarDays,
   Search,
   ChevronDown,
+  Menu,
+  X,
 } from "lucide-react";
 import { GoLaw } from "react-icons/go";
 import UserManagement from "../../components/UserManagement";
@@ -78,7 +80,10 @@ export default function Dashboard() {
   const [lawyerPassword, setLawyerPassword] = useState("");
   const [lawyerConfirmPassword, setLawyerConfirmPassword] = useState("");
   const [lawyerSpecializations, setLawyerSpecializations] = useState([]);
-  const [lawyerProfileImage, setLawyerProfileImage] = useState({ file: null, previewUrl: "" });
+  const [lawyerProfileImage, setLawyerProfileImage] = useState({
+    file: null,
+    previewUrl: "",
+  });
   const [lawyerFees, setLawyerFees] = useState([{ category: "", fee: "" }]);
   const [lawyerEducation, setLawyerEducation] = useState([
     { degree: "", university: "", year: "" },
@@ -91,6 +96,7 @@ export default function Dashboard() {
   const [lawyers, setLawyers] = useState([]);
   const [lawyerErrors, setLawyerErrors] = useState({});
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [verificationLoading, setVerificationLoading] = useState({
     id: null,
     action: null,
@@ -125,6 +131,7 @@ export default function Dashboard() {
       setIsUserMenuOpen(false);
     }
     setActiveMenu(menuId);
+    setIsSidebarOpen(false);
   };
   const fetchUsers = async () => {
     try {
@@ -268,23 +275,33 @@ export default function Dashboard() {
       });
 
       const createdLawyerId = response?.data?.user?.id;
-      const cleanedSpecializations = (lawyerSpecializations || []).filter(Boolean);
+      const cleanedSpecializations = (lawyerSpecializations || []).filter(
+        Boolean,
+      );
       const cleanedFees = (lawyerFees || [])
         .map((fee) => ({
           category: fee.category?.trim(),
-          fee: fee.fee === "" || fee.fee === null || fee.fee === undefined ? undefined : Number(fee.fee),
+          fee:
+            fee.fee === "" || fee.fee === null || fee.fee === undefined
+              ? undefined
+              : Number(fee.fee),
         }))
         .filter((fee) => fee.category && Number.isFinite(fee.fee));
       const cleanedEducation = (lawyerEducation || [])
         .map((ed) => ({
           degree: ed.degree?.trim() || "",
           university: ed.university?.trim() || "",
-          year: ed.year === "" || ed.year === null || ed.year === undefined ? undefined : Number(ed.year),
+          year:
+            ed.year === "" || ed.year === null || ed.year === undefined
+              ? undefined
+              : Number(ed.year),
         }))
         .filter((ed) => ed.degree || ed.university || Number.isFinite(ed.year));
       const hasLocation =
         lawyerLocation &&
-        Object.values(lawyerLocation).some((value) => value && String(value).trim().length > 0);
+        Object.values(lawyerLocation).some(
+          (value) => value && String(value).trim().length > 0,
+        );
       const hasProfileDetails =
         !!lawyerProfileImage?.file ||
         cleanedSpecializations.length > 0 ||
@@ -292,7 +309,9 @@ export default function Dashboard() {
         cleanedEducation.length > 0 ||
         hasLocation ||
         (lawyerDescription && lawyerDescription.trim().length > 0) ||
-        (lawyerExperience !== "" && lawyerExperience !== null && lawyerExperience !== undefined);
+        (lawyerExperience !== "" &&
+          lawyerExperience !== null &&
+          lawyerExperience !== undefined);
 
       if (createdLawyerId && hasProfileDetails) {
         const formData = new FormData();
@@ -306,12 +325,19 @@ export default function Dashboard() {
           formData.append("education", JSON.stringify(cleanedEducation));
         }
         if (cleanedSpecializations.length > 0) {
-          formData.append("specializations", JSON.stringify(cleanedSpecializations));
+          formData.append(
+            "specializations",
+            JSON.stringify(cleanedSpecializations),
+          );
         }
         if (cleanedFees.length > 0) {
           formData.append("feesByCategory", JSON.stringify(cleanedFees));
         }
-        if (lawyerExperience !== "" && lawyerExperience !== null && lawyerExperience !== undefined) {
+        if (
+          lawyerExperience !== "" &&
+          lawyerExperience !== null &&
+          lawyerExperience !== undefined
+        ) {
           formData.append("experience", String(lawyerExperience));
         }
         if (lawyerDescription && lawyerDescription.trim().length > 0) {
@@ -472,9 +498,21 @@ export default function Dashboard() {
 
   return (
     <div className="flex h-screen flex-col bg-[#F7F9FC] font-sans lg:flex-row overflow-auto lg:overflow-hidden">
+      {/* Mobile Sidebar Overlay */}
+      {isSidebarOpen && (
+        <button
+          type="button"
+          aria-label="Close sidebar"
+          onClick={() => setIsSidebarOpen(false)}
+          className="fixed inset-0 z-30 bg-black/40 lg:hidden"
+        />
+      )}
+
       {/* Sidebar */}
       <aside
-        className="w-full bg-white border-b border-gray-200 px-6 py-6 flex flex-col justify-between lg:w-65 lg:border-b-0 lg:border-r lg:max-h-screen lg:overflow-y-auto"
+        className={`fixed inset-y-0 left-0 z-40 w-72 bg-white border-r border-gray-200 px-6 py-6 flex flex-col justify-between transform transition-transform duration-200 ease-out lg:static lg:translate-x-0 lg:w-65 lg:border-b-0 lg:max-h-screen lg:overflow-y-auto ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
         style={{ scrollbarWidth: "thin", scrollbarColor: "#d1d5db #f3f4f6" }}
       >
         <div>
@@ -486,6 +524,14 @@ export default function Dashboard() {
               <p className="font-semibold leading-none">EsueBook</p>
               <span className="text-xs text-gray-400">Admin Controller</span>
             </div>
+            <button
+              type="button"
+              aria-label="Close sidebar"
+              onClick={() => setIsSidebarOpen(false)}
+              className="ml-auto inline-flex items-center justify-center rounded-lg border border-gray-200 p-2 text-gray-500 hover:bg-gray-50 lg:hidden"
+            >
+              <X size={18} />
+            </button>
           </div>
 
           <nav className="space-y-6">
@@ -627,16 +673,26 @@ export default function Dashboard() {
       >
         {/* Header */}
         <div className="flex flex-col gap-4 mb-6 lg:mb-8 lg:flex-row lg:justify-between lg:items-center">
-          <h1 className="text-xl sm:text-2xl font-semibold">
-            {activeMenu === "overview" && "Dashboard Overview"}
-            {activeMenu === "users" && "User Management"}
-            {activeMenu === "lawyers" && "Lawyer Management"}
-            {activeMenu === "verification" && "Verification Queue"}
-            {activeMenu === "financial" && "Financial"}
-            {activeMenu === "appointments" && "Appointments"}
-            {activeMenu === "reports" && "Reports"}
-            {activeMenu === "settings" && "Settings"}
-          </h1>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              aria-label="Open sidebar"
+              onClick={() => setIsSidebarOpen(true)}
+              className="inline-flex items-center justify-center rounded-lg border border-gray-200 p-2 text-gray-600 hover:bg-gray-50 lg:hidden"
+            >
+              <Menu size={18} />
+            </button>
+            <h1 className="text-xl sm:text-2xl font-semibold">
+              {activeMenu === "overview" && "Dashboard Overview"}
+              {activeMenu === "users" && "User Management"}
+              {activeMenu === "lawyers" && "Lawyer Management"}
+              {activeMenu === "verification" && "Verification Queue"}
+              {activeMenu === "financial" && "Financial"}
+              {activeMenu === "appointments" && "Appointments"}
+              {activeMenu === "reports" && "Reports"}
+              {activeMenu === "settings" && "Settings"}
+            </h1>
+          </div>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
             <div className="relative w-full sm:w-auto">
@@ -648,11 +704,6 @@ export default function Dashboard() {
                 className="pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg w-full sm:w-[320px] hover:border-blue-500 hover:ring-2 hover:ring-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                 placeholder="Search for clients, lawyers or invoices"
               />
-            </div>
-            <div className="relative">
-              <div className="bg-blue-100 p-2 rounded-full inline-flex items-center justify-center">
-                <Bell className="text-blue-600" />
-              </div>
             </div>
             <div className="flex items-center gap-2">
               <img

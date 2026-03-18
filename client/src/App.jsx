@@ -27,10 +27,10 @@ const LawyerProfile = lazy(() => import("./pages/lawyer/LawyerProfile"));
 const App = () => {
   return (
     <Suspense fallback={<LoadingFallback />}>
-      <CustomCursor/>
+      <CustomCursor />
       <Router>
         <Routes>
-          <Route path="*" element={<PageNotFound/>} />
+          <Route path="*" element={<PageNotFound />} />
           <Route path="/" element={<Home />} />
           <Route path="/complete-profile" element={<CompleteLawyerProfile />} />
           <Route path="/auth/login" element={<LoginPage />} />
@@ -54,14 +54,17 @@ const App = () => {
             path="/lawyer/lawyer-dashboard"
             element={<LawyerDashboard />}
           />
-          <Route path="/lawyer/lawyer-profile/:id" element={<LawyerProfile />} />
+          <Route
+            path="/lawyer/lawyer-profile/:id"
+            element={<LawyerProfile />}
+          />
 
           <Route path="/admin/admin-login" element={<AdminLoginPage />} />
           <Route path="/admin/admin-dashboard" element={<AdminDashBoard />} />
           <Route path="/admin/manage-users" element={<div>Manage Users</div>} />
           <Route
             path="/admin/manage-lawyers"
-            element={<LawyerCardSkeleton/>||<div>Manage Lawyers</div>}
+            element={<LawyerCardSkeleton /> || <div>Manage Lawyers</div>}
           />
         </Routes>
       </Router>
