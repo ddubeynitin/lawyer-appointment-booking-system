@@ -17,7 +17,8 @@ import UserManagement from "../../components/UserManagement";
 import Overview from "../../components/Overview";
 import VerificationQueue from "../../components/VerificationQueue";
 import Financials from "../../components/Financials";
-import Appointments from "../../components/Appointments";
+import UserAppointments from "../../components/UserAppointments";
+import LawyerAppointments from "../../components/LawyerAppointments";
 import Reports from "../../components/Reports";
 import SettingsPage from "../../components/Settings";
 
@@ -120,15 +121,21 @@ export default function Dashboard() {
 
   const operationItems = [
     { id: "financials", label: "Financials", icon: DollarSign },
-    { id: "appointments", label: "Appointments", icon: CalendarDays },
     { id: "reports", label: "Reports", icon: CalendarDays },
   ];
+
+  const [isAppointmentMenuOpen, setIsAppointmentMenuOpen] = useState(false);
 
   const handleMenuClick = (menuId) => {
     if (menuId === "users" || menuId === "lawyers") {
       setIsUserMenuOpen(true);
     } else {
       setIsUserMenuOpen(false);
+    }
+    if (menuId === "user-appointments" || menuId === "lawyer-appointments") {
+      setIsAppointmentMenuOpen(true);
+    } else {
+      setIsAppointmentMenuOpen(false);
     }
     setActiveMenu(menuId);
     setIsSidebarOpen(false);
@@ -207,7 +214,6 @@ export default function Dashboard() {
         role: userRole,
       });
 
-      // Immediate UI update so the new row appears right after clicking Add User
       if (userRole === "user") {
         const createdUser = response?.data?.user;
         setUsers((prev) => [
@@ -411,7 +417,6 @@ export default function Dashboard() {
       await fetchUsers();
       alert("User marked as inactive");
     } catch (error) {
-      // Backend may still update isActive=false but return 404 for inactive users.
       if (error?.response?.status === 404) {
         await fetchUsers();
         alert("User marked as inactive");
@@ -498,7 +503,6 @@ export default function Dashboard() {
 
   return (
     <div className="flex h-screen flex-col bg-[#F7F9FC] font-sans lg:flex-row overflow-auto lg:overflow-hidden">
-      {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
         <button
           type="button"
@@ -508,7 +512,6 @@ export default function Dashboard() {
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={`fixed inset-y-0 left-0 z-40 w-72 bg-white border-r border-gray-200 px-6 py-6 flex flex-col justify-between transform transition-transform duration-200 ease-out lg:static lg:translate-x-0 lg:w-65 lg:border-b-0 lg:max-h-screen lg:overflow-y-auto ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
@@ -639,6 +642,60 @@ export default function Dashboard() {
                     </li>
                   );
                 })}
+                <li>
+                  <div
+                    onClick={() =>
+                      setIsAppointmentMenuOpen((prev) => {
+                        const next = !prev;
+                        if (
+                          next &&
+                          activeMenu !== "user-appointments" &&
+                          activeMenu !== "lawyer-appointments"
+                        ) {
+                          setActiveMenu("user-appointments");
+                        }
+                        return next;
+                      })
+                    }
+                    className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all ${
+                      activeMenu === "user-appointments" || activeMenu === "lawyer-appointments"
+                        ? "bg-blue-50 text-blue-600 font-medium"
+                        : "text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <CalendarDays size={18} /> Appointments
+                    </div>
+                    <ChevronDown
+                      size={16}
+                      className={`transition-transform ${isAppointmentMenuOpen ? "rotate-180" : ""}`}
+                    />
+                  </div>
+                  {isAppointmentMenuOpen && (
+                    <ul className="mt-2 space-y-1">
+                      <li
+                        onClick={() => handleMenuClick("user-appointments")}
+                        className={`ml-6 flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all ${
+                          activeMenu === "user-appointments"
+                            ? "bg-blue-50 text-blue-600 font-medium"
+                            : "text-gray-600 hover:bg-gray-100"
+                        }`}
+                      >
+                        User Appointments
+                      </li>
+                      <li
+                        onClick={() => handleMenuClick("lawyer-appointments")}
+                        className={`ml-6 flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all ${
+                          activeMenu === "lawyer-appointments"
+                            ? "bg-blue-50 text-blue-600 font-medium"
+                            : "text-gray-600 hover:bg-gray-100"
+                        }`}
+                      >
+                        Lawyer Appointments
+                      </li>
+                    </ul>
+                  )}
+                </li>
               </ul>
             </div>
           </nav>
@@ -661,7 +718,6 @@ export default function Dashboard() {
         </div>
       </aside>
 
-      {/* Main Content */}
       <main
         className={`flex-1 p-4 sm:p-6 lg:p-8 pb-10 ${
           activeMenu === "lawyers"
@@ -671,7 +727,6 @@ export default function Dashboard() {
               : "overflow-auto"
         }`}
       >
-        {/* Header */}
         <div className="flex flex-col gap-4 mb-6 lg:mb-8 lg:flex-row lg:justify-between lg:items-center">
           <div className="flex items-center gap-3">
             <button
@@ -687,8 +742,9 @@ export default function Dashboard() {
               {activeMenu === "users" && "User Management"}
               {activeMenu === "lawyers" && "Lawyer Management"}
               {activeMenu === "verification" && "Verification Queue"}
-              {activeMenu === "financial" && "Financial"}
-              {activeMenu === "appointments" && "Appointments"}
+              {activeMenu === "financials" && "Financials"}
+              {activeMenu === "user-appointments" && "User Appointments"}
+              {activeMenu === "lawyer-appointments" && "Lawyer Appointments"}
               {activeMenu === "reports" && "Reports"}
               {activeMenu === "settings" && "Settings"}
             </h1>
@@ -718,7 +774,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Overview Content */}
         {activeMenu === "overview" && (
           <Overview
             usersCount={Array.isArray(users) ? users.length : 0}
@@ -733,7 +788,6 @@ export default function Dashboard() {
           />
         )}
 
-        {/* User Management Content */}
         {activeMenu === "users" && (
           <UserManagement
             mode="users"
@@ -844,7 +898,6 @@ export default function Dashboard() {
             setUsers={setUsers}
           />
         )}
-        {/* Verification Queue Content */}
         {activeMenu === "verification" && (
           <VerificationQueue
             allLawyers={AllLawyers}
@@ -855,16 +908,14 @@ export default function Dashboard() {
           />
         )}
 
-        {/* Financials Content */}
         {activeMenu === "financials" && <Financials />}
 
-        {/* Appointments Content */}
-        {activeMenu === "appointments" && <Appointments />}
+        {activeMenu === "user-appointments" && <UserAppointments />}
 
-        {/* Reports Content */}
+        {activeMenu === "lawyer-appointments" && <LawyerAppointments />}
+
         {activeMenu === "reports" && <Reports />}
 
-        {/* Settings Content */}
         {activeMenu === "settings" && <SettingsPage />}
       </main>
     </div>
