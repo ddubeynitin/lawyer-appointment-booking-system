@@ -1,20 +1,99 @@
-import {
-  FaCalendarAlt,
-  FaUsers,
-  FaFileAlt,
-  FaCog,
-  FaSearch,
-  FaPlus,
-  FaGavel,
-  FaVideo,
-} from "react-icons/fa";
+import { FaCalendarAlt, FaGavel, FaVideo } from "react-icons/fa";
 import { LuBellRing } from "react-icons/lu";
 import { useState, useRef, useEffect } from "react";
+import { useAuth } from "../../context/AuthContext";
+import { Link, useNavigate } from "react-router-dom";
+import useFetch from "../../hooks/useFetch";
+import { API_URL } from "../../utils/api";
+import { TfiMenuAlt } from "react-icons/tfi";
+
+const SCHEDULE_TIME_SLOTS = [
+  "09:00 AM",
+  "09:30 AM",
+  "10:00 AM",
+  "10:30 AM",
+  "11:30 AM",
+  "02:00 PM",
+  "03:30 PM",
+];
+
+const getTodayDateInputValue = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = `${today.getMonth() + 1}`.padStart(2, "0");
+  const day = `${today.getDate()}`.padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+};
+
+const formatScheduleDateLabel = (date) =>
+  new Date(`${date}T00:00:00`).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 
 const LawyerDashboard = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [isMenuVisible, setIsMenuVisible] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(getTodayDateInputValue);
   const profileRef = useRef(null);
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const { data, loading, error } = useFetch(
+    `${API_URL}/appointments/lawyer/${user.id}?status=Pending`,
+  );
+  const { data: allAppointmentsData, loading: allAppointmentsLoading } = useFetch(
+    `${API_URL}/appointments/lawyer/${user.id}`,
+  );
+  const { data: scheduleData, loading: scheduleLoading } = useFetch(
+    `${API_URL}/appointments/lawyer/${user.id}?date=${selectedDate}`,
+  );
+
+  const appointments = data?.appointments || [];
+  const allAppointments = allAppointmentsData?.appointments || [];
+  const totalAppointments = data?.totalAppointments || 0;
+  const pendingAppointments = data?.pendingAppointments || 0;
+  const selectedDateAppointments = scheduleData?.appointments || [];
+  const selectedDateSlots = new Map(
+    selectedDateAppointments.map((appointment) => [
+      appointment.timeSlot,
+      appointment,
+    ]),
+  );
+  const selectedDateLabel = formatScheduleDateLabel(selectedDate);
+  const upcomingAppointment = allAppointments
+    .filter((appointment) => {
+      if (!appointment?.date || !appointment?.timeSlot) return false;
+
+      const appointmentDateTime = new Date(
+        `${new Date(appointment.date).toISOString().split("T")[0]} ${appointment.timeSlot}`,
+      );
+
+      return (
+        !Number.isNaN(appointmentDateTime.getTime()) &&
+        appointmentDateTime >= new Date() &&
+        appointment.status !== "Rejected" &&
+        appointment.status !== "Completed"
+      );
+    })
+    .sort((firstAppointment, secondAppointment) => {
+      const firstDate = new Date(
+        `${new Date(firstAppointment.date).toISOString().split("T")[0]} ${firstAppointment.timeSlot}`,
+      );
+      const secondDate = new Date(
+        `${new Date(secondAppointment.date).toISOString().split("T")[0]} ${secondAppointment.timeSlot}`,
+      );
+
+      return firstDate - secondDate;
+    })[0];
+
+  const handleLogout = () => {
+    logout();
+    navigate("/auth/login");
+  };
 
   const hour = new Date().getHours();
   const greeting =
@@ -28,95 +107,130 @@ const LawyerDashboard = () => {
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () =>
-      document.removeEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const showMenu = () => {
+    setIsMenuVisible((current) => !current);
+  };
 
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-100 to-gray-200">
-      {/* ================= HEADER ================= */}
-      <header className="bg-white/70 backdrop-blur-lg border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          {/* Logo */}
-          <div className="flex items-center gap-2">
-            <FaGavel className="text-blue-700 text-xl" />
-            <span className="font-bold text-xl text-gray-800">Esue</span>
+      <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/70 backdrop-blur-lg">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+          <div onClick={showMenu} className="sm:hidden">
+            <TfiMenuAlt />
+            {isMenuVisible && (
+              <div className="absolute top-17 left-0 w-50 rounded-br-2xl rounded-tr-2xl bg-white pt-5 pb-5">
+                <nav className="flex flex-col items-center gap-6 font-medium text-gray-600">
+                  <Link to="/lawyer/lawyer-dashboard">
+                    <span className="font-semibold text-blue-600">Dashboard</span>
+                  </Link>
+                  <Link to="/hhggkj">
+                    <span className="cursor-pointer hover:text-blue-600">
+                      Calendar
+                    </span>
+                  </Link>
+                  <Link to="/lawyer/appointment-requests">
+                    <span className="cursor-pointer hover:text-blue-600">
+                      Requests
+                    </span>
+                  </Link>
+                  <Link>
+                    <span className="cursor-pointer hover:text-blue-600">
+                      Clients
+                    </span>
+                  </Link>
+                  <Link>
+                    <span className="cursor-pointer hover:text-blue-600">
+                      Case Files
+                    </span>
+                  </Link>
+                </nav>
+              </div>
+            )}
           </div>
 
-          {/* Navigation */}
-          <nav className="hidden md:flex items-center gap-6 font-medium text-gray-600">
-            <span className="text-blue-600 font-semibold">Dashboard</span>
-            <span className="hover:text-blue-600 cursor-pointer">Calendar</span>
-            <span className="hover:text-blue-600 cursor-pointer">Requests</span>
-            <span className="hover:text-blue-600 cursor-pointer">Clients</span>
-            <span className="hover:text-blue-600 cursor-pointer">Case Files</span>
+          <Link to="/">
+            <div className="flex items-center gap-2">
+              <FaGavel className="text-xl text-blue-700" />
+              <span className="font-barlow text-xl font-bold text-gray-800">
+                Justif<span className="text-blue-500">Ai</span>
+              </span>
+            </div>
+          </Link>
+
+          <nav className="hidden items-center gap-6 font-medium text-gray-600 md:flex">
+            <span className="font-semibold text-blue-600">Dashboard</span>
+            <span className="cursor-pointer hover:text-blue-600">Calendar</span>
+            <span className="cursor-pointer hover:text-blue-600">Requests</span>
+            <span className="cursor-pointer hover:text-blue-600">Clients</span>
+            <span className="cursor-pointer hover:text-blue-600">Case Files</span>
           </nav>
 
-          {/* Notifications + Profile */}
-          <div className="flex items-center gap-6 relative">
+          <div className="relative flex items-center gap-6">
             <div
               className="relative cursor-pointer"
               onClick={() => setShowNotifications(!showNotifications)}
             >
-              <LuBellRing className="text-gray-700 text-xl" />
-              <span className="absolute -top-1 -right-1 bg-red-500 w-2 h-2 rounded-full"></span>
+              <LuBellRing className="text-xl text-gray-700" />
+              <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500"></span>
             </div>
 
-            {/* Notification Dropdown */}
             {showNotifications && (
-              <div className="absolute right-0 top-12 w-72 bg-white shadow-xl rounded-xl p-4 z-50">
-                <h4 className="font-semibold mb-3">Notifications</h4>
+              <div className="absolute right-0 top-12 z-50 w-72 rounded-xl bg-white p-4 shadow-xl">
+                <h4 className="mb-3 font-semibold">Notifications</h4>
                 <ul className="space-y-2 text-sm text-gray-600">
-                  <li>📅 Appointment booked by client</li>
-                  <li>💬 New message from Sarah Jenkins</li>
-                  <li>💳 Payment received</li>
+                  <li>Appointment booked by client</li>
+                  <li>New message from Sarah Jenkins</li>
+                  <li>Payment received</li>
                 </ul>
               </div>
             )}
 
-            {/* Profile */}
             <div className="relative" ref={profileRef}>
               <img
-                src="https://i.pravatar.cc/40?img=12"
+                src={user.profileImage.url}
                 alt="profile"
                 onClick={() => setShowProfile(!showProfile)}
-                className="w-9 h-9 rounded-full ring-2 ring-blue-500 cursor-pointer"
+                className="h-9 w-9 cursor-pointer rounded-full ring-2 ring-blue-500"
               />
 
-              {/* Profile Popup */}
               <div
-                className={`absolute right-0 mt-3 w-72 bg-white rounded-2xl shadow-2xl border border-gray-100 p-5 transition-all duration-300 ease-out z-50 ${
+                className={`absolute right-0 mt-3 w-72 rounded-2xl border border-gray-100 bg-white p-5 shadow-2xl transition-all duration-300 ease-out z-50 ${
                   showProfile
-                    ? "opacity-100 scale-100 translate-y-0"
-                    : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
+                    ? "translate-y-0 scale-100 opacity-100"
+                    : "-translate-y-2 scale-95 opacity-0 pointer-events-none"
                 }`}
               >
-                <div className="flex items-center gap-4 mb-4">
+                <div className="mb-4 flex items-center gap-4">
                   <img
-                    src="https://i.pravatar.cc/80?img=12"
+                    src={user.profileImage.url}
                     alt="lawyer"
-                    className="w-14 h-14 rounded-full"
+                    className="h-14 w-14 rounded-full"
                   />
                   <div>
-                    <h4 className="font-semibold text-gray-800">
-                      Harvey Specter
-                    </h4>
-                    <p className="text-sm text-gray-500">
-                      Senior Corporate Lawyer
-                    </p>
+                    <h4 className="font-semibold text-gray-800">{user.name}</h4>
+                    <p className="text-sm text-gray-500">{user.role}</p>
                   </div>
                 </div>
 
-                <div className="border-t border-gray-100 my-3"></div>
+                <div className="my-3 border-t border-gray-100"></div>
 
                 <div className="space-y-2 text-sm">
-                  <button className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 transition">
+                  <button
+                    onClick={() => navigate(`/lawyer/lawyer-profile/${user.id}`)}
+                    className="w-full rounded-lg px-3 py-2 text-left transition hover:bg-gray-100"
+                  >
                     View Profile
                   </button>
-                  <button className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 transition">
+                  <button className="w-full rounded-lg px-3 py-2 text-left transition hover:bg-gray-100">
                     Account Settings
                   </button>
-                  <button className="w-full text-left px-3 py-2 rounded-lg hover:bg-red-50 text-red-600 transition">
+                  <button
+                    onClick={handleLogout}
+                    className="w-full rounded-lg px-3 py-2 text-left text-red-600 transition hover:bg-red-50"
+                  >
                     Logout
                   </button>
                 </div>
@@ -126,135 +240,173 @@ const LawyerDashboard = () => {
         </div>
       </header>
 
-      {/* ================= MAIN ================= */}
-      <main className="max-w-7xl mx-auto px-6 py-10 space-y-10">
-        {/* Greeting */}
+      <main className="mx-auto max-w-7xl space-y-10 px-6 py-10">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">
-            {greeting}, <span className="text-blue-600">Harvey</span>
+          <h1 className="flex flex-col lg:flex-row text-3xl font-bold text-gray-800">
+            {greeting}, <span className="text-blue-600">{user.name}</span>
           </h1>
-          <p className="text-gray-500 mt-1">
-            Here’s what’s happening in your practice today.
+          <p className="mt-1 text-gray-500">
+            Here&apos;s what&apos;s happening in your practice today.
           </p>
         </div>
 
-        {/* Search Section */}
-        <div className="bg-linear-to-b from-blue-700 to-blue-950 rounded-xl p-10 text-white shadow-xl">
-          <h2 className="text-2xl font-semibold text-center mb-3">
-            Search Clients or Cases
-          </h2>
-          <p className="text-sm text-center mb-6 opacity-90">
-            Quickly find clients, cases, or documents to manage your workflow.
-          </p>
-
-          <div className="flex justify-center">
-            <div className="flex bg-white rounded-full overflow-hidden max-w-xl w-full">
-              <div className="flex items-center justify-center px-4 text-gray-400">
-                <FaSearch />
-              </div>
-              <input
-                type="text"
-                placeholder="Client name, case ID, or document..."
-                className="flex-1 px-3 py-2 outline-none text-gray-700"
-              />
-              <button className="bg-blue-600 hover:bg-blue-700 transition px-6 text-white font-medium">
-                Search
-              </button>
-            </div>
-          </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            title="Total Appointments"
+            value={loading ? "..." : totalAppointments}
+            icon={<FaCalendarAlt />}
+          />
+          <StatCard
+            title="Pending Requests"
+            value={loading ? "..." : pendingAppointments}
+            sub={error ? "Unable to load" : undefined}
+          />
         </div>
+        {/* Up Next Appointment */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="space-y-6 lg:col-span-2">
+            <Card
+              title="Up Next"
+              badge={
+                upcomingAppointment
+                  ? new Date(upcomingAppointment.date).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    })
+                  : "No upcoming"
+              }
+            >
+              {allAppointmentsLoading ? (
+                <p className="text-sm text-gray-500">Loading next appointment...</p>
+              ) : upcomingAppointment ? (
+                <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+                  <div className="flex items-center gap-4">
+                    <img
+                      src="/assets/images/user.png"
+                      className="h-14 w-14 rounded-lg"
+                      alt="client"
+                    />
+                    <div>
+                      <p className="font-semibold">
+                        {upcomingAppointment.userId?.name || "Client"}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {upcomingAppointment.caseCategory} • {upcomingAppointment.timeSlot}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {new Date(upcomingAppointment.date).toLocaleDateString(
+                          "en-US",
+                          {
+                            weekday: "long",
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          },
+                        )}
+                      </p>
+                    </div>
+                  </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard title="Appointments Today" value="4" icon={<FaCalendarAlt />} />
-          <StatCard title="Pending Requests" value="3" sub="+1 new" />
-          <StatCard title="Active Clients" value="128" sub="+5%" />
-          <StatCard title="Hours Billed" value="32.5" sub="This week" />
-        </div>
-
-        {/* Main Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* LEFT */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Up Next Appointment */}
-            <Card title="Up Next" badge="Starts in 15m">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <img
-                    src="https://i.pravatar.cc/80?img=3"
-                    className="w-14 h-14 rounded-lg"
-                    alt="client"
-                  />
-                  <div>
-                    <p className="font-semibold">Sarah Jenkins</p>
-                    <p className="text-sm text-gray-500">
-                      Estate Planning Consultation • Case #23901
-                    </p>
+                  <div className="flex gap-3">
+                    <button className="rounded-lg border border-gray-200 px-4 py-2 text-sm">
+                      Details
+                    </button>
+                    <button className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm text-white">
+                      <FaVideo /> Join Meeting
+                    </button>
                   </div>
                 </div>
-
-                <div className="flex gap-3">
-                  <button className="border border-gray-200 px-4 py-2 rounded-lg text-sm">
-                    Details
-                  </button>
-                  <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2">
-                    <FaVideo /> Join Meeting
-                  </button>
-                </div>
-              </div>
+              ) : (
+                <p className="text-sm text-gray-500">
+                  No upcoming appointments scheduled.
+                </p>
+              )}
             </Card>
 
-            {/* Today’s Schedule */}
-            <Card title="Today’s Schedule" right="Oct 24, 2023">
-              <ScheduleItem time="09:00 AM" title="Team Standup" done />
-              <ScheduleItem
-                time="10:00 AM"
-                title="Sarah Jenkins - Consultation"
-                sub="Zoom Meeting • ID: 492-392"
-                active
-              />
-              <ScheduleItem
-                time="01:00 PM"
-                title="Lunch with Partner"
-                sub="Downtown Bistro"
-                purple
-              />
-              <ScheduleItem
-                time="02:30 PM"
-                title="Michael Ross - Case Review"
-                sub="Office 4B"
-              />
+            <Card
+              title="Daily Schedule"
+              right={
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(event) => setSelectedDate(event.target.value)}
+                  className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 outline-none focus:border-blue-500"
+                />
+              }
+            >
+              <p className="mb-4 text-sm text-gray-500">
+                Showing all time slots for {selectedDateLabel}
+              </p>
+              {scheduleLoading ? (
+                <p className="text-sm text-gray-500">Loading schedule...</p>
+              ) : (
+                SCHEDULE_TIME_SLOTS.map((time) => {
+                  const bookedAppointment = selectedDateSlots.get(time);
+
+                  return (
+                    <ScheduleItem
+                      key={time}
+                      time={time}
+                      title={
+                        bookedAppointment
+                          ? `${bookedAppointment.userId?.name || "Client"} booked this slot`
+                          : "Available slot"
+                      }
+                      sub={
+                        bookedAppointment
+                          ? `${bookedAppointment.caseCategory} • ${bookedAppointment.status}`
+                          : "No appointment booked"
+                      }
+                      status={bookedAppointment ? "booked" : "available"}
+                    />
+                  );
+                })
+              )}
             </Card>
           </div>
 
-          {/* RIGHT */}
           <div className="space-y-7">
-            {/* New Requests */}
             <Card title="New Requests" action="View All">
-              <RequestItem name="Louis M." type="Corporate Law" />
-              <RequestItem name="Donna P." type="Contract Review" />
+              {loading ? (
+                <p className="text-sm text-gray-500">
+                  Loading pending appointments...
+                </p>
+              ) : appointments.length > 0 ? (
+                appointments.map((appointment) => (
+                  <RequestItem
+                    key={appointment._id}
+                    name={appointment.userId?.name || "Client"}
+                    type={appointment.caseCategory}
+                    date={appointment.date}
+                    timeSlot={appointment.timeSlot}
+                    status={appointment.status}
+                  />
+                ))
+              ) : (
+                <p className="text-sm text-gray-500">
+                  No pending appointments found.
+                </p>
+              )}
             </Card>
 
-            {/* Quick Notes */}
-            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-              <h4 className="font-semibold mb-2">Quick Notes</h4>
+            <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-4">
+              <h4 className="mb-2 font-semibold">Quick Notes</h4>
               <textarea
                 placeholder="Type a note..."
-                className="w-full bg-transparent outline-none text-sm h-24"
+                className="h-24 w-full bg-transparent text-sm outline-none"
               />
-              <button className="text-sm text-blue-600 mt-2">Save</button>
+              <button className="mt-2 text-sm text-blue-600">Save</button>
             </div>
 
-            {/* CTA */}
-            <div className="bg-linear-to-b from-blue-700 to-blue-900 text-white rounded-3xl p-6 text-center shadow-xl">
-              <h4 className="font-semibold mb-2 flex justify-center">
+            <div className="rounded-3xl bg-linear-to-b from-blue-700 to-blue-900 p-6 text-center text-white shadow-xl">
+              <h4 className="mb-2 flex justify-center font-semibold">
                 Need urgent assistance?
               </h4>
-              <p className="text-sm mb-4 flex justify-center">
+              <p className="mb-4 flex justify-center text-sm">
                 Match with a client or urgent case immediately.
               </p>
               <div className="flex justify-center">
-                <button className="w-40 bg-white text-blue-600 px-4 py-2 rounded-xl text-sm font-medium hover:bg-gray-200">
+                <button className="w-40 rounded-xl bg-white px-4 py-2 text-sm font-medium text-blue-600 hover:bg-gray-200">
                   Quick Match
                 </button>
               </div>
@@ -266,11 +418,9 @@ const LawyerDashboard = () => {
   );
 };
 
-/* ================= REUSABLE COMPONENTS ================= */
-
 const StatCard = ({ title, value, sub, icon }) => (
-  <div className="bg-white rounded-xl p-4 shadow-sm">
-    <div className="flex justify-between items-center mb-2">
+  <div className="rounded-xl bg-white p-4 shadow-sm">
+    <div className="mb-2 flex items-center justify-between">
       <p className="text-sm text-gray-600">{title}</p>
       {icon && <span className="text-blue-600">{icon}</span>}
     </div>
@@ -280,34 +430,35 @@ const StatCard = ({ title, value, sub, icon }) => (
 );
 
 const Card = ({ title, badge, action, right, children }) => (
-  <div className="bg-white rounded-xl shadow-sm p-4">
-    <div className="flex justify-between items-center mb-4">
+  <div className="rounded-xl bg-white p-4 shadow-sm">
+    <div className="mb-4 flex items-center justify-between gap-3">
       <h3 className="font-semibold">{title}</h3>
       {badge && (
-        <span className="text-xs bg-blue-100 text-blue-600 px-3 py-1 rounded-full">
+        <span className="rounded-full bg-blue-100 px-3 py-1 text-xs text-blue-600">
           {badge}
         </span>
       )}
       {action && <span className="text-sm text-blue-600">{action}</span>}
-      {right && <span className="text-sm text-gray-500">{right}</span>}
+      {right &&
+        (typeof right === "string" ? (
+          <span className="text-sm text-gray-500">{right}</span>
+        ) : (
+          right
+        ))}
     </div>
     {children}
   </div>
 );
 
-const ScheduleItem = ({ time, title, sub, active, purple, done }) => (
+const ScheduleItem = ({ time, title, sub, status }) => (
   <div
-    className={`flex gap-4 py-3 pl-4 border-l-4 ${
-      active
-        ? "border-blue-600 bg-blue-50"
-        : purple
-        ? "border-purple-500 bg-purple-50"
-        : done
-        ? "border-green-500"
-        : "border-gray-200"
+    className={`flex gap-4 border-l-4 py-3 pl-4 ${
+      status === "booked"
+        ? "border-red-400 bg-red-50"
+        : "border-green-500 bg-green-50"
     }`}
   >
-    <span className="text-sm text-gray-500 w-20">{time}</span>
+    <span className="w-20 text-sm text-gray-500">{time}</span>
     <div>
       <p className="font-medium">{title}</p>
       {sub && <p className="text-xs text-gray-500">{sub}</p>}
@@ -315,17 +466,24 @@ const ScheduleItem = ({ time, title, sub, active, purple, done }) => (
   </div>
 );
 
-const RequestItem = ({ name, type }) => (
-  <div className="flex justify-between items-center mb-4">
+const RequestItem = ({ name, type, date, timeSlot, status }) => (
+  <div className="mb-4 flex items-center justify-between">
     <div>
       <p className="font-medium">{name}</p>
       <p className="text-xs text-gray-500">{type}</p>
+      <p className="text-xs text-gray-400">
+        {new Date(date).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })}{" "}
+        at {timeSlot}
+      </p>
     </div>
     <div className="flex gap-2">
-      <button className="border px-3 py-1 rounded-lg text-xs">Decline</button>
-      <button className="bg-blue-600 text-white px-3 py-1 rounded-lg text-xs">
-        Accept
-      </button>
+      <span className="rounded-lg bg-yellow-100 px-3 py-1 text-xs text-yellow-700">
+        {status}
+      </span>
     </div>
   </div>
 );
