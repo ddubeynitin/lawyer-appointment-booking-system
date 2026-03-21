@@ -7,18 +7,28 @@ import {
   FaBalanceScale,
   FaGavel,
   FaHome,
+  FaPowerOff,
 } from "react-icons/fa";
-import { use, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import useFetch from "../hooks/useFetch";
 import { API_URL } from "../utils/api";
 import { BsStars } from "react-icons/bs";
 import CountUp from "react-countup";
-import { MdAttachFile, MdSend, MdOutlineFilePresent, MdCancel } from "react-icons/md";
+import {
+  MdAttachFile,
+  MdSend,
+  MdOutlineFilePresent,
+  MdCancel,
+} from "react-icons/md";
+import { TfiMenuAlt } from "react-icons/tfi";
+import { useAuth } from "../context/AuthContext";
+
 /* ================= FULL LANDING PAGE ================= */
 const Home = () => {
   const { data, loading, error } = useFetch(`${API_URL}/lawyers/featured`);
   const [featuredLawyers, setFeaturedLawyers] = useState([]);
-
+  const [isMenuVisible, setIsMenuVisible] = useState(false);
+  const { user, logout } = useAuth();
   const typewriterPhrases = [
     "Find your legal match in seconds",
     "Expert legal advice at your fingertips",
@@ -79,11 +89,7 @@ const Home = () => {
     if (fileInputRef.current) fileInputRef.current.value = null;
   };
 
-  const {
-    data: statsData,
-    loading: statsLoading,
-    error: statsError,
-  } = useFetch(`${API_URL}/stats`);
+  const { data: statsData } = useFetch(`${API_URL}/stats`);
   const [stats, setStats] = useState({});
 
   useEffect(() => {
@@ -91,8 +97,6 @@ const Home = () => {
       setStats(statsData);
     }
   }, [statsData]);
-
-
 
   const createStarRain = () =>
     Array.from({ length: STAR_COUNT }).map(() => ({
@@ -195,7 +199,7 @@ const Home = () => {
 
   useEffect(() => {
     getFeaturedLawyers();
-  },[ loading, error, data]);
+  }, [loading, error, data]);
 
   useEffect(() => {
     if (messagesRef.current) {
@@ -203,6 +207,13 @@ const Home = () => {
     }
   }, [chatMessages]);
 
+  const showMenu = () => {
+    setIsMenuVisible((current) => !current);
+  };
+
+  const handleLogout = () => {
+    logout();
+  };
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-50 via-white to-slate-100 text-slate-800 font-barlow">
       <div className="fixed bottom-5 right-5 z-50">
@@ -221,6 +232,45 @@ const Home = () => {
       {/* ================= HEADER ================= */}
       <header className="sticky top-0 z-50 backdrop-blur-md bg-white/80 border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div onClick={showMenu} className="sm:hidden">
+            <TfiMenuAlt />
+            {isMenuVisible && (
+              <div className="absolute top-17 left-0 w-50 rounded-br-2xl rounded-tr-2xl bg-white pt-5 pb-5">
+                {/* Navigation */}
+                <nav className="flex flex-col md:hidden items-center gap-8 text-sm font-medium text-slate-600">
+                  <Link
+                    to="/client/lawyer-list"
+                    className="hover:text-blue-600 transition flex items-center gap-2"
+                  >
+                    <FaSearch /> Find Lawyer
+                  </Link>
+                  {user ? (
+                    <Link
+                      to={
+                        user.role == "lawyer"
+                          ? "/lawyer/lawyer-dashboard"
+                          : "/client/client-dashboard"
+                      }
+                      className="hover:text-blue-600 transition"
+                    >
+                      Your Dashboard
+                    </Link>
+                  ) : (
+                    ""
+                  )}
+                  <Link to="/about" className="hover:text-blue-600 transition">
+                    About
+                  </Link>
+                  <Link
+                    to="/contact"
+                    className="hover:text-blue-600 transition"
+                  >
+                    Contact Us
+                  </Link>
+                </nav>
+              </div>
+            )}
+          </div>
           {/* Logo */}
           <div className="flex items-center gap-2 font-bold text-xl font-barlow ">
             <FaBalanceScale />
@@ -236,18 +286,30 @@ const Home = () => {
             >
               <FaSearch /> Find Lawyer
             </Link>
-            <Link
-              to="/specializations"
-              className="hover:text-blue-600 transition"
-            >
-              Specializations
-            </Link>
-            <Link
-              to="/auth/register"
-              className="hover:text-blue-600 transition"
-            >
-              Join as Lawyer
-            </Link>
+            {user ? (
+              <Link
+                to={
+                  user.role == "lawyer"
+                    ? "/lawyer/lawyer-dashboard"
+                    : "/client/client-dashboard"
+                }
+                className="hover:text-blue-600 transition"
+              >
+                Your Dashboard
+              </Link>
+            ) : (
+              ""
+            )}
+            {user ? (
+              ""
+            ) : (
+              <Link
+                to="/auth/register"
+                className="hover:text-blue-600 transition"
+              >
+                Join as Lawyer
+              </Link>
+            )}
             <Link to="/about" className="hover:text-blue-600 transition">
               About
             </Link>
@@ -256,21 +318,59 @@ const Home = () => {
             </Link>
           </nav>
 
-          {/* CTA Buttons */}
-          <div className="flex items-center gap-3">
-            <Link
-              to="/auth/login"
-              className="px-4 py-2 rounded-xl text-sm font-medium border border-slate-300 hover:bg-slate-100 transition"
-            >
-              Login
-            </Link>
-            <Link
-              to="/auth/register"
-              className="px-5 py-2 rounded-xl text-sm font-medium text-white bg-linear-to-r from-blue-600 to-indigo-600 shadow-md hover:shadow-lg hover:scale-105 transition"
-            >
-              Get Started
-            </Link>
-          </div>
+          {user ? (
+            user.profileImage?.url || user.profilePicture ? (
+              <>
+                <div className=" w-40 flex justify-center items-center gap-5 ">
+                  <button
+                    onClick={handleLogout}
+                    className="border flex gap-2 justify-center items-center px-2 py-1 rounded-lg bg-linear-to-r from-blue-600 to-indigo-600 text-white"
+                  >
+                    {" "}
+                    <FaPowerOff /> Logout
+                  </button>
+                  <img
+                    src={user.profileImage?.url || user.profilePicture}
+                    alt={user.name || "User profile"}
+                    className="h-11 w-11 rounded-full object-cover ring-2 ring-blue-500"
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                <div className=" w-40 flex justify-center items-center gap-5 ">
+                  <button
+                    onClick={handleLogout}
+                    className="border flex gap-2 justify-center items-center px-2 py-1 rounded-lg bg-linear-to-r from-blue-600 to-indigo-600 text-white"
+                  >
+                    {" "}
+                    <FaPowerOff /> Logout
+                  </button>
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-100 font-semibold uppercase text-blue-600 ring-2 ring-blue-500">
+                    {user.name?.charAt(0) || "U"}
+                  </div>
+                </div>
+              </>
+            )
+          ) : (
+            <>
+              {/* CTA Buttons */}
+              <div className="flex items-center gap-3">
+                <Link
+                  to="/auth/login"
+                  className="px-4 py-2 rounded-xl text-sm font-medium border border-slate-300 hover:bg-slate-100 transition"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/auth/register"
+                  className="px-5 py-2 rounded-xl text-sm font-medium text-white bg-linear-to-r from-blue-600 to-indigo-600 shadow-md hover:shadow-lg hover:scale-105 transition"
+                >
+                  Get Started
+                </Link>
+              </div>
+            </>
+          )}
         </div>
       </header>
 
@@ -478,9 +578,9 @@ const Home = () => {
           </h2>
 
           <div className="grid md:grid-cols-3 gap-8">
-            <Testimonial name="Sarah Jenkins" />
-            <Testimonial name="Robert Chen" />
-            <Testimonial name="David Thompson" />
+            <Testimonial name="Aditya Singh" />
+            <Testimonial name="Vinit Sahu" />
+            <Testimonial name="Gaurav Malhotra" />
           </div>
         </div>
       </section>
@@ -517,7 +617,7 @@ const Home = () => {
         </p>
         <div className="flex justify-center gap-4">
           <Link
-            to="/auth/register"
+            to="/client/lawyer-list"
             className="px-6 py-3 bg-white text-blue-600 font-semibold rounded-xl hover:scale-105 transition"
           >
             Find a Lawyer
@@ -578,7 +678,6 @@ const Home = () => {
           className="fixed inset-0 z-50 bg-black/70"
         >
           <div className="fixed bottom-0 right-0 lg:bottom-4 lg:right-4 lg:h-[90vh] h-150 lg:w-120 w-full bg-white border border-slate-200 rounded-t-lg lg:rounded-lg shadow-xl overflow-hidden">
-            
             <div className="flex items-center justify-between bg-blue-600 px-4 py-3">
               <h3 className="text-sm font-semibold text-white">Chat with AI</h3>
               <button
@@ -586,10 +685,13 @@ const Home = () => {
                 className="text-white lg:text-3xl text-lg leading-none hover:text-slate-200"
                 aria-label="Close chat"
               >
-              <MdCancel/>
+                <MdCancel />
               </button>
             </div>
-            <div ref={messagesRef} className="lg:h-125 h-105 overflow-y-auto px-4 py-3 space-y-3 bg-slate-50">
+            <div
+              ref={messagesRef}
+              className="lg:h-125 h-105 overflow-y-auto px-4 py-3 space-y-3 bg-slate-50"
+            >
               {chatMessages.map((msg) => (
                 <div
                   key={msg.id}
@@ -608,14 +710,16 @@ const Home = () => {
               ))}
             </div>
             <div className="border-t border-slate-200 bg-white p-3">
-                <div className="absolute bottom-0 flex items-center gap-2 mb-2 text-sm text-black bg-blue-500/30 px-3 py-2 rounded-lg">
-              {attachedFile ? (
-                <>
-                  <MdOutlineFilePresent />
-                  <span>{attachedFile.name}</span>
-                </>
-                ):"Upload PDF or image of case document to get best recommendations!"}
-                </div>
+              <div className="absolute bottom-0 flex items-center gap-2 mb-2 text-sm text-black bg-blue-500/30 px-3 py-2 rounded-lg">
+                {attachedFile ? (
+                  <>
+                    <MdOutlineFilePresent />
+                    <span>{attachedFile.name}</span>
+                  </>
+                ) : (
+                  "Upload PDF or image of case document to get best recommendations!"
+                )}
+              </div>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -680,33 +784,41 @@ const SpecCard = ({ title }) => (
   </div>
 );
 
-const LawyerCard = ({ name, specialization, rating, photo }) => (
-  <div className="bg-white rounded-2xl shadow-md border border-slate-100 hover:shadow-2xl hover:scale-105 transition-transform duration-300 overflow-hidden">
-    {/* Lawyer Photo */}
-    <div className="h-80 w-full overflow-hidden">
-      <img
-        src={photo}
-        alt={name}
-        className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
-      />
-    </div>
+const LawyerCard = ({ name, specialization, rating, photo }) => {
+  const numericRating = Number(rating) || 0;
+  const starCount = Math.max(0, Math.min(5, Math.round(numericRating)));
 
-    <div className="p-6 text-center">
-      {/* Name */}
-      <h4 className="font-semibold text-lg mb-1">{name}</h4>
+  return (
+    <div className="bg-white rounded-2xl shadow-md border border-slate-100 hover:shadow-2xl hover:scale-105 transition-transform duration-300 overflow-hidden">
+      {/* Lawyer Photo */}
+      <div className="h-80 w-full overflow-hidden">
+        <img
+          src={photo}
+          alt={name}
+          className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+        />
+      </div>
 
-      {/* Specialization */}
-      <p className="text-sm text-slate-500 mb-1">{specialization}</p>
+      <div className="p-6 text-center">
+        {/* Name */}
+        <h4 className="font-semibold text-lg mb-1">{name}</h4>
 
-      {/* Rating */}
-      <div className="flex justify-center gap-1 text-yellow-400">
-        {[...Array(rating)].map((_, i) => (
-          <FaStar key={i} />
-        ))}
+        {/* Specialization */}
+        <p className="text-sm text-slate-500 mb-1">{specialization}</p>
+
+        {/* Rating */}
+        <div className="flex justify-center gap-1 text-yellow-400">
+          {Array.from({ length: starCount }).map((_, i) => (
+            <FaStar key={i} />
+          ))}
+        </div>
+        <p className="mt-2 text-sm text-slate-500">
+          {numericRating.toFixed(1)} / 5
+        </p>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const FeatureCard = ({ icon, title, desc }) => (
   <div className="bg-white p-8 rounded-2xl shadow-md hover:shadow-xl transition border border-slate-100 text-center">
@@ -735,7 +847,7 @@ const Testimonial = ({ name }) => (
       ))}
     </div>
     <p className="text-sm text-slate-500 mb-4">
-      “LexLink made the entire process seamless and professional.”
+      “JustifAi made the entire process seamless and professional.”
     </p>
     <p className="font-semibold text-center">{name}</p>
   </div>

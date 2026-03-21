@@ -13,26 +13,27 @@ import {
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import useFetch from "../../hooks/useFetch";
-import {API_URL} from "../../utils/api";
+import { API_URL } from "../../utils/api";
 import LoadingFallback from "../../components/LoadingFallback";
-import { FaBalanceScale , FaSearch } from "react-icons/fa";
+import { FaBalanceScale, FaSearch } from "react-icons/fa";
+import { useAuth } from "../../context/AuthContext";
 
 const LawyerProfile = () => {
-  const { id } = useParams(); 
+  const { id } = useParams();
   const { data, loading, error } = useFetch(`${API_URL}/lawyers/${id}`);
+  const {
+    data: reviews = [],
+    loading: reviewsLoading,
+    error: reviewsError,
+  } = useFetch(`${API_URL}/reviews/lawyer/${id}`);
   const [lawyerProfileData, setLawyerProfileData] = useState(null);
+  const { user } = useAuth();
 
-  console.log(data);
-  console.log(loading);
-  console.log(error);
-  
-  
   React.useEffect(() => {
     if (data) {
       setLawyerProfileData(data);
     }
   }, [data]);
- 
 
   if (loading) {
     return <LoadingFallback />;
@@ -41,7 +42,9 @@ const LawyerProfile = () => {
   if (error) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p className="text-red-500 text-lg">Error loading lawyer profile: {error}</p>
+        <p className="text-red-500 text-lg">
+          Error loading lawyer profile: {error}
+        </p>
       </div>
     );
   }
@@ -61,9 +64,11 @@ const LawyerProfile = () => {
           {/* Logo */}
           <div className="flex items-center gap-2 font-bold text-xl font-barlow ">
             <FaBalanceScale />
-            <span className="tracking-wide">
-              Justif<span className="text-blue-500">Ai</span>{" "}
-            </span>
+            <Link to="/">
+              <span className="tracking-wide">
+                Justif<span className="text-blue-500">Ai</span>{" "}
+              </span>
+            </Link>
           </div>
           {/* Navigation */}
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
@@ -73,18 +78,20 @@ const LawyerProfile = () => {
             >
               <FaSearch /> Find Lawyer
             </Link>
+            {user ?
             <Link
-              to="/specializations"
-              className="hover:text-blue-600 transition"
+            to={user.role == 'lawyer' ? '/lawyer/lawyer-dashboard':'/client/client-dashboard'}
+            className="hover:text-blue-600 transition"
             >
-              Specializations
+              Your Dashboard
             </Link>
-            <Link
+            : "" }
+            {/* <Link
               to="/auth/register"
               className="hover:text-blue-600 transition"
             >
               Join as Lawyer
-            </Link>
+            </Link> */}
             <Link to="/about" className="hover:text-blue-600 transition">
               About
             </Link>
@@ -95,61 +102,99 @@ const LawyerProfile = () => {
 
           {/* CTA Buttons */}
           <div className="flex items-center gap-3">
-            <Link
-              to="/auth/login"
-              className="px-4 py-2 rounded-xl text-sm font-medium border border-slate-300 hover:bg-slate-100 transition"
-            >
-              Login
-            </Link>
-            <Link
-              to="/auth/register"
-              className="px-5 py-2 rounded-xl text-sm font-medium text-white bg-linear-to-r from-blue-600 to-indigo-600 shadow-md hover:shadow-lg hover:scale-105 transition"
-            >
-              Get Started
-            </Link>
+            {user ? (
+              <div className="flex items-center gap-3">
+                {user.profileImage?.url || user.profilePicture ? (
+                  <img
+                    src={user.profileImage?.url || user.profilePicture}
+                    alt={user.name || "User profile"}
+                    className="w-11 h-11 rounded-full object-cover ring-2 ring-blue-500"
+                  />
+                ) : (
+                  <div className="w-11 h-11 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-semibold uppercase ring-2 ring-blue-500">
+                    {user.name?.charAt(0) || "U"}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                <Link
+                  to="/auth/login"
+                  className="px-4 py-2 rounded-xl text-sm font-medium border border-slate-300 hover:bg-slate-100 transition"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/auth/register"
+                  className="px-5 py-2 rounded-xl text-sm font-medium text-white bg-linear-to-r from-blue-600 to-indigo-600 shadow-md hover:shadow-lg hover:scale-105 transition"
+                >
+                  Sign Up
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>
 
       {/* Container */}
       <div className="max-w-7xl mx-auto px-6 pt-10">
-
         {/* ===== TOP SECTION ===== */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
           {/* LEFT SIDE */}
           <div className="lg:col-span-2 space-y-8">
-
             {/* Profile Card */}
             <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-8 hover:shadow-xl transition">
-
               <div className="flex flex-col md:flex-row gap-8">
-                
                 <img
-                  src={lawyerProfileData.profileImage?.url || "https://randomuser.me/api/portraits/women/44.jpg"}
+                  src={
+                    lawyerProfileData.profileImage?.url ||
+                    "https://randomuser.me/api/portraits/women/44.jpg"
+                  }
                   alt="Lawyer"
                   className="w-40 h-40 rounded-xl object-cover shadow-md"
                 />
 
                 <div className="flex flex-col justify-between items-start">
                   <h1 className=" text-3xl font-bold text-slate-800 uppercase">
-                    
                     {lawyerProfileData.name}
                   </h1>
 
                   <div className="flex items-center gap-3 mt-2">
                     <span className="text-blue-600 font-medium">
-                      {lawyerProfileData.experience ? `${lawyerProfileData.experience} Years Experience` : "Experience not specified"}
+                      {lawyerProfileData.experience
+                        ? `${lawyerProfileData.experience} Years Experience`
+                        : "Experience not specified"}
                     </span>
-                    <span className="flex items-center text-green-600 text-sm font-medium bg-green-100 px-3 py-1 rounded-full">
-                      <CheckCircle size={16} className="mr-1" />
-                      {lawyerProfileData.verification === "Approved" ? "Verified" : "Pending Verification"}
-                    </span>
+                    {user ? (
+                      user.role == "lawyer" ? (
+                        <span className="flex items-center text-green-600 text-sm font-medium bg-green-100 px-3 py-1 rounded-full">
+                          <CheckCircle size={16} className="mr-1" />
+                          {lawyerProfileData.verification === "Approved"
+                            ? "Verified"
+                            : "Pending Verification"}
+                        </span>
+                      ) : (
+                        <span>
+                          {lawyerProfileData.verification === "Approved" ? (
+                            <span className="flex items-center text-green-600 text-sm font-medium bg-green-100 px-3 py-1 rounded-full">
+                              <CheckCircle size={16} className="mr-1" />
+                              Verified
+                            </span>
+                          ) : (
+                            ""
+                          )}
+                        </span>
+                      )
+                    ) : (
+                      ""
+                    )}
                   </div>
 
                   <div className="flex flex-wrap gap-6 mt-4 text-sm text-slate-600">
                     <div className="flex items-center gap-1">
-                      <MapPin size={16} /> {lawyerProfileData.location?.city || "Location not specified"}
+                      <MapPin size={16} />{" "}
+                      {lawyerProfileData.location?.city ||
+                        "Location not specified"}
                     </div>
                     <div className="flex items-center gap-1">
                       <Globe size={16} /> English
@@ -186,7 +231,8 @@ const LawyerProfile = () => {
                 Specializations
               </h2>
               <div className="flex flex-wrap gap-3">
-                {lawyerProfileData.specializations && lawyerProfileData.specializations.length > 0 ? (
+                {lawyerProfileData.specializations &&
+                lawyerProfileData.specializations.length > 0 ? (
                   lawyerProfileData.specializations.map((item, index) => (
                     <span
                       key={index}
@@ -196,7 +242,9 @@ const LawyerProfile = () => {
                     </span>
                   ))
                 ) : (
-                  <span className="text-slate-500">No specializations listed</span>
+                  <span className="text-slate-500">
+                    No specializations listed
+                  </span>
                 )}
               </div>
             </div>
@@ -207,9 +255,13 @@ const LawyerProfile = () => {
                 Education & Credentials
               </h2>
 
-              {lawyerProfileData.education && lawyerProfileData.education.length > 0 ? (
+              {lawyerProfileData.education &&
+              lawyerProfileData.education.length > 0 ? (
                 lawyerProfileData.education.map((edu, index) => (
-                  <div key={index} className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl">
+                  <div
+                    key={index}
+                    className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl"
+                  >
                     <GraduationCap className="text-blue-600" />
                     <div>
                       <p className="font-medium">{edu.university}</p>
@@ -244,62 +296,72 @@ const LawyerProfile = () => {
                   <div>
                     <p className="font-medium">Rating</p>
                     <p className="text-sm text-slate-500">
-                      {lawyerProfileData.rating} stars ({lawyerProfileData.totalReviews} reviews)
+                      {lawyerProfileData.rating} stars (
+                      {lawyerProfileData.totalReviews} reviews)
                     </p>
                   </div>
                 </div>
               )}
             </div>
-
           </div>
 
           {/* RIGHT SIDE - BOOKING CARD */}
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 h-fit sticky top-8">
+          {user.role != "lawyer" ? (
+            <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 h-fit sticky top-8">
+              <h2 className="text-lg font-semibold text-slate-800 mb-4">
+                Book an Appointment
+              </h2>
 
-            <h2 className="text-lg font-semibold text-slate-800 mb-4">
-              Book an Appointment
-            </h2>
-
-            <div className="bg-blue-50 p-4 rounded-xl mb-6 border border-blue-100">
-              <p className="text-blue-600 font-medium flex items-center gap-2">
-                <Calendar size={18} /> Next Available Slot
-              </p>
-              <p className="text-slate-700 mt-2 font-medium">
-                Tomorrow at 10:00 AM
-              </p>
-              <p className="text-sm text-slate-500">
-                Pacific Standard Time (PST)
-              </p>
-            </div>
-
-            <div className="space-y-3 text-sm text-slate-600 mb-6">
-              <div className="flex justify-between">
-                <span>Consultation Fee</span>
-                <span className="font-medium text-slate-800">
-                  ${lawyerProfileData.feesByCategory && lawyerProfileData.feesByCategory.length > 0 ? lawyerProfileData.feesByCategory[0].fee : "N/A"} / 30 min
-                </span>
+              <div className="bg-blue-50 p-4 rounded-xl mb-6 border border-blue-100">
+                <p className="text-blue-600 font-medium flex items-center gap-2">
+                  <Calendar size={18} /> Next Available Slot
+                </p>
+                <p className="text-slate-700 mt-2 font-medium">
+                  Tomorrow at 10:00 AM
+                </p>
+                <p className="text-sm text-slate-500">
+                  Pacific Standard Time (PST)
+                </p>
               </div>
-              <div className="flex justify-between">
-                <span>Location</span>
-                <span className="font-medium text-slate-800">
-                  Video Call / Office
-                </span>
+
+              <div className="space-y-3 text-sm text-slate-600 mb-6">
+                <div className="flex justify-between">
+                  <span>Consultation Fee</span>
+                  <span className="font-medium text-slate-800">
+                    $
+                    {lawyerProfileData.feesByCategory &&
+                    lawyerProfileData.feesByCategory.length > 0
+                      ? lawyerProfileData.feesByCategory[0].fee
+                      : "N/A"}{" "}
+                    / 30 min
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Location</span>
+                  <span className="font-medium text-slate-800">
+                    Video Call / Office
+                  </span>
+                </div>
+              </div>
+
+              <button className="w-full bg-linear-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-xl font-medium shadow-md hover:shadow-lg hover:scale-[1.02] transition">
+                Book Now
+              </button>
+
+              <button className="w-full mt-3 border border-slate-300 py-3 rounded-xl font-medium hover:bg-slate-50 transition">
+                View Full Calendar
+              </button>
+
+              <div className="bg-green-50 border border-green-200 text-green-700 text-sm p-3 rounded-xl mt-6 flex items-center gap-2">
+                <ShieldCheck size={16} />
+                {lawyerProfileData.verification === "Approved"
+                  ? "Identity Verified"
+                  : "Verification Pending"}
               </div>
             </div>
-
-            <button className="w-full bg-linear-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-xl font-medium shadow-md hover:shadow-lg hover:scale-[1.02] transition">
-              Book Now
-            </button>
-
-            <button className="w-full mt-3 border border-slate-300 py-3 rounded-xl font-medium hover:bg-slate-50 transition">
-              View Full Calendar
-            </button>
-
-            <div className="bg-green-50 border border-green-200 text-green-700 text-sm p-3 rounded-xl mt-6 flex items-center gap-2">
-              <ShieldCheck size={16} />
-              {lawyerProfileData.verification === "Approved" ? "Identity Verified" : "Verification Pending"}
-            </div>
-          </div>
+          ) : (
+            ""
+          )}
         </div>
 
         {/* ===== REVIEWS SECTION ===== */}
@@ -310,17 +372,67 @@ const LawyerProfile = () => {
             </h2>
             <div className="flex items-center gap-2 text-yellow-500 font-medium">
               <Star size={18} fill="currentColor" />
-              {lawyerProfileData.rating || 0} ({lawyerProfileData.totalReviews || 0} reviews)
+              {lawyerProfileData.rating || 0} (
+              {lawyerProfileData.totalReviews || 0} reviews)
             </div>
           </div>
 
           <div className="border-t pt-6">
-            <p className="text-slate-600 italic">
-              Reviews functionality to be implemented.
-            </p>
+            {reviewsLoading ? (
+              <p className="text-slate-600 italic">Loading reviews...</p>
+            ) : reviewsError ? (
+              <p className="text-red-500 italic">
+                Unable to load reviews right now.
+              </p>
+            ) : reviews.length > 0 ? (
+              <div className="space-y-4">
+                {reviews.map((review) => (
+                  <div
+                    key={review._id}
+                    className="rounded-xl border border-slate-200 bg-slate-50 p-5"
+                  >
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <p className="font-semibold text-slate-800">
+                          {review.userId?.name || "Client"}
+                        </p>
+                        <div className="mt-2 flex items-center gap-1 text-yellow-500">
+                          {Array.from({ length: 5 }).map((_, index) => (
+                            <Star
+                              key={index}
+                              size={16}
+                              fill={
+                                index < review.rating ? "currentColor" : "none"
+                              }
+                            />
+                          ))}
+                          <span className="ml-2 text-sm font-medium text-slate-600">
+                            {review.rating}/5
+                          </span>
+                        </div>
+                      </div>
+                      <p className="text-sm text-slate-500">
+                        {new Date(review.createdAt).toLocaleDateString(
+                          "en-US",
+                          {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          },
+                        )}
+                      </p>
+                    </div>
+                    <p className="mt-3 text-slate-600">
+                      {review.comment || "No written comment provided."}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-slate-600 italic">No reviews available yet.</p>
+            )}
           </div>
         </div>
-
       </div>
     </div>
   );
