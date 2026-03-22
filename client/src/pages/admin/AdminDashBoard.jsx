@@ -22,45 +22,8 @@ import LawyerAppointments from "../../components/LawyerAppointments";
 import Reports from "../../components/Reports";
 import SettingsPage from "../../components/Settings";
 
-const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
-
-const normalizeBaseUrl = (url = "") => url.trim().replace(/\/+$/, "");
-
-const API_BASE_CANDIDATES = Array.from(
-  new Set(
-    [
-      normalizeBaseUrl(VITE_API_BASE_URL),
-      normalizeBaseUrl(window.location.origin),
-      "http://localhost:3000",
-      "http://127.0.0.1:3000",
-      "http://localhost:5000",
-      "http://127.0.0.1:5000",
-    ].filter(Boolean),
-  ),
-);
-
-const requestWithFallback = async (method, path, payload) => {
-  let lastError;
-
-  for (const baseUrl of API_BASE_CANDIDATES) {
-    try {
-      const response = await axios({
-        method,
-        url: `${baseUrl}${path}`,
-        data: payload,
-      });
-      return response;
-    } catch (error) {
-      lastError = error;
-      const isNetworkError = !error?.response;
-      if (!isNetworkError) {
-        throw error;
-      }
-    }
-  }
-
-  throw lastError;
-};
+// Server URL - direct server routes use kar rahe hain
+const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 export default function Dashboard() {
   const [activeMenu, setActiveMenu] = useState("overview");
@@ -103,6 +66,7 @@ export default function Dashboard() {
     action: null,
   });
   const [AllLawyers, setAllLawyers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const pendingVerificationCount = Array.isArray(AllLawyers)
     ? AllLawyers.filter((lawyer) => lawyer?.verification !== "Approved").length
@@ -140,9 +104,10 @@ export default function Dashboard() {
     setActiveMenu(menuId);
     setIsSidebarOpen(false);
   };
+
   const fetchUsers = async () => {
     try {
-      const response = await requestWithFallback("get", "/api/users");
+      const response = await axios.get(`${API_URL}/api/users`);
       setUsers(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error("Failed to fetch users:", error);
@@ -152,7 +117,7 @@ export default function Dashboard() {
 
   const fetchLawyers = async () => {
     try {
-      const res = await requestWithFallback("get", "/api/lawyers");
+      const res = await axios.get(`${API_URL}/api/lawyers`);
       const lawyerList = Array.isArray(res.data) ? res.data : [];
       setAllLawyers(lawyerList);
       setLawyers(lawyerList);
@@ -162,12 +127,17 @@ export default function Dashboard() {
       setLawyers([]);
     }
   };
-
   useEffect(() => {
-    fetchLawyers();
-    fetchUsers();
+    setLoading(true);
+    const loadData = async () => {
+      try {
+        await Promise.all([fetchLawyers(), fetchUsers()]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
   }, []);
-
   useEffect(() => {
     if (activeMenu === "users") {
       fetchUsers();
@@ -206,7 +176,7 @@ export default function Dashboard() {
     }
 
     try {
-      const response = await requestWithFallback("post", "/api/auth/register", {
+      const response = await axios.post(`${API_URL}/api/auth/register`, {
         name: userName,
         email: userEmail,
         phone: userPhone,
@@ -271,7 +241,7 @@ export default function Dashboard() {
     }
 
     try {
-      const response = await requestWithFallback("post", "/api/auth/register", {
+      const response = await axios.post(`${API_URL}/api/auth/register`, {
         name: lawyerName,
         email: lawyerEmail,
         phone: lawyerPhone,
@@ -350,10 +320,13 @@ export default function Dashboard() {
           formData.append("bio", lawyerDescription.trim());
         }
 
-        await requestWithFallback(
-          "patch",
-          `/api/lawyers/complete-profile/${createdLawyerId}`,
+        // Complete profile with image upload - server route
+        await axios.patch(
+          `${API_URL}/api/lawyers/complete-profile/${createdLawyerId}`,
           formData,
+          {
+            headers: { "Content-Type": "multipart/form-data" },
+          },
         );
       }
 
@@ -391,7 +364,7 @@ export default function Dashboard() {
     }
 
     try {
-      await requestWithFallback("delete", `/api/users/${userId}`);
+      await axios.delete(`${API_URL}/api/users/${userId}`);
       await fetchUsers();
       alert("User deleted successfully");
     } catch (error) {
@@ -411,7 +384,7 @@ export default function Dashboard() {
     }
 
     try {
-      await requestWithFallback("put", `/api/users/${userId}`, {
+      await axios.put(`${API_URL}/api/users/${userId}`, {
         isActive: false,
       });
       await fetchUsers();
@@ -440,13 +413,9 @@ export default function Dashboard() {
 
     setVerificationLoading({ id: lawyerId, action: "approve" });
     try {
-      await requestWithFallback(
-        "put",
-        `/api/lawyers/update-lawyer/${lawyerId}`,
-        {
-          verification: "Approved",
-        },
-      );
+      await axios.put(`${API_URL}/api/lawyers/update-lawyer/${lawyerId}`, {
+        verification: "Approved",
+      });
       setAllLawyers((prev) =>
         prev.map((lawyer) =>
           lawyer._id === lawyerId
@@ -482,10 +451,7 @@ export default function Dashboard() {
 
     setVerificationLoading({ id: lawyerId, action: "reject" });
     try {
-      await requestWithFallback(
-        "delete",
-        `/api/lawyers/delete-lawyer/${lawyerId}`,
-      );
+      await axios.delete(`${API_URL}/api/lawyers/delete-lawyer/${lawyerId}`);
       setAllLawyers((prev) => prev.filter((lawyer) => lawyer._id !== lawyerId));
       setLawyers((prev) => prev.filter((lawyer) => lawyer._id !== lawyerId));
       alert("Lawyer rejected successfully");
@@ -500,6 +466,14 @@ export default function Dashboard() {
       setVerificationLoading({ id: null, action: null });
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#F7F9FC]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen flex-col bg-[#F7F9FC] font-sans lg:flex-row overflow-auto lg:overflow-hidden">
@@ -658,7 +632,8 @@ export default function Dashboard() {
                       })
                     }
                     className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all ${
-                      activeMenu === "user-appointments" || activeMenu === "lawyer-appointments"
+                      activeMenu === "user-appointments" ||
+                      activeMenu === "lawyer-appointments"
                         ? "bg-blue-50 text-blue-600 font-medium"
                         : "text-gray-600 hover:bg-gray-100"
                     }`}

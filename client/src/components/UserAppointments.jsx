@@ -2,45 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { CalendarDays, Search, RefreshCw, CheckCircle, XCircle, Clock, AlertCircle } from "lucide-react";
 
-const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
-
-const normalizeBaseUrl = (url = "") => url.trim().replace(/\/+$/, "");
-
-const API_BASE_CANDIDATES = Array.from(
-  new Set(
-    [
-      normalizeBaseUrl(VITE_API_BASE_URL),
-      normalizeBaseUrl(window.location.origin),
-      "http://localhost:3000",
-      "http://127.0.0.1:3000",
-      "http://localhost:5000",
-      "http://127.0.0.1:5000",
-    ].filter(Boolean),
-  ),
-);
-
-const requestWithFallback = async (method, path, payload) => {
-  let lastError;
-
-  for (const baseUrl of API_BASE_CANDIDATES) {
-    try {
-      const response = await axios({
-        method,
-        url: `${baseUrl}${path}`,
-        data: payload,
-      });
-      return response;
-    } catch (error) {
-      lastError = error;
-      const isNetworkError = !error?.response;
-      if (!isNetworkError) {
-        throw error;
-      }
-    }
-  }
-
-  throw lastError;
-};
+const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 export default function UserAppointments() {
   const [appointments, setAppointments] = useState([]);
@@ -53,19 +15,19 @@ export default function UserAppointments() {
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchAppointments = async (isRefresh = false) => {
-    if (isRefresh) {
-      setRefreshing(true);
-    } else {
-      setLoading(true);
-    }
+    if (isRefresh) setRefreshing(true);
+    else setLoading(true);
     setError(null);
     
     try {
-      const response = await requestWithFallback("get", "/api/appointments");
+      const response = await axios.get(`${API_URL}/api/appointments`, { timeout: 10000 });
       setAppointments(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
-      console.error("Failed to fetch appointments:", err);
-      setError(err?.response?.data?.message || err?.response?.data?.error || "Failed to load appointments");
+      if (err.code === 'ECONNABORTED') {
+        setError("Request timed out. Please check if the server is running.");
+      } else {
+        setError(err?.response?.data?.message || err?.response?.data?.error || "Failed to load appointments. Please try again.");
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -74,7 +36,7 @@ export default function UserAppointments() {
 
   const fetchUsers = async () => {
     try {
-      const response = await requestWithFallback("get", "/api/users");
+      const response = await axios.get(`${API_URL}/api/users`, { timeout: 5000 });
       setUsers(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
       console.error("Failed to fetch users:", err);
@@ -86,7 +48,6 @@ export default function UserAppointments() {
     fetchUsers();
   }, []);
 
-  // Filter appointments based on search, status, and user
   const filteredAppointments = useMemo(() => {
     return appointments.filter((appointment) => {
       const userName = appointment?.userId?.name || appointment?.userName || "";
@@ -126,30 +87,27 @@ export default function UserAppointments() {
   const formatDate = (dateString) => {
     if (!dateString) return "-";
     const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
+    return date.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" });
   };
 
-  const formatTime = (timeString) => {
-    if (!timeString) return "-";
-    return timeString;
-  };
+  const formatTime = (timeString) => timeString || "-";
 
   const formatFee = (fee) => {
     if (fee === undefined || fee === null) return "-";
     return `$${Number(fee).toLocaleString()}`;
   };
 
+  const getUserImage = (userId) => {
+    if (!userId) return null;
+    const user = users.find(u => u._id === userId || u.id === userId);
+    return user?.profileImage || null;
+  };
+
   if (loading) {
     return (
       <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-100">
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-3 bg-blue-100 rounded-lg text-blue-600">
-            <CalendarDays />
-          </div>
+          <div className="p-3 bg-blue-100 rounded-lg text-blue-600"><CalendarDays /></div>
           <h2 className="text-xl font-semibold text-gray-800">User Appointments</h2>
         </div>
         <div className="flex items-center justify-center py-12">
@@ -164,14 +122,12 @@ export default function UserAppointments() {
     return (
       <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-100">
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-3 bg-blue-100 rounded-lg text-blue-600">
-            <CalendarDays />
-          </div>
+          <div className="p-3 bg-blue-100 rounded-lg text-blue-600"><CalendarDays /></div>
           <h2 className="text-xl font-semibold text-gray-800">User Appointments</h2>
         </div>
         <div className="flex flex-col items-center justify-center py-12">
           <AlertCircle className="text-red-500 mb-3" size={40} />
-          <p className="text-gray-600 mb-4">{error}</p>
+          <p className="text-gray-600 mb-4 text-center">{error}</p>
           <button
             onClick={() => fetchAppointments()}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -185,117 +141,51 @@ export default function UserAppointments() {
 
   return (
     <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-100">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
         <div className="flex flex-wrap items-center gap-2">
-          <div className="p-3 bg-blue-100 rounded-lg text-blue-600">
-            <CalendarDays size={20} />
-          </div>
+          <div className="p-3 bg-blue-100 rounded-lg text-blue-600"><CalendarDays size={20} /></div>
           <h2 className="text-xl font-semibold text-gray-800">User Appointments</h2>
-          
-          <span className="px-3 py-1 text-xs font-semibold bg-gray-100 text-gray-700 rounded-full">
-            {totalAppointments} Total
-          </span>
-          <span className="px-3 py-1 text-xs font-semibold bg-amber-100 text-amber-700 rounded-full">
-            {pendingCount} Pending
-          </span>
-          <span className="px-3 py-1 text-xs font-semibold bg-green-100 text-green-700 rounded-full">
-            {approvedCount} Confirmed
-          </span>
-          <span className="px-3 py-1 text-xs font-semibold bg-red-100 text-red-700 rounded-full">
-            {rejectedCount} Cancelled
-          </span>
-          <span className="px-3 py-1 text-xs font-semibold bg-blue-100 text-blue-700 rounded-full">
-            {completedCount} Completed
-          </span>
+          <span className="px-3 py-1 text-xs font-semibold bg-gray-100 text-gray-700 rounded-full">{totalAppointments} Total</span>
+          <span className="px-3 py-1 text-xs font-semibold bg-amber-100 text-amber-700 rounded-full">{pendingCount} Pending</span>
+          <span className="px-3 py-1 text-xs font-semibold bg-green-100 text-green-700 rounded-full">{approvedCount} Confirmed</span>
+          <span className="px-3 py-1 text-xs font-semibold bg-red-100 text-red-700 rounded-full">{rejectedCount} Cancelled</span>
+          <span className="px-3 py-1 text-xs font-semibold bg-blue-100 text-blue-700 rounded-full">{completedCount} Completed</span>
         </div>
-
-        <button
-          onClick={() => fetchAppointments(true)}
-          disabled={refreshing}
-          className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
-        >
-          <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
-          Refresh
+        <button onClick={() => fetchAppointments(true)} disabled={refreshing} className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50">
+          <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} /> Refresh
         </button>
       </div>
 
-      {/* Search and Filter Section */}
       <div className="flex flex-col sm:flex-row gap-3 mb-5">
         <div className="relative flex-1">
-          <Search 
-            size={16} 
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-          />
-          <input
-            type="text"
-            placeholder="Search by user name, lawyer, case category..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg hover:border-blue-500 hover:ring-2 hover:ring-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-          />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input type="text" placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
-
-        <div className="relative">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="pl-4 pr-8 py-2 text-sm border border-gray-200 rounded-lg hover:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition appearance-none bg-white cursor-pointer"
-          >
-            <option value="all">All Status</option>
-            <option value="Pending">Pending</option>
-            <option value="Approved">Confirmed</option>
-            <option value="Rejected">Cancelled</option>
-            <option value="Completed">Completed</option>
-          </select>
-        </div>
-
-        <div className="relative">
-          <select
-            value={userFilter}
-            onChange={(e) => setUserFilter(e.target.value)}
-            className="pl-4 pr-8 py-2 text-sm border border-gray-200 rounded-lg hover:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition appearance-none bg-white cursor-pointer"
-          >
-            <option value="all">All Users</option>
-            {users.map((user) => (
-              <option key={user._id || user.id} value={user._id || user.id}>
-                {user.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="pl-4 pr-8 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white cursor-pointer">
+          <option value="all">All Status</option>
+          <option value="Pending">Pending</option>
+          <option value="Approved">Confirmed</option>
+          <option value="Rejected">Cancelled</option>
+          <option value="Completed">Completed</option>
+        </select>
+        <select value={userFilter} onChange={(e) => setUserFilter(e.target.value)} className="pl-4 pr-8 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white cursor-pointer">
+          <option value="all">All Users</option>
+          {users.map((user) => (<option key={user._id || user.id} value={user._id || user.id}>{user.name}</option>))}
+        </select>
         {(searchQuery || statusFilter !== "all" || userFilter !== "all") && (
-          <button
-            onClick={clearFilters}
-            className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition"
-          >
-            Clear Filters
-          </button>
+          <button onClick={clearFilters} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition">Clear</button>
         )}
       </div>
-
-      {/* Results Count */}
-      {(searchQuery || statusFilter !== "all" || userFilter !== "all") && (
-        <p className="text-sm text-gray-500 mb-4">
-          Showing {filteredAppointments.length} of {appointments.length} appointments
-        </p>
-      )}
 
       {appointments.length === 0 ? (
         <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-10 text-center">
           <CalendarDays className="mx-auto text-gray-300 mb-3" size={40} />
           <p className="text-gray-500">No appointments found.</p>
         </div>
-      ) : filteredAppointments.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-10 text-center">
-          <Search className="mx-auto text-gray-300 mb-3" size={40} />
-          <p className="text-gray-500">No appointments match your search criteria.</p>
-        </div>
       ) : (
         <div className="overflow-hidden rounded-xl border border-gray-200">
           <div className="max-h-[60vh] overflow-x-auto overflow-y-auto">
-            <table className="w-full min-w-230">
+            <table className="w-full">
               <thead className="bg-gray-50 sticky top-0">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Client</th>
@@ -319,56 +209,42 @@ export default function UserAppointments() {
                   const IconComponent = config.icon;
                   
                   const userName = appointment?.userId?.name || appointment?.userName || "Client";
-                  const userEmail = appointment?.userId?.email || appointment?.userEmail || "-";
-                  const userInitial = userName.charAt(0)?.toUpperCase() || "C";
+                  const userEmail = appointment?.userId?.email || "-";
+                  const userImage = getUserImage(appointment?.userId?._id || appointment?.userId);
+                  const userInitial = userName?.charAt(0)?.toUpperCase() || "C";
 
                   return (
                     <tr key={appointment._id} className="hover:bg-blue-50/40 transition-colors">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-semibold">
-                            {userInitial}
-                          </div>
+                          {userImage ? (
+                            <img src={userImage} alt={userName} className="h-10 w-10 rounded-full object-cover" />
+                          ) : (
+                            <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold">{userInitial}</div>
+                          )}
                           <div>
-                            <p className="font-medium text-gray-900">
-                              {userName}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {userEmail}
-                            </p>
+                            <p className="font-medium text-gray-900">{userName}</p>
+                            <p className="text-xs text-gray-500">{userEmail}</p>
                           </div>
                         </div>
                       </td>
                       <td className="px-4 py-3">
                         <div>
-                          <p className="font-medium text-gray-900">
-                            {appointment?.lawyerName || "-"}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {appointment?.lawyerSpecialization || "-"}
-                          </p>
+                          <p className="font-medium text-gray-900">{appointment?.lawyerName || "-"}</p>
+                          <p className="text-xs text-gray-500">{appointment?.lawyerSpecialization || "-"}</p>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">
-                        {appointment?.caseCategory || "-"}
-                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-700">{appointment?.caseCategory || "-"}</td>
                       <td className="px-4 py-3">
                         <div>
-                          <p className="text-sm text-gray-900">
-                            {formatDate(appointment?.date)}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {formatTime(appointment?.timeSlot)}
-                          </p>
+                          <p className="text-sm text-gray-900">{formatDate(appointment?.date)}</p>
+                          <p className="text-xs text-gray-500">{formatTime(appointment?.timeSlot)}</p>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                        {formatFee(appointment?.feeCharged)}
-                      </td>
+                      <td className="px-4 py-3 text-sm font-medium text-gray-900">{formatFee(appointment?.feeCharged)}</td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${config.bg} ${config.text}`}>
-                          <IconComponent size={12} />
-                          {status}
+                          <IconComponent size={12} /> {status}
                         </span>
                       </td>
                     </tr>
