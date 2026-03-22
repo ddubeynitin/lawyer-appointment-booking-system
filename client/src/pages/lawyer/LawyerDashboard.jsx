@@ -1,11 +1,10 @@
-import { FaCalendarAlt, FaGavel, FaVideo } from "react-icons/fa";
-import { LuBellRing } from "react-icons/lu";
-import { useState, useRef, useEffect } from "react";
+import { FaCalendarAlt, FaVideo } from "react-icons/fa";
+import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
-import { Link, useNavigate } from "react-router-dom";
 import useFetch from "../../hooks/useFetch";
 import { API_URL } from "../../utils/api";
-import { TfiMenuAlt } from "react-icons/tfi";
+import LawyerHeader from "../../components/common/LawyerHeader";
+import { Link } from "react-router-dom";
 
 const SCHEDULE_TIME_SLOTS = [
   "09:00 AM",
@@ -34,13 +33,9 @@ const formatScheduleDateLabel = (date) =>
   });
 
 const LawyerDashboard = () => {
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [showProfile, setShowProfile] = useState(false);
-  const [isMenuVisible, setIsMenuVisible] = useState(false);
+
   const [selectedDate, setSelectedDate] = useState(getTodayDateInputValue);
-  const profileRef = useRef(null);
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
 
   const { data, loading, error } = useFetch(
     `${API_URL}/appointments/lawyer/${user.id}?status=Pending`,
@@ -90,156 +85,15 @@ const LawyerDashboard = () => {
       return firstDate - secondDate;
     })[0];
 
-  const handleLogout = () => {
-    logout();
-    navigate("/auth/login");
-  };
 
   const hour = new Date().getHours();
   const greeting =
     hour < 12 ? "Good Morning" : hour < 18 ? "Good Afternoon" : "Good Evening";
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (profileRef.current && !profileRef.current.contains(event.target)) {
-        setShowProfile(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const showMenu = () => {
-    setIsMenuVisible((current) => !current);
-  };
 
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-100 to-gray-200">
-      <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/70 backdrop-blur-lg">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <div onClick={showMenu} className="sm:hidden">
-            <TfiMenuAlt />
-            {isMenuVisible && (
-              <div className="absolute top-17 left-0 w-50 rounded-br-2xl rounded-tr-2xl bg-white pt-5 pb-5">
-                <nav className="flex flex-col items-center gap-6 font-medium text-gray-600">
-                  <Link to="/lawyer/lawyer-dashboard">
-                    <span className="font-semibold text-blue-600">Dashboard</span>
-                  </Link>
-                  <Link to="/hhggkj">
-                    <span className="cursor-pointer hover:text-blue-600">
-                      Calendar
-                    </span>
-                  </Link>
-                  <Link to="/lawyer/appointment-requests">
-                    <span className="cursor-pointer hover:text-blue-600">
-                      Requests
-                    </span>
-                  </Link>
-                  <Link>
-                    <span className="cursor-pointer hover:text-blue-600">
-                      Clients
-                    </span>
-                  </Link>
-                  <Link>
-                    <span className="cursor-pointer hover:text-blue-600">
-                      Case Files
-                    </span>
-                  </Link>
-                </nav>
-              </div>
-            )}
-          </div>
-
-          <Link to="/">
-            <div className="flex items-center gap-2">
-              <FaGavel className="text-xl text-blue-700" />
-              <span className="font-barlow text-xl font-bold text-gray-800">
-                Justif<span className="text-blue-500">Ai</span>
-              </span>
-            </div>
-          </Link>
-
-          <nav className="hidden items-center gap-6 font-medium text-gray-600 md:flex">
-            <span className="font-semibold text-blue-600">Dashboard</span>
-            <span className="cursor-pointer hover:text-blue-600">Calendar</span>
-            <span className="cursor-pointer hover:text-blue-600">Requests</span>
-            <span className="cursor-pointer hover:text-blue-600">Clients</span>
-            <span className="cursor-pointer hover:text-blue-600">Case Files</span>
-          </nav>
-
-          <div className="relative flex items-center gap-6">
-            <div
-              className="relative cursor-pointer"
-              onClick={() => setShowNotifications(!showNotifications)}
-            >
-              <LuBellRing className="text-xl text-gray-700" />
-              <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500"></span>
-            </div>
-
-            {showNotifications && (
-              <div className="absolute right-0 top-12 z-50 w-72 rounded-xl bg-white p-4 shadow-xl">
-                <h4 className="mb-3 font-semibold">Notifications</h4>
-                <ul className="space-y-2 text-sm text-gray-600">
-                  <li>Appointment booked by client</li>
-                  <li>New message from Sarah Jenkins</li>
-                  <li>Payment received</li>
-                </ul>
-              </div>
-            )}
-
-            <div className="relative" ref={profileRef}>
-              <img
-                src={user.profileImage.url}
-                alt="profile"
-                onClick={() => setShowProfile(!showProfile)}
-                className="h-9 w-9 cursor-pointer rounded-full ring-2 ring-blue-500"
-              />
-
-              <div
-                className={`absolute right-0 mt-3 w-72 rounded-2xl border border-gray-100 bg-white p-5 shadow-2xl transition-all duration-300 ease-out z-50 ${
-                  showProfile
-                    ? "translate-y-0 scale-100 opacity-100"
-                    : "-translate-y-2 scale-95 opacity-0 pointer-events-none"
-                }`}
-              >
-                <div className="mb-4 flex items-center gap-4">
-                  <img
-                    src={user.profileImage.url}
-                    alt="lawyer"
-                    className="h-14 w-14 rounded-full"
-                  />
-                  <div>
-                    <h4 className="font-semibold text-gray-800">{user.name}</h4>
-                    <p className="text-sm text-gray-500">{user.role}</p>
-                  </div>
-                </div>
-
-                <div className="my-3 border-t border-gray-100"></div>
-
-                <div className="space-y-2 text-sm">
-                  <button
-                    onClick={() => navigate(`/lawyer/lawyer-profile/${user.id}`)}
-                    className="w-full rounded-lg px-3 py-2 text-left transition hover:bg-gray-100"
-                  >
-                    View Profile
-                  </button>
-                  <button className="w-full rounded-lg px-3 py-2 text-left transition hover:bg-gray-100">
-                    Account Settings
-                  </button>
-                  <button
-                    onClick={handleLogout}
-                    className="w-full rounded-lg px-3 py-2 text-left text-red-600 transition hover:bg-red-50"
-                  >
-                    Logout
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
+      <LawyerHeader/>
       <main className="mx-auto max-w-7xl space-y-10 px-6 py-10">
         <div>
           <h1 className="flex flex-col lg:flex-row text-3xl font-bold text-gray-800">
@@ -366,7 +220,17 @@ const LawyerDashboard = () => {
           </div>
 
           <div className="space-y-7">
-            <Card title="New Requests" action="View All">
+            <Card
+              title="New Requests"
+              action={
+                <Link
+                  to="/lawyer/appointment-requests"
+                  className="text-sm text-blue-600"
+                >
+                  View All
+                </Link>
+              }
+            >
               {loading ? (
                 <p className="text-sm text-gray-500">
                   Loading pending appointments...
@@ -438,7 +302,12 @@ const Card = ({ title, badge, action, right, children }) => (
           {badge}
         </span>
       )}
-      {action && <span className="text-sm text-blue-600">{action}</span>}
+      {action &&
+        (typeof action === "string" ? (
+          <span className="text-sm text-blue-600">{action}</span>
+        ) : (
+          action
+        ))}
       {right &&
         (typeof right === "string" ? (
           <span className="text-sm text-gray-500">{right}</span>
