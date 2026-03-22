@@ -8,6 +8,7 @@ import {
   FaGavel,
   FaHome,
 } from "react-icons/fa";
+import LawyerCard from "../components/common/LawyerCard";
 
 /* ================= FULL LANDING PAGE ================= */
 const Home = () => {
@@ -179,9 +180,9 @@ const Home = () => {
           </h2>
 
           <div className="grid md:grid-cols-3 gap-8">
-            <LawyerCard name="Alice Johnson" specialization="Family Law" rating={5} />
-            <LawyerCard name="Michael Lee" specialization="Corporate Law" rating={4} />
-            <LawyerCard name="Sophia Davis" specialization="Criminal Defense" rating={5} />
+            <LawyerCard lawyer={{ name: "Alice Johnson", role: "Family Law Attorney", specializations: ["Family Law", "Divorce", "Custody"], rating: 5, availability: true, experience: 8, location: "New Delhi, India" }} />
+            <LawyerCard lawyer={{ name: "Michael Lee", role: "Corporate Lawyer", specializations: ["Corporate", "Business Law", "M&A"], rating: 4.5, availability: true, experience: 5, location: "Mumbai, India" }} />
+            <LawyerCard lawyer={{ name: "Sophia Davis", role: "Criminal Defense", specializations: ["Criminal Defense", "DUI", "Litigation"], rating: 4.8, availability: true, experience: 12, location: "Bangalore, India" }} />
           </div>
         </div>
       </section>
@@ -300,35 +301,6 @@ const SpecCard = ({ title }) => (
   </div>
 );
 
-const LawyerCard = ({ name, specialization, rating, photo, address }) => (
-  <div className="bg-white rounded-2xl shadow-md border border-slate-100 hover:shadow-2xl hover:scale-105 transition-transform duration-300 overflow-hidden">
-    
-    {/* Lawyer Photo */}
-    <div className="h-48 w-full overflow-hidden">
-      <img 
-        src={photo} 
-        alt={name} 
-        className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
-      />
-    </div>
-
-    <div className="p-6 text-center">
-      {/* Name */}
-      <h4 className="font-semibold text-lg mb-1">{name}</h4>
-
-      {/* Specialization */}
-      <p className="text-sm text-slate-500 mb-1">{specialization}</p>
-
-      {/* Address */}
-      <p className="text-xs text-slate-400 mb-2">{address}</p>
-
-      {/* Rating */}
-      <div className="flex justify-center gap-1 text-yellow-400">
-        {[...Array(rating)].map((_, i) => <FaStar key={i} />)}
-      </div>
-    </div>
-  </div>
-);
 
 const FeatureCard = ({ icon, title, desc }) => (
   <div className="bg-white p-8 rounded-2xl shadow-md hover:shadow-xl transition border border-slate-100 text-center">

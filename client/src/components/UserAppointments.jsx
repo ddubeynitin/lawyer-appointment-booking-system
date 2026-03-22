@@ -11,7 +11,6 @@ export default function UserAppointments() {
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [userFilter, setUserFilter] = useState("all");
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchAppointments = async (isRefresh = false) => {
@@ -48,10 +47,39 @@ export default function UserAppointments() {
     fetchUsers();
   }, []);
 
+  // Get user info helper function
+  const getUserInfo = (userId) => {
+    if (!userId) return { name: "Unknown", email: "-", profileImage: null };
+    
+    // Check if userId is already populated
+    if (typeof userId === 'object' && userId.name) {
+      return {
+        name: userId.name,
+        email: userId.email || "-",
+        profileImage: userId.profileImage || null
+      };
+    }
+    
+    // Find user from users list
+    const userIdStr = typeof userId === 'string' ? userId : userId?._id;
+    const user = users.find(u => u._id === userIdStr || u.id === userIdStr);
+    
+    if (user) {
+      return {
+        name: user.name || "Unknown",
+        email: user.email || "-",
+        profileImage: user.profileImage || null
+      };
+    }
+    
+    return { name: userIdStr ? `User ${userIdStr.slice(-4)}` : "Unknown", email: "-", profileImage: null };
+  };
+
   const filteredAppointments = useMemo(() => {
     return appointments.filter((appointment) => {
-      const userName = appointment?.userId?.name || appointment?.userName || "";
-      const userEmail = appointment?.userId?.email || appointment?.userEmail || "";
+      const userInfo = getUserInfo(appointment?.userId);
+      const userName = userInfo.name;
+      const userEmail = userInfo.email;
       
       const searchLower = searchQuery.toLowerCase();
       const matchesSearch = 
@@ -64,13 +92,9 @@ export default function UserAppointments() {
       const appointmentStatus = appointment?.status || "Pending";
       const matchesStatus = statusFilter === "all" || appointmentStatus === statusFilter;
 
-      const matchesUser = userFilter === "all" || 
-        appointment?.userId?._id === userFilter || 
-        appointment?.userId === userFilter;
-
-      return matchesSearch && matchesStatus && matchesUser;
+      return matchesSearch && matchesStatus;
     });
-  }, [appointments, searchQuery, statusFilter, userFilter]);
+  }, [appointments, users, searchQuery, statusFilter]);
 
   const totalAppointments = appointments.length;
   const pendingCount = appointments.filter(a => a?.status === "Pending").length;
@@ -81,7 +105,6 @@ export default function UserAppointments() {
   const clearFilters = () => {
     setSearchQuery("");
     setStatusFilter("all");
-    setUserFilter("all");
   };
 
   const formatDate = (dateString) => {
@@ -95,12 +118,6 @@ export default function UserAppointments() {
   const formatFee = (fee) => {
     if (fee === undefined || fee === null) return "-";
     return `$${Number(fee).toLocaleString()}`;
-  };
-
-  const getUserImage = (userId) => {
-    if (!userId) return null;
-    const user = users.find(u => u._id === userId || u.id === userId);
-    return user?.profileImage || null;
   };
 
   if (loading) {
@@ -159,7 +176,7 @@ export default function UserAppointments() {
       <div className="flex flex-col sm:flex-row gap-3 mb-5">
         <div className="relative flex-1">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input type="text" placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <input type="text" placeholder="Search by name, email, lawyer or category..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="pl-4 pr-8 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white cursor-pointer">
           <option value="all">All Status</option>
@@ -168,11 +185,7 @@ export default function UserAppointments() {
           <option value="Rejected">Cancelled</option>
           <option value="Completed">Completed</option>
         </select>
-        <select value={userFilter} onChange={(e) => setUserFilter(e.target.value)} className="pl-4 pr-8 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white cursor-pointer">
-          <option value="all">All Users</option>
-          {users.map((user) => (<option key={user._id || user.id} value={user._id || user.id}>{user.name}</option>))}
-        </select>
-        {(searchQuery || statusFilter !== "all" || userFilter !== "all") && (
+        {(searchQuery || statusFilter !== "all") && (
           <button onClick={clearFilters} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition">Clear</button>
         )}
       </div>
@@ -208,23 +221,22 @@ export default function UserAppointments() {
                   const config = statusConfig[status] || statusConfig.Pending;
                   const IconComponent = config.icon;
                   
-                  const userName = appointment?.userId?.name || appointment?.userName || "Client";
-                  const userEmail = appointment?.userId?.email || "-";
-                  const userImage = getUserImage(appointment?.userId?._id || appointment?.userId);
-                  const userInitial = userName?.charAt(0)?.toUpperCase() || "C";
+                  // Get user info using helper function
+                  const userInfo = getUserInfo(appointment?.userId);
+                  const userInitial = userInfo.name?.charAt(0)?.toUpperCase() || "C";
 
                   return (
                     <tr key={appointment._id} className="hover:bg-blue-50/40 transition-colors">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
-                          {userImage ? (
-                            <img src={userImage} alt={userName} className="h-10 w-10 rounded-full object-cover" />
+                          {userInfo.profileImage ? (
+                            <img src={userInfo.profileImage} alt={userInfo.name} className="h-10 w-10 rounded-full object-cover" />
                           ) : (
-                            <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold">{userInitial}</div>
+                            <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 font-semibold">{userInitial}</div>
                           )}
                           <div>
-                            <p className="font-medium text-gray-900">{userName}</p>
-                            <p className="text-xs text-gray-500">{userEmail}</p>
+                            <p className="font-medium text-gray-900">{userInfo.name}</p>
+                            <p className="text-xs text-gray-500">{userInfo.email}</p>
                           </div>
                         </div>
                       </td>
