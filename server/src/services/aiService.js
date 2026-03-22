@@ -4,7 +4,8 @@ const path = require("path");
 
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
-const DEFAULT_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const DEFAULT_MODEL = process.env.GEMINI_MODEL;
+
 const LEGAL_ASSISTANT_SYSTEM_PROMPT =
   "You are JustifAi's legal assistant. Answer only: 1) legal questions about laws, FIR, courts, crimes, contracts, disputes, and rights, or 2) JustifAi platform questions such as booking appointments, using dashboards, requests, lawyer search, profiles, and related app features. For anything else, reply exactly: \"I'm a legal assistant. Please ask legal-related questions only.\"";
 

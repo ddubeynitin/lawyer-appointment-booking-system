@@ -210,7 +210,7 @@ const AiChatWidget = () => {
                     {message.from === "bot" ? (
                       <AiMessageContent text={message.text} />
                     ) : (
-                      <p className="whitespace-pre-wrap break-words">
+                      <p className="whitespace-pre-wrap wrap-break-word">
                         {message.text}
                       </p>
                     )}
@@ -341,7 +341,7 @@ const AiMessageContent = ({ text }) => {
               {lines.map((line, lineIndex) => (
                 <li
                   key={`${line}-${lineIndex}`}
-                  className="flex gap-2 break-words"
+                  className="flex gap-2 wrap-break-word"
                 >
                   <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500" />
                   <span>{line.replace(/^([-*•]|\d+\.)\s+/, "")}</span>
@@ -365,7 +365,7 @@ const AiMessageContent = ({ text }) => {
         return (
           <p
             key={`${section}-${sectionIndex}`}
-            className="whitespace-pre-wrap break-words text-[14px] leading-7 text-slate-700"
+            className="whitespace-pre-wrap wrap-break-word text-[14px] leading-7 text-slate-700"
           >
             {section}
           </p>
