@@ -126,7 +126,7 @@ const ClientDashboard = () => {
                   ) : null}
                   <Link className="font-semibold text-blue-600">Dashboard</Link>
                   <Link
-                    to="/client/appointment-scheduling"
+                    to="/client/appointment-history"
                     className="hover:text-blue-600"
                   >
                     Appointments
@@ -146,12 +146,12 @@ const ClientDashboard = () => {
           </div>
 
           <nav className="hidden items-center gap-8 font-medium text-gray-600 md:flex">
-            <Link className="font-semibold text-blue-600">Dashboard</Link>
+            <Link to="/client/client-dashboard" className="font-semibold text-blue-600">Dashboard</Link>
             <Link to="/client/lawyer-list" className="hover:text-blue-600">
               Search Lawyers
             </Link>
             <Link
-              to="/client/appointment-scheduling"
+              to="/client/appointment-history"
               className="hover:text-blue-600"
             >
               Appointments
@@ -376,7 +376,7 @@ const ClientDashboard = () => {
             <div className="mb-2 flex items-center justify-between">
               <h3 className="text-lg font-semibold">Appointment History</h3>
               <Link
-                to="/client/appointment-scheduling"
+                to="/client/appointment-history"
                 className="text-sm text-blue-600"
               >
                 View All

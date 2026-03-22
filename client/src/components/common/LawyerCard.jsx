@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { FaMapMarkerAlt, FaStar, FaChevronDown } from "react-icons/fa";
+import { useAuth } from "../../context/AuthContext";
 
 function LawyerCard({ lawyer }) {
   const location =
@@ -11,7 +12,8 @@ function LawyerCard({ lawyer }) {
       : lawyer.location;
 
   const [selectedFeeIndex, setSelectedFeeIndex] = useState(0);
-
+  const navigate = useNavigate();
+  const {user} = useAuth();
   return (
     <div className="relative rounded-3xl border border-slate-100 bg-white p-4 shadow-lg transition-all duration-300 hover:shadow-2xl sm:p-6">
       <div className="absolute right-3 top-3 flex items-center gap-2 rounded-full bg-yellow-50 px-3 py-1 text-xs font-semibold text-yellow-700 shadow-sm sm:text-sm">
@@ -117,8 +119,13 @@ function LawyerCard({ lawyer }) {
         >
           View Profile
         </Link>
-
-        <button className="flex-1 rounded-xl bg-linear-to-r from-blue-600 to-blue-700 py-2 text-sm font-semibold text-white shadow-md transition hover:opacity-95">
+        <button onClick={() =>{
+          if(!user){
+            navigate('/auth/login')
+          }else{
+            navigate(`/client/appointment-scheduling/${lawyer._id}`)
+          }
+        }} className="flex-1 rounded-xl bg-linear-to-r from-blue-600 to-blue-700 py-2 text-sm font-semibold text-white shadow-md transition hover:opacity-95">
           Book Consultation
         </button>
       </div>

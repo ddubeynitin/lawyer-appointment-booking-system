@@ -306,7 +306,7 @@ const LawyerProfile = () => {
           </div>
 
           {/* RIGHT SIDE - BOOKING CARD */}
-          {user.role != "lawyer" ? (
+          {user && user.role != "lawyer" ? (
             <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 h-fit sticky top-8">
               <h2 className="text-lg font-semibold text-slate-800 mb-4">
                 Book an Appointment

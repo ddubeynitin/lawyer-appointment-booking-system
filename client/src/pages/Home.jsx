@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   FaSearch,
   FaMapMarkerAlt,
@@ -29,6 +29,7 @@ const Home = () => {
   const [featuredLawyers, setFeaturedLawyers] = useState([]);
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const typewriterPhrases = [
     "Find your legal match in seconds",
     "Expert legal advice at your fingertips",
@@ -48,8 +49,31 @@ const Home = () => {
   ]);
   const [chatInput, setChatInput] = useState("");
   const [attachedFile, setAttachedFile] = useState(null);
+  const [heroSearchTerm, setHeroSearchTerm] = useState("");
+  const [heroLocation, setHeroLocation] = useState("");
   const fileInputRef = useRef(null);
   const messagesRef = useRef(null);
+
+  const handleHeroSearch = () => {
+    const params = new URLSearchParams();
+    const trimmedSearch = heroSearchTerm.trim();
+    const trimmedLocation = heroLocation.trim();
+
+    if (trimmedSearch) {
+      params.set("search", trimmedSearch);
+    }
+
+    if (trimmedLocation) {
+      params.set("location", trimmedLocation);
+    }
+
+    const queryString = params.toString();
+    navigate(
+      queryString
+        ? `/client/lawyer-list?${queryString}`
+        : "/client/lawyer-list",
+    );
+  };
 
   const sendMessage = () => {
     const text = chatInput.trim();
@@ -433,6 +457,13 @@ const Home = () => {
               <FaSearch className="text-slate-400" />
               <input
                 type="text"
+                value={heroSearchTerm}
+                onChange={(event) => setHeroSearchTerm(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    handleHeroSearch();
+                  }
+                }}
                 placeholder="Specialization (e.g. Family Law)"
                 className="w-full outline-none text-sm"
               />
@@ -442,12 +473,23 @@ const Home = () => {
               <FaMapMarkerAlt className="text-slate-400" />
               <input
                 type="text"
+                value={heroLocation}
+                onChange={(event) => setHeroLocation(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    handleHeroSearch();
+                  }
+                }}
                 placeholder="Location"
                 className="w-full outline-none text-sm"
               />
             </div>
 
-            <button className="bg-linear-to-r from-blue-600 to-indigo-600 text-white w-full px-10 py-4 text-sm font-semibold hover:scale-105 transition">
+            <button
+              type="button"
+              onClick={handleHeroSearch}
+              className="bg-linear-to-r from-blue-600 to-indigo-600 text-white w-full px-10 py-4 text-sm font-semibold hover:scale-105 transition"
+            >
               Search Now
             </button>
           </div>

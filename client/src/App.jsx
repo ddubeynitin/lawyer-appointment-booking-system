@@ -4,6 +4,9 @@ import "./App.css";
 import LoadingFallback from "./components/LoadingFallback";
 import PageNotFound from "./pages/PageNotFound";
 import LawyerCardSkeleton from "./components/layout/LawyerCardSkeleton";
+import AppointmentSchedulingPage from "./pages/client/AppointmentSchedulingPage";
+import AppointmentRequestsPage from "./pages/lawyer/AppointmentRequestsPage";
+import LawyerCalendarPage from "./pages/lawyer/LawyerCalendarPage";
 
 // Lazy load components
 const Registration = lazy(() => import("./pages/auth/Register"));
@@ -39,18 +42,26 @@ const App = () => {
             element={<ClientDashboard />}
           />
           <Route
-            path="/client/appointment-scheduling"
-            element={<MyAppointments />}
+            path="/client/appointment-scheduling/:id"
+            element={<AppointmentSchedulingPage/>}
           />
           <Route
-            path="/client/appointment-confirmation"
-            element={<AppointmentConfirmation />}
+            path="/client/appointment-history"
+            element={<MyAppointments />}
           />
           <Route path="/client/lawyer-list" element={<LawyersList />} />
 
           <Route
             path="/lawyer/lawyer-dashboard"
             element={<LawyerDashboard />}
+          />
+          <Route
+            path="/lawyer/appointment-requests"
+            element={<AppointmentRequestsPage/>}
+          />
+          <Route
+            path="/lawyer/calendar"
+            element={<LawyerCalendarPage />}
           />
           <Route path="/lawyer/lawyer-profile/:id" element={<LawyerProfile />} />
 
