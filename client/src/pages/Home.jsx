@@ -9,17 +9,10 @@ import {
   FaHome,
   FaPowerOff,
 } from "react-icons/fa";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import useFetch from "../hooks/useFetch";
 import { API_URL } from "../utils/api";
-import { BsStars } from "react-icons/bs";
 import CountUp from "react-countup";
-import {
-  MdAttachFile,
-  MdSend,
-  MdOutlineFilePresent,
-  MdCancel,
-} from "react-icons/md";
 import { TfiMenuAlt } from "react-icons/tfi";
 import { useAuth } from "../context/AuthContext";
 
@@ -40,19 +33,8 @@ const Home = () => {
   const [typewriterIndex, setTypewriterIndex] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const [starRain, setStarRain] = useState([]);
-  const STAR_COUNT = 6;
-
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [chatMessages, setChatMessages] = useState([
-    { id: 1, from: "bot", text: "Hi there! How can I help you today?" },
-  ]);
-  const [chatInput, setChatInput] = useState("");
-  const [attachedFile, setAttachedFile] = useState(null);
   const [heroSearchTerm, setHeroSearchTerm] = useState("");
   const [heroLocation, setHeroLocation] = useState("");
-  const fileInputRef = useRef(null);
-  const messagesRef = useRef(null);
 
   const handleHeroSearch = () => {
     const params = new URLSearchParams();
@@ -75,43 +57,6 @@ const Home = () => {
     );
   };
 
-  const sendMessage = () => {
-    const text = chatInput.trim();
-    const fileName = attachedFile?.name;
-
-    if (!text && !fileName) return;
-
-    setChatMessages((prev) => [
-      ...prev,
-      ...(fileName
-        ? [
-            {
-              id: Date.now(),
-              from: "user",
-              text: `📎 Sent file: ${fileName}`,
-            },
-          ]
-        : []),
-      ...(text
-        ? [
-            {
-              id: Date.now() + 1,
-              from: "user",
-              text,
-            },
-          ]
-        : []),
-      {
-        id: Date.now() + 2,
-        from: "bot",
-        text: "Thanks for your message! We'll get back to you soon.",
-      },
-    ]);
-
-    setChatInput("");
-    setAttachedFile(null);
-    if (fileInputRef.current) fileInputRef.current.value = null;
-  };
 
   const { data: statsData } = useFetch(`${API_URL}/stats`);
   const [stats, setStats] = useState({});
@@ -121,25 +66,6 @@ const Home = () => {
       setStats(statsData);
     }
   }, [statsData]);
-
-  const createStarRain = () =>
-    Array.from({ length: STAR_COUNT }).map(() => ({
-      id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
-      left: 10 + Math.random() * 80,
-      delay: Math.random() * 300,
-      duration: 1200 + Math.random() * 400,
-      size: 25 + Math.random() * 10,
-    }));
-
-  const triggerStarRain = () => {
-    setStarRain(createStarRain());
-  };
-
-  useEffect(() => {
-    if (!starRain.length) return;
-    const timer = setTimeout(() => setStarRain([]), 1400);
-    return () => clearTimeout(timer);
-  }, [starRain]);
 
   useEffect(() => {
     const typingSpeed = 10;
@@ -225,12 +151,6 @@ const Home = () => {
     getFeaturedLawyers();
   }, [loading, error, data]);
 
-  useEffect(() => {
-    if (messagesRef.current) {
-      messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
-    }
-  }, [chatMessages]);
-
   const showMenu = () => {
     setIsMenuVisible((current) => !current);
   };
@@ -240,19 +160,6 @@ const Home = () => {
   };
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-50 via-white to-slate-100 text-slate-800 font-barlow">
-      <div className="fixed bottom-5 right-5 z-50">
-        <button
-          type="button"
-          onClick={() => setIsChatOpen((open) => !open)}
-          aria-label="Open chat"
-          className="relative flex items-center justify-center p-2 animate-spin drop-shadow-2xl bg-linear-to-bl from-pink-400 via-purple-400 to-indigo-600 md:w-20 md:h-20 h-15 w-15 aspect-square rounded-full focus:outline-none focus:ring-2 focus:ring-blue-400"
-        >
-          <div className="rounded-full h-full w-full bg-slate-100 background-blur-md" />
-          <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-slate-800">
-            <BsStars className="text-4xl text-yellow-500" />
-          </span>
-        </button>
-      </div>
       {/* ================= HEADER ================= */}
       <header className="sticky top-0 z-50 backdrop-blur-md bg-white/80 border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -418,34 +325,6 @@ const Home = () => {
               <span className="inline-block w-1 h-4 bg-gray-300 animate-pulse ml-1" />
             </h1>
           </div>
-          <div className="w-full flex justify-center items-center mb-5">
-            <button
-              onMouseEnter={triggerStarRain}
-              className="flex justify-center items-center scale-125 gap-2 animate-bounce hover:animate-pulse bg-linear-to-r from-blue-600 to-indigo-600 text-white px-6 py-2 rounded-lg hover:scale-125 transition"
-            >
-              Ask to
-              <span className="text-2xl font-barlow font-bold">AI</span>
-              <BsStars className="scale-140 text-yellow-300" />
-            </button>
-          </div>
-
-          {starRain.length > 0 && (
-            <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden">
-              {starRain.map((star) => (
-                <BsStars
-                  key={star.id}
-                  className="absolute text-yellow-300 star-fall"
-                  style={{
-                    top: -30,
-                    left: `${star.left}%`,
-                    animationDelay: `${star.delay}ms`,
-                    animationDuration: `${star.duration}ms`,
-                    fontSize: `${star.size}px`,
-                  }}
-                />
-              ))}
-            </div>
-          )}
           <p className="text-slate-500 max-w-2xl mx-auto mb-8 text-lg">
             Connect with top-rated lawyers for expert legal advice and seamless
             appointment booking. Secure your future with professional counsel.
@@ -708,103 +587,6 @@ const Home = () => {
           © 2024 LexLink. All rights reserved.
         </p>
       </footer>
-      {/* ================= AI CHAT WIDGET ================= */}
-      {isChatOpen && (
-        <div
-          onClick={(e) => {
-            // Close chat when clicking outside of the inner chat panel
-            if (e.target === e.currentTarget) {
-              setIsChatOpen(false);
-            }
-          }}
-          className="fixed inset-0 z-50 bg-black/70"
-        >
-          <div className="fixed bottom-0 right-0 lg:bottom-4 lg:right-4 lg:h-[90vh] h-150 lg:w-120 w-full bg-white border border-slate-200 rounded-t-lg lg:rounded-lg shadow-xl overflow-hidden">
-            <div className="flex items-center justify-between bg-blue-600 px-4 py-3">
-              <h3 className="text-sm font-semibold text-white">Chat with AI</h3>
-              <button
-                onClick={() => setIsChatOpen(false)}
-                className="text-white lg:text-3xl text-lg leading-none hover:text-slate-200"
-                aria-label="Close chat"
-              >
-                <MdCancel />
-              </button>
-            </div>
-            <div
-              ref={messagesRef}
-              className="lg:h-125 h-105 overflow-y-auto px-4 py-3 space-y-3 bg-slate-50"
-            >
-              {chatMessages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex ${msg.from === "user" ? "justify-end" : "justify-start"}`}
-                >
-                  <div
-                    className={`rounded-xl px-3 py-2 text-sm ${
-                      msg.from === "user"
-                        ? "bg-blue-600 text-white rounded-br-none"
-                        : "bg-white text-slate-800 rounded-bl-none border border-slate-200"
-                    }`}
-                  >
-                    {msg.text}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="border-t border-slate-200 bg-white p-3">
-              <div className="absolute bottom-0 flex items-center gap-2 mb-2 text-sm text-black bg-blue-500/30 px-3 py-2 rounded-lg">
-                {attachedFile ? (
-                  <>
-                    <MdOutlineFilePresent />
-                    <span>{attachedFile.name}</span>
-                  </>
-                ) : (
-                  "Upload PDF or image of case document to get best recommendations!"
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="rounded-xl bg-blue-600 px-3 py-2 text-lg font-semibold text-white hover:bg-blue-700"
-                  aria-label="Attach file"
-                >
-                  <MdAttachFile />
-                </button>
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0] ?? null;
-                    setAttachedFile(file);
-                  }}
-                />
-
-                <input
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      sendMessage();
-                    }
-                  }}
-                  placeholder="Type your message..."
-                  className="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-300"
-                />
-                <button
-                  type="button"
-                  onClick={sendMessage}
-                  className="rounded-xl bg-blue-600 px-3 py-2 text-lg font-semibold text-white hover:bg-blue-700"
-                >
-                  <MdSend />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
