@@ -119,15 +119,16 @@ function LawyerCard({ lawyer }) {
         >
           View Profile
         </Link>
-        <button onClick={() =>{
+        {user && user.role === "lawyer" ? " " :  <button onClick={() =>{
           if(!user){
             navigate('/auth/login')
           }else{
-            navigate(`/client/appointment-scheduling/${lawyer._id}`)
+              navigate(`/client/appointment-scheduling/${lawyer._id}`)
+            }
           }
-        }} className="flex-1 rounded-xl bg-linear-to-r from-blue-600 to-blue-700 py-2 text-sm font-semibold text-white shadow-md transition hover:opacity-95">
+        } className="flex-1 rounded-xl bg-linear-to-r from-blue-600 to-blue-700 py-2 text-sm font-semibold text-white shadow-md transition hover:opacity-95">
           Book Consultation
-        </button>
+        </button>}
       </div>
     </div>
   );

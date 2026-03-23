@@ -29,6 +29,27 @@ const getTodayDateInputValue = () => {
   return `${year}-${month}-${day}`;
 };
 
+const getDateTimeFromDateAndSlot = (dateValue, slot) => {
+  if (!dateValue || !slot) {
+    return null;
+  }
+
+  const [time, meridiem] = slot.split(" ");
+  const [rawHours, rawMinutes] = time.split(":").map(Number);
+
+  if (Number.isNaN(rawHours) || Number.isNaN(rawMinutes)) {
+    return null;
+  }
+
+  let hours = rawHours % 12;
+  if (meridiem === "PM") {
+    hours += 12;
+  }
+
+  const [year, month, day] = dateValue.split("-").map(Number);
+  return new Date(year, month - 1, day, hours, rawMinutes, 0, 0);
+};
+
 const AppointmentSchedulingPage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -100,6 +121,21 @@ const AppointmentSchedulingPage = () => {
 
     fetchBookedSlots();
   }, [selectedLawyerId, selectedDate]);
+
+  useEffect(() => {
+    if (!selectedTimeSlot) {
+      return;
+    }
+
+    const selectedSlotDateTime = getDateTimeFromDateAndSlot(
+      selectedDate,
+      selectedTimeSlot,
+    );
+
+    if (selectedSlotDateTime && selectedSlotDateTime < new Date()) {
+      setSelectedTimeSlot("");
+    }
+  }, [selectedDate, selectedTimeSlot]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -316,7 +352,7 @@ const AppointmentSchedulingPage = () => {
                 <div>
                   <h3 className="font-semibold">Available Time Slots</h3>
                   <p className="text-sm text-slate-500">
-                    Booked slots are disabled automatically.
+                    Booked and past slots are disabled automatically.
                   </p>
                 </div>
               </div>
@@ -327,16 +363,25 @@ const AppointmentSchedulingPage = () => {
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                   {TIME_SLOTS.map((slot) => {
                     const isBooked = bookedSlots.includes(slot);
+                    const isPastSlot = (() => {
+                      const slotDateTime = getDateTimeFromDateAndSlot(
+                        selectedDate,
+                        slot,
+                      );
+
+                      return slotDateTime ? slotDateTime < new Date() : false;
+                    })();
                     const isSelected = selectedTimeSlot === slot;
+                    const isDisabled = isBooked || isPastSlot;
 
                     return (
                       <button
                         key={slot}
                         type="button"
-                        disabled={isBooked}
+                        disabled={isDisabled}
                         onClick={() => setSelectedTimeSlot(slot)}
                         className={`rounded-2xl border px-4 py-3 text-sm font-medium transition ${
-                          isBooked
+                          isDisabled
                             ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
                             : isSelected
                               ? "border-blue-600 bg-blue-600 text-white"
