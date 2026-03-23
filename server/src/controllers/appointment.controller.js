@@ -1,5 +1,58 @@
 const Appointment = require("../models/appointment.model");
 
+const getAppointmentDateTime = (appointmentDate, timeSlot) => {
+  if (!appointmentDate || !timeSlot) {
+    return null;
+  }
+
+  const [time, meridiem] = timeSlot.split(" ");
+  const [rawHours, rawMinutes] = time.split(":").map(Number);
+
+  if (Number.isNaN(rawHours) || Number.isNaN(rawMinutes)) {
+    return null;
+  }
+
+  const appointmentDateTime = new Date(appointmentDate);
+
+  if (Number.isNaN(appointmentDateTime.getTime())) {
+    return null;
+  }
+
+  let hours = rawHours % 12;
+  if (meridiem === "PM") {
+    hours += 12;
+  }
+
+  appointmentDateTime.setHours(hours, rawMinutes, 0, 0);
+  return appointmentDateTime;
+};
+
+const syncCompletedAppointments = async (baseQuery = {}) => {
+  const appointmentsToCheck = await Appointment.find({
+    ...baseQuery,
+    status: { $nin: ["Rejected", "Completed"] },
+  }).select("_id date timeSlot status");
+
+  const now = new Date();
+  const completedAppointmentIds = appointmentsToCheck
+    .filter((appointment) => {
+      const appointmentDateTime = getAppointmentDateTime(
+        appointment.date,
+        appointment.timeSlot,
+      );
+
+      return appointmentDateTime && appointmentDateTime < now;
+    })
+    .map((appointment) => appointment._id);
+
+  if (completedAppointmentIds.length > 0) {
+    await Appointment.updateMany(
+      { _id: { $in: completedAppointmentIds } },
+      { $set: { status: "Completed" } },
+    );
+  }
+};
+
 const buildLawyerAppointmentQuery = (lawyerId, queryParams = {}) => {
   const query = { lawyerId };
   const status = queryParams.status?.trim();
@@ -37,6 +90,7 @@ const createAppointment = async (req, res) => {
 
 const getAllAppointments = async (req, res) => {
   try {
+    await syncCompletedAppointments();
     const appointments = await Appointment.find();
     res.json(appointments);
   } catch (err) {
@@ -46,6 +100,7 @@ const getAllAppointments = async (req, res) => {
 
 const getAppointmentById = async (req, res) => {
   try {
+    await syncCompletedAppointments({ lawyerId: req.params.id });
     const baseQuery = { lawyerId: req.params.id };
     const status = req.query.status?.trim();
     const query = buildLawyerAppointmentQuery(req.params.id, req.query);
@@ -104,6 +159,7 @@ const deleteAppointment = async (req, res) => {
 
 const getAllLawyerAppointments = async (req, res) => {
   try {
+    await syncCompletedAppointments({ lawyerId: req.params.id });
     const baseQuery = { lawyerId: req.params.id };
     const query = buildLawyerAppointmentQuery(req.params.id, req.query);
 
@@ -129,6 +185,7 @@ const getAllLawyerAppointments = async (req, res) => {
 
 const getAllUserAppointments = async (req, res) => {
   try {
+    await syncCompletedAppointments({ userId: req.params.id });
     const appointments = await Appointment.find({ userId: req.params.id });
     
     res.json({ message: "Appointments retrieved successfully", appointments });
