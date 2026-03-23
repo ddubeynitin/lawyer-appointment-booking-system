@@ -19,7 +19,7 @@ export default function LawyerAppointments() {
 
   // Get all unique specializations from lawyers
   const allSpecializations = useMemo(() => {
-    const specs = new Set();
+    const specs = new Set();        
     lawyers.forEach((lawyer) => {
       if (lawyer.specializations && Array.isArray(lawyer.specializations)) {
         lawyer.specializations.forEach((spec) => specs.add(spec));

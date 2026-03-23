@@ -361,10 +361,10 @@ export default function ClientAppointments({ userId, userRole = "user" }) {
                 ))}
               </div>
             </div>
-          </div>
+          // </div>
         )}
       </div>
-
+      )}
       {/* Review Modal - Using New ReviewRating Component */}
       {showReviewModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
