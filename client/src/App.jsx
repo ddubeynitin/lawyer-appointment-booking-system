@@ -7,6 +7,7 @@ import LawyerCardSkeleton from "./components/layout/LawyerCardSkeleton";
 import AppointmentSchedulingPage from "./pages/client/AppointmentSchedulingPage";
 import AppointmentRequestsPage from "./pages/lawyer/AppointmentRequestsPage";
 import LawyerCalendarPage from "./pages/lawyer/LawyerCalendarPage";
+import AiChatWidget from "./components/ai/AiChatWidget";
 
 // Lazy load components
 const Registration = lazy(() => import("./pages/auth/Register"));
@@ -73,6 +74,7 @@ const App = () => {
             element={<LawyerCardSkeleton/>||<div>Manage Lawyers</div>}
           />
         </Routes>
+        <AiChatWidget />
       </Router>
     </Suspense>
   );
