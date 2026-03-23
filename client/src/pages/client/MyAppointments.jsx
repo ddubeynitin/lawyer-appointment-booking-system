@@ -155,7 +155,7 @@ export default function MyAppointments() {
 
         <section className="rounded-3xl bg-white p-6 shadow-xl">
           <div className="grid gap-4 lg:grid-cols-[1.6fr_0.8fr_0.8fr_auto]">
-            <label className="relative block">
+            <label className="relative flex">
               <span className="sr-only">Search appointments</span>
               <Search
                 size={18}

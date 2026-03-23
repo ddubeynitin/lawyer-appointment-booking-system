@@ -1,7 +1,7 @@
 import { FaGavel, FaSearch, FaVideo, FaTimes } from "react-icons/fa";
 import { LuBellRing } from "react-icons/lu";
 import { Link, useNavigate } from "react-router-dom";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useAuth } from "../../context/AuthContext";
 import userImg from "../../assets/gifs/icons8-user.gif";
 import axios from "axios";
@@ -12,22 +12,59 @@ import useFetch from "../../hooks/useFetch";
 const ClientDashboard = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [appointmentHistory, setAppointmentHistory] = useState([]);
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  const [profileForm, setProfileForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+  });
+  const [profileUpdateError, setProfileUpdateError] = useState("");
+  const [profileUpdateSuccess, setProfileUpdateSuccess] = useState("");
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
   const profileRef = useRef(null);
 
-  const { user, logout } = useAuth();
+  const { user, token, login, logout } = useAuth();
   const navigate = useNavigate();
   const { data: lawyersData } = useFetch(`${API_URL}/lawyers`);
+  const lawyers = Array.isArray(lawyersData) ? lawyersData : [];
 
-  const recommendedLawyers = (Array.isArray(lawyersData) ? lawyersData : [])
+  const recommendedLawyers = lawyers
     .filter((lawyer) => lawyer._id !== user?.id)
     .sort(
       (firstLawyer, secondLawyer) =>
         (secondLawyer.rating || 0) - (firstLawyer.rating || 0),
     )
     .slice(0, 2);
+
+  const matchedLawyers = useMemo(() => {
+    const normalizedQuery = searchInput.trim().toLowerCase();
+
+    if (!normalizedQuery) {
+      return [];
+    }
+
+    const tokens = normalizedQuery.split(/\s+/).filter(Boolean);
+
+    return lawyers
+      .filter((lawyer) => {
+        const searchableText = [
+          lawyer.name,
+          ...(lawyer.specializations || []),
+          lawyer.location?.city,
+          lawyer.location?.state,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+        return tokens.every((token) => searchableText.includes(token));
+      })
+      .slice(0, 3);
+  }, [lawyers, searchInput]);
 
   const upcomingAppointment = appointmentHistory
     .filter((appointment) => {
@@ -93,8 +130,95 @@ const ClientDashboard = () => {
     }
   }, [user?.id]);
 
+  useEffect(() => {
+    if (!showProfileModal) {
+      return;
+    }
+
+    setProfileForm({
+      name: user?.name || "",
+      email: user?.email || "",
+      phone: user?.phone || "",
+    });
+    setIsEditingProfile(false);
+    setProfileUpdateError("");
+    setProfileUpdateSuccess("");
+  }, [showProfileModal, user]);
+
   const showMenu = () => {
     setIsMenuVisible((current) => !current);
+  };
+
+  const handleLawyerSearch = () => {
+    const trimmedSearch = searchInput.trim();
+
+    navigate(
+      trimmedSearch
+        ? `/client/lawyer-list?search=${encodeURIComponent(trimmedSearch)}`
+        : "/client/lawyer-list",
+    );
+  };
+
+  const handleProfileInputChange = (event) => {
+    const { name, value } = event.target;
+
+    setProfileForm((current) => ({
+      ...current,
+      [name]: value,
+    }));
+  };
+
+  const handleProfileSave = async () => {
+    const trimmedName = profileForm.name.trim();
+    const trimmedEmail = profileForm.email.trim().toLowerCase();
+    const trimmedPhone = profileForm.phone.trim();
+
+    if (!trimmedName || !trimmedEmail || !trimmedPhone) {
+      setProfileUpdateError("Name, email, and phone are required.");
+      setProfileUpdateSuccess("");
+      return;
+    }
+
+    setIsSavingProfile(true);
+    setProfileUpdateError("");
+    setProfileUpdateSuccess("");
+
+    try {
+      const response = await axios.put(`${API_URL}/users/${user.id}`, {
+        name: trimmedName,
+        email: trimmedEmail,
+        phone: trimmedPhone,
+      });
+
+      const updatedUser = response.data;
+
+      login({
+        token,
+        user: {
+          ...user,
+          id: updatedUser._id || updatedUser.id || user.id,
+          name: updatedUser.name,
+          email: updatedUser.email,
+          phone: updatedUser.phone,
+        },
+      });
+
+      setProfileForm({
+        name: updatedUser.name || "",
+        email: updatedUser.email || "",
+        phone: updatedUser.phone || "",
+      });
+      setIsEditingProfile(false);
+      setProfileUpdateSuccess("Profile updated successfully.");
+    } catch (error) {
+      setProfileUpdateError(
+        error.response?.data?.message ||
+          error.response?.data?.error ||
+          "Unable to update profile right now.",
+      );
+    } finally {
+      setIsSavingProfile(false);
+    }
   };
 
   return (
@@ -267,9 +391,101 @@ const ClientDashboard = () => {
                   <span className="font-medium">Phone:</span> {user.phone}
                 </p>
               </div>
-              <button className="mt-6 w-full rounded-xl bg-blue-600 py-2 font-medium text-white hover:bg-blue-700">
-                Edit Profile
-              </button>
+              <div className="mt-4 w-full space-y-3 text-left">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-600">
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={profileForm.name}
+                    onChange={handleProfileInputChange}
+                    disabled={!isEditingProfile || isSavingProfile}
+                    className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none transition focus:border-blue-400 disabled:bg-gray-50 disabled:text-gray-500"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-600">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={profileForm.email}
+                    onChange={handleProfileInputChange}
+                    disabled={!isEditingProfile || isSavingProfile}
+                    className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none transition focus:border-blue-400 disabled:bg-gray-50 disabled:text-gray-500"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-600">
+                    Phone
+                  </label>
+                  <input
+                    type="text"
+                    name="phone"
+                    value={profileForm.phone}
+                    onChange={handleProfileInputChange}
+                    disabled={!isEditingProfile || isSavingProfile}
+                    className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none transition focus:border-blue-400 disabled:bg-gray-50 disabled:text-gray-500"
+                  />
+                </div>
+              </div>
+
+              {profileUpdateError ? (
+                <p className="mt-4 w-full text-left text-sm text-red-600">
+                  {profileUpdateError}
+                </p>
+              ) : null}
+
+              {profileUpdateSuccess ? (
+                <p className="mt-4 w-full text-left text-sm text-green-600">
+                  {profileUpdateSuccess}
+                </p>
+              ) : null}
+
+              {isEditingProfile ? (
+                <div className="mt-6 flex w-full gap-3">
+                  <button
+                    type="button"
+                    onClick={handleProfileSave}
+                    disabled={isSavingProfile}
+                    className="w-full rounded-xl bg-blue-600 py-2 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-400"
+                  >
+                    {isSavingProfile ? "Saving..." : "Save Changes"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsEditingProfile(false);
+                      setProfileForm({
+                        name: user?.name || "",
+                        email: user?.email || "",
+                        phone: user?.phone || "",
+                      });
+                      setProfileUpdateError("");
+                      setProfileUpdateSuccess("");
+                    }}
+                    disabled={isSavingProfile}
+                    className="w-full rounded-xl border border-gray-300 py-2 font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditingProfile(true);
+                    setProfileUpdateError("");
+                    setProfileUpdateSuccess("");
+                  }}
+                  className="mt-6 w-full rounded-xl bg-blue-600 py-2 font-medium text-white hover:bg-blue-700"
+                >
+                  Edit Profile
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -294,18 +510,70 @@ const ClientDashboard = () => {
           </p>
 
           <div className="flex justify-center">
-            <div className="flex w-full max-w-xl overflow-hidden rounded-full bg-white">
-              <div className="flex items-center justify-center px-4 text-gray-400">
-                <FaSearch />
+            <div className="w-full max-w-xl">
+              <div className="flex overflow-hidden rounded-full bg-white">
+                <div className="flex items-center justify-center px-4 text-gray-400">
+                  <FaSearch />
+                </div>
+                <input
+                  type="text"
+                  value={searchInput}
+                  onChange={(event) => setSearchInput(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      handleLawyerSearch();
+                    }
+                  }}
+                  placeholder="Family Law, Corporate, Real Estate..."
+                  className="flex-1 px-3 py-2 text-gray-700 outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleLawyerSearch}
+                  className="bg-blue-600 px-6 font-medium text-white transition hover:bg-blue-700"
+                >
+                  Search
+                </button>
               </div>
-              <input
-                type="text"
-                placeholder="Family Law, Corporate, Real Estate..."
-                className="flex-1 px-3 py-2 text-gray-700 outline-none"
-              />
-              <button className="bg-blue-600 px-6 font-medium text-white transition hover:bg-blue-700">
-                Search
-              </button>
+
+              {searchInput.trim() ? (
+                <div className="mt-4 rounded-2xl bg-white/95 p-4 text-left text-slate-700 shadow-lg">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                    Quick matches
+                  </p>
+                  {matchedLawyers.length > 0 ? (
+                    <div className="mt-3 space-y-3">
+                      {matchedLawyers.map((lawyer) => (
+                        <button
+                          key={lawyer._id}
+                          type="button"
+                          onClick={() =>
+                            navigate(`/lawyer/lawyer-profile/${lawyer._id}`)
+                          }
+                          className="flex w-full items-center justify-between rounded-2xl border border-slate-200 px-4 py-3 transition hover:border-blue-300 hover:bg-blue-50"
+                        >
+                          <div>
+                            <p className="font-semibold text-slate-800">
+                              {lawyer.name}
+                            </p>
+                            <p className="text-sm text-slate-500">
+                              {(lawyer.specializations || []).slice(0, 2).join(", ") ||
+                                "General Practice"}
+                            </p>
+                          </div>
+                          <span className="text-sm font-medium text-blue-600">
+                            View
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-sm text-slate-500">
+                      No direct matches found. Press search to browse all lawyers.
+                    </p>
+                  )}
+                </div>
+              ) : null}
             </div>
           </div>
         </div>

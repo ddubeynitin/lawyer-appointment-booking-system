@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   CheckCircle,
   MapPin,
@@ -11,7 +11,7 @@ import {
   Calendar,
   Star,
 } from "lucide-react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import useFetch from "../../hooks/useFetch";
 import { API_URL } from "../../utils/api";
 import LoadingFallback from "../../components/LoadingFallback";
@@ -27,13 +27,61 @@ const LawyerProfile = () => {
     error: reviewsError,
   } = useFetch(`${API_URL}/reviews/lawyer/${id}`);
   const [lawyerProfileData, setLawyerProfileData] = useState(null);
+  const [shareStatus, setShareStatus] = useState("");
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const canShowBookingCard = !user || user.role !== "lawyer";
+  const topSectionGridClass = canShowBookingCard
+    ? "lg:grid-cols-3"
+    : "lg:grid-cols-2";
+  const primaryConsultationFee =
+    lawyerProfileData?.feesByCategory && lawyerProfileData.feesByCategory.length > 0
+      ? lawyerProfileData.feesByCategory[0].fee
+      : null;
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (data) {
       setLawyerProfileData(data);
     }
   }, [data]);
+
+  useEffect(() => {
+    if (!shareStatus) {
+      return undefined;
+    }
+
+    const timer = window.setTimeout(() => {
+      setShareStatus("");
+    }, 2500);
+
+    return () => window.clearTimeout(timer);
+  }, [shareStatus]);
+
+  const handleShareProfile = async () => {
+    const shareUrl = window.location.href;
+    const shareData = {
+      title: `${lawyerProfileData.name} | JustifAi`,
+      text: `View ${lawyerProfileData.name}'s lawyer profile on JustifAi.`,
+      url: shareUrl,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        setShareStatus("Profile link shared.");
+        return;
+      }
+
+      await navigator.clipboard.writeText(shareUrl);
+      setShareStatus("Profile link copied.");
+    } catch (shareError) {
+      if (shareError?.name === "AbortError") {
+        return;
+      }
+
+      setShareStatus("Unable to share right now.");
+    }
+  };
 
   if (loading) {
     return <LoadingFallback />;
@@ -72,12 +120,12 @@ const LawyerProfile = () => {
           </div>
           {/* Navigation */}
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
-            <Link
+            { user && user.role != "lawyer" ? <Link
               to="/client/lawyer-list"
               className="hover:text-blue-600 transition flex items-center gap-2"
             >
               <FaSearch /> Find Lawyer
-            </Link>
+            </Link>: ""}
             {user ?
             <Link
             to={user.role == 'lawyer' ? '/lawyer/lawyer-dashboard':'/client/client-dashboard'}
@@ -139,7 +187,7 @@ const LawyerProfile = () => {
       {/* Container */}
       <div className="max-w-7xl mx-auto px-6 pt-10">
         {/* ===== TOP SECTION ===== */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className={`grid grid-cols-1 ${topSectionGridClass} gap-8`}>
           {/* LEFT SIDE */}
           <div className="lg:col-span-2 space-y-8">
             {/* Profile Card */}
@@ -203,14 +251,23 @@ const LawyerProfile = () => {
                   </div>
 
                   <div className="flex gap-4 mt-6">
-                    <button className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg transition">
+                    { user && user.role == "lawyer" ? " ": <button className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg transition">
                       <MessageCircle size={18} /> Message
-                    </button>
+                    </button>}
 
-                    <button className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg transition">
+                    <button
+                      type="button"
+                      onClick={handleShareProfile}
+                      className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg transition"
+                    >
                       <Share2 size={18} /> Share
                     </button>
                   </div>
+                  {shareStatus ? (
+                    <p className="mt-3 text-sm font-medium text-slate-500">
+                      {shareStatus}
+                    </p>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -306,59 +363,122 @@ const LawyerProfile = () => {
           </div>
 
           {/* RIGHT SIDE - BOOKING CARD */}
-          {user && user.role != "lawyer" ? (
-            <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 h-fit sticky top-8">
-              <h2 className="text-lg font-semibold text-slate-800 mb-4">
-                Book an Appointment
-              </h2>
-
-              <div className="bg-blue-50 p-4 rounded-xl mb-6 border border-blue-100">
-                <p className="text-blue-600 font-medium flex items-center gap-2">
-                  <Calendar size={18} /> Next Available Slot
-                </p>
-                <p className="text-slate-700 mt-2 font-medium">
-                  Tomorrow at 10:00 AM
-                </p>
-                <p className="text-sm text-slate-500">
-                  Pacific Standard Time (PST)
-                </p>
-              </div>
-
-              <div className="space-y-3 text-sm text-slate-600 mb-6">
-                <div className="flex justify-between">
-                  <span>Consultation Fee</span>
-                  <span className="font-medium text-slate-800">
-                    $
-                    {lawyerProfileData.feesByCategory &&
-                    lawyerProfileData.feesByCategory.length > 0
-                      ? lawyerProfileData.feesByCategory[0].fee
-                      : "N/A"}{" "}
-                    / 30 min
-                  </span>
+          {canShowBookingCard ? (
+            <aside className="h-fit self-start lg:sticky lg:top-24">
+              <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl shadow-slate-200/70">
+                <div className="bg-linear-to-br from-slate-900 via-slate-800 to-blue-900 px-6 py-6 text-white">
+                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blue-200">
+                    Consultation
+                  </p>
+                  <div className="mt-3 flex items-end justify-between gap-4">
+                    <div>
+                      <h2 className="text-2xl font-semibold">
+                        Book an Appointment
+                      </h2>
+                      <p className="mt-2 text-sm leading-6 text-slate-200">
+                        Secure a time with {lawyerProfileData.name} for legal
+                        guidance tailored to your case.
+                      </p>
+                    </div>
+                    <div className="rounded-2xl bg-white/10 px-4 py-3 text-right backdrop-blur-sm">
+                      <p className="text-xs uppercase tracking-[0.2em] text-blue-100">
+                        Starting at
+                      </p>
+                      <p className="mt-1 text-2xl font-bold text-white">
+                        {primaryConsultationFee ? `Rs.${primaryConsultationFee}` : "N/A"}
+                      </p>
+                      <p className="text-xs text-slate-300">per 30 min</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span>Location</span>
-                  <span className="font-medium text-slate-800">
-                    Video Call / Office
-                  </span>
+
+                <div className="space-y-6 p-6">
+                  <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4">
+                    <p className="flex items-center gap-2 text-sm font-semibold text-blue-700">
+                      <Calendar size={18} />
+                      Next available consultation
+                    </p>
+                    <p className="mt-3 text-lg font-semibold text-slate-800">
+                      Tomorrow at 10:00 AM
+                    </p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Video or office meeting, based on your preference
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <p className="text-slate-500">Session format</p>
+                      <p className="mt-2 font-semibold text-slate-800">
+                        Video / Office
+                      </p>
+                    </div>
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <p className="text-slate-500">Verification</p>
+                      <p className="mt-2 font-semibold text-slate-800">
+                        {lawyerProfileData.verification === "Approved"
+                          ? "Verified profile"
+                          : "Pending review"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 p-4">
+                    <p className="text-sm font-semibold text-slate-800">
+                      What to expect
+                    </p>
+                    <div className="mt-4 space-y-3 text-sm text-slate-600">
+                      <div className="flex items-start gap-3">
+                        <span className="mt-1 h-2.5 w-2.5 rounded-full bg-blue-500" />
+                        <p>Share your issue and preferred consultation mode.</p>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <span className="mt-1 h-2.5 w-2.5 rounded-full bg-blue-500" />
+                        <p>Pick a time slot that works for your schedule.</p>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <span className="mt-1 h-2.5 w-2.5 rounded-full bg-blue-500" />
+                        <p>Receive confirmation and connect securely.</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!user) {
+                          navigate("/auth/login");
+                        } else {
+                          navigate(
+                            `/client/appointment-scheduling/${lawyerProfileData._id}`,
+                          );
+                        }
+                      }}
+                      className="w-full rounded-2xl bg-linear-to-r from-blue-600 to-indigo-600 px-4 py-3.5 text-sm font-semibold text-white shadow-md transition hover:scale-[1.02] hover:shadow-lg"
+                    >
+                      {user ? "Book Now" : "Login to Book"}
+                    </button>
+
+                    {/* <button
+                      type="button"
+                      className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                    >
+                      View Full Calendar
+                    </button> */}
+                  </div>
+
+                  <div className="flex items-start gap-3 rounded-2xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">
+                    <ShieldCheck size={18} className="mt-0.5 shrink-0" />
+                    <p>
+                      {lawyerProfileData.verification === "Approved"
+                        ? "This lawyer's identity has been verified for safer bookings."
+                        : "Profile verification is in progress. Booking details will still be confirmed before your session."}
+                    </p>
+                  </div>
                 </div>
               </div>
-
-              <button className="w-full bg-linear-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-xl font-medium shadow-md hover:shadow-lg hover:scale-[1.02] transition">
-                Book Now
-              </button>
-
-              <button className="w-full mt-3 border border-slate-300 py-3 rounded-xl font-medium hover:bg-slate-50 transition">
-                View Full Calendar
-              </button>
-
-              <div className="bg-green-50 border border-green-200 text-green-700 text-sm p-3 rounded-xl mt-6 flex items-center gap-2">
-                <ShieldCheck size={16} />
-                {lawyerProfileData.verification === "Approved"
-                  ? "Identity Verified"
-                  : "Verification Pending"}
-              </div>
-            </div>
+            </aside>
           ) : (
             ""
           )}
