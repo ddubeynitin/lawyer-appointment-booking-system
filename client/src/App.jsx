@@ -8,6 +8,8 @@ import AppointmentSchedulingPage from "./pages/client/AppointmentSchedulingPage"
 import AppointmentRequestsPage from "./pages/lawyer/AppointmentRequestsPage";
 import LawyerCalendarPage from "./pages/lawyer/LawyerCalendarPage";
 import AiChatWidget from "./components/ai/AiChatWidget";
+import AboutUs from "./pages/AboutUs";
+import ContactUs from "./pages/ContactUs";
 
 // Lazy load components
 const Registration = lazy(() => import("./pages/auth/Register"));
@@ -34,6 +36,9 @@ const App = () => {
         <Routes>
           <Route path="*" element={<PageNotFound/>} />
           <Route path="/" element={<Home />} />
+          <Route path="/about" element={<AboutUs/>} />
+          <Route path="/contact" element={<ContactUs/>} />
+
           <Route path="/complete-profile" element={<CompleteLawyerProfile />} />
           <Route path="/auth/login" element={<LoginPage />} />
           <Route path="/auth/register" element={<Registration />} />

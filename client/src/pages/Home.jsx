@@ -57,7 +57,6 @@ const Home = () => {
     );
   };
 
-
   const { data: statsData } = useFetch(`${API_URL}/stats`);
   const [stats, setStats] = useState({});
 
@@ -169,12 +168,16 @@ const Home = () => {
               <div className="absolute top-17 left-0 w-50 rounded-br-2xl rounded-tr-2xl bg-white pt-5 pb-5">
                 {/* Navigation */}
                 <nav className="flex flex-col md:hidden items-center gap-8 text-sm font-medium text-slate-600">
-                  <Link
-                    to="/client/lawyer-list"
-                    className="hover:text-blue-600 transition flex items-center gap-2"
-                  >
-                    <FaSearch /> Find Lawyer
-                  </Link>
+                  {user && user.role === "lawyer" ? (
+                    ""
+                  ) : (
+                    <Link
+                      to="/client/lawyer-list"
+                      className="hover:text-blue-600 transition flex items-center gap-2"
+                    >
+                      <FaSearch /> Find Lawyer
+                    </Link>
+                  )}
                   {user ? (
                     <Link
                       to={
@@ -211,12 +214,16 @@ const Home = () => {
           </div>
           {/* Navigation */}
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
-            <Link
-              to="/client/lawyer-list"
-              className="hover:text-blue-600 transition flex items-center gap-2"
-            >
-              <FaSearch /> Find Lawyer
-            </Link>
+            {user && user.role === "lawyer" ? (
+              ""
+            ) : (
+              <Link
+                to="/client/lawyer-list"
+                className="hover:text-blue-600 transition flex items-center gap-2"
+              >
+                <FaSearch /> Find Lawyer
+              </Link>
+            )}
             {user ? (
               <Link
                 to={
@@ -584,7 +591,7 @@ const Home = () => {
         </div>
 
         <p className="text-center text-xs mt-12 text-slate-500">
-          © 2024 LexLink. All rights reserved.
+          © 2026 JustifAi. All rights reserved.
         </p>
       </footer>
     </div>
@@ -690,7 +697,19 @@ const FooterCol = ({ title, items }) => (
     <ul className="space-y-2 text-sm">
       {items.map((item, i) => (
         <li key={i} className="hover:text-white cursor-pointer transition">
-          {item}
+          <Link
+            to={
+              item === "About"
+                ? "/about"
+                : item === "Find Lawyer"
+                  ? "/client/lawyer-list"
+                  : item === "Contact"
+                    ? "/contact"
+                    : ""
+            }
+          >
+            {item}
+          </Link>
         </li>
       ))}
     </ul>
