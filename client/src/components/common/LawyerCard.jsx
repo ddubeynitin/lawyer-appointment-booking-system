@@ -87,7 +87,7 @@ function LawyerCard({ lawyer }) {
                 Unavailable
               </span>
             )}
-          </span>
+          </div>
         </div>
 
         <div className="w-full rounded-lg bg-amber-300 px-3 py-2 text-left text-lg font-bold text-slate-800 sm:w-auto">
@@ -106,9 +106,28 @@ function LawyerCard({ lawyer }) {
               </select>
               <FaChevronDown className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-white" />
             </div>
-          ) : (
-            <span className="text-black">FREE</span>
-          )}
+            <span className="text-sm text-slate-500">
+              ({lawyer.totalReviews} reviews)
+            </span>
+          </div>
+        )}
+
+        {/* Buttons */}
+        <div className="flex gap-3 mt-5">
+          <Link
+            to={`/lawyer/lawyer-profile/${lawyer._id}`}
+            className="flex-1 border-2 border-slate-200 hover:border-blue-500 hover:bg-blue-50 rounded-xl py-2.5 text-center text-sm font-semibold text-slate-700 hover:text-blue-700 transition-all"
+          >
+            View Profile
+          </Link>
+
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={handleBookNow}
+            className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl py-2.5 text-sm font-bold shadow-lg hover:shadow-xl transition-all"
+          >
+            Book Now
+          </motion.button>
         </div>
       </div>
 

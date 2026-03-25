@@ -9,55 +9,21 @@ import {
   CalendarDays,
   Search,
   ChevronDown,
+  Menu,
+  X,
 } from "lucide-react";
 import { GoLaw } from "react-icons/go";
 import UserManagement from "../../components/UserManagement";
 import Overview from "../../components/Overview";
 import VerificationQueue from "../../components/VerificationQueue";
 import Financials from "../../components/Financials";
-import Appointments from "../../components/Appointments";
+import UserAppointments from "../../components/UserAppointments";
+import LawyerAppointments from "../../components/LawyerAppointments";
 import Reports from "../../components/Reports";
 import SettingsPage from "../../components/Settings";
 
-const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
-
-const normalizeBaseUrl = (url = "") => url.trim().replace(/\/+$/, "");
-
-const API_BASE_CANDIDATES = Array.from(
-  new Set(
-    [
-      normalizeBaseUrl(VITE_API_BASE_URL),
-      normalizeBaseUrl(window.location.origin),
-      "http://localhost:3000",
-      "http://127.0.0.1:3000",
-      "http://localhost:5000",
-      "http://127.0.0.1:5000",
-    ].filter(Boolean),
-  ),
-);
-
-const requestWithFallback = async (method, path, payload) => {
-  let lastError;
-
-  for (const baseUrl of API_BASE_CANDIDATES) {
-    try {
-      const response = await axios({
-        method,
-        url: `${baseUrl}${path}`,
-        data: payload,
-      });
-      return response;
-    } catch (error) {
-      lastError = error;
-      const isNetworkError = !error?.response;
-      if (!isNetworkError) {
-        throw error;
-      }
-    }
-  }
-
-  throw lastError;
-};
+// Server URL - direct server routes use kar rahe hain
+const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 export default function Dashboard() {
   const [activeMenu, setActiveMenu] = useState("overview");
@@ -78,7 +44,10 @@ export default function Dashboard() {
   const [lawyerPassword, setLawyerPassword] = useState("");
   const [lawyerConfirmPassword, setLawyerConfirmPassword] = useState("");
   const [lawyerSpecializations, setLawyerSpecializations] = useState([]);
-  const [lawyerProfileImage, setLawyerProfileImage] = useState({ file: null, previewUrl: "" });
+  const [lawyerProfileImage, setLawyerProfileImage] = useState({
+    file: null,
+    previewUrl: "",
+  });
   const [lawyerFees, setLawyerFees] = useState([{ category: "", fee: "" }]);
   const [lawyerEducation, setLawyerEducation] = useState([
     { degree: "", university: "", year: "" },
@@ -91,11 +60,13 @@ export default function Dashboard() {
   const [lawyers, setLawyers] = useState([]);
   const [lawyerErrors, setLawyerErrors] = useState({});
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [verificationLoading, setVerificationLoading] = useState({
     id: null,
     action: null,
   });
   const [AllLawyers, setAllLawyers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const pendingVerificationCount = Array.isArray(AllLawyers)
     ? AllLawyers.filter((lawyer) => lawyer?.verification !== "Approved").length
@@ -114,9 +85,10 @@ export default function Dashboard() {
 
   const operationItems = [
     { id: "financials", label: "Financials", icon: DollarSign },
-    { id: "appointments", label: "Appointments", icon: CalendarDays },
     { id: "reports", label: "Reports", icon: CalendarDays },
   ];
+
+  const [isAppointmentMenuOpen, setIsAppointmentMenuOpen] = useState(false);
 
   const handleMenuClick = (menuId) => {
     if (menuId === "users" || menuId === "lawyers") {
@@ -124,11 +96,18 @@ export default function Dashboard() {
     } else {
       setIsUserMenuOpen(false);
     }
+    if (menuId === "user-appointments" || menuId === "lawyer-appointments") {
+      setIsAppointmentMenuOpen(true);
+    } else {
+      setIsAppointmentMenuOpen(false);
+    }
     setActiveMenu(menuId);
+    setIsSidebarOpen(false);
   };
+
   const fetchUsers = async () => {
     try {
-      const response = await requestWithFallback("get", "/api/users");
+      const response = await axios.get(`${API_URL}/api/users`);
       setUsers(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error("Failed to fetch users:", error);
@@ -138,7 +117,7 @@ export default function Dashboard() {
 
   const fetchLawyers = async () => {
     try {
-      const res = await requestWithFallback("get", "/api/lawyers");
+      const res = await axios.get(`${API_URL}/api/lawyers`);
       const lawyerList = Array.isArray(res.data) ? res.data : [];
       setAllLawyers(lawyerList);
       setLawyers(lawyerList);
@@ -148,12 +127,17 @@ export default function Dashboard() {
       setLawyers([]);
     }
   };
-
   useEffect(() => {
-    fetchLawyers();
-    fetchUsers();
+    setLoading(true);
+    const loadData = async () => {
+      try {
+        await Promise.all([fetchLawyers(), fetchUsers()]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
   }, []);
-
   useEffect(() => {
     if (activeMenu === "users") {
       fetchUsers();
@@ -192,7 +176,7 @@ export default function Dashboard() {
     }
 
     try {
-      const response = await requestWithFallback("post", "/api/auth/register", {
+      const response = await axios.post(`${API_URL}/api/auth/register`, {
         name: userName,
         email: userEmail,
         phone: userPhone,
@@ -200,7 +184,6 @@ export default function Dashboard() {
         role: userRole,
       });
 
-      // Immediate UI update so the new row appears right after clicking Add User
       if (userRole === "user") {
         const createdUser = response?.data?.user;
         setUsers((prev) => [
@@ -258,7 +241,7 @@ export default function Dashboard() {
     }
 
     try {
-      const response = await requestWithFallback("post", "/api/auth/register", {
+      const response = await axios.post(`${API_URL}/api/auth/register`, {
         name: lawyerName,
         email: lawyerEmail,
         phone: lawyerPhone,
@@ -268,23 +251,33 @@ export default function Dashboard() {
       });
 
       const createdLawyerId = response?.data?.user?.id;
-      const cleanedSpecializations = (lawyerSpecializations || []).filter(Boolean);
+      const cleanedSpecializations = (lawyerSpecializations || []).filter(
+        Boolean,
+      );
       const cleanedFees = (lawyerFees || [])
         .map((fee) => ({
           category: fee.category?.trim(),
-          fee: fee.fee === "" || fee.fee === null || fee.fee === undefined ? undefined : Number(fee.fee),
+          fee:
+            fee.fee === "" || fee.fee === null || fee.fee === undefined
+              ? undefined
+              : Number(fee.fee),
         }))
         .filter((fee) => fee.category && Number.isFinite(fee.fee));
       const cleanedEducation = (lawyerEducation || [])
         .map((ed) => ({
           degree: ed.degree?.trim() || "",
           university: ed.university?.trim() || "",
-          year: ed.year === "" || ed.year === null || ed.year === undefined ? undefined : Number(ed.year),
+          year:
+            ed.year === "" || ed.year === null || ed.year === undefined
+              ? undefined
+              : Number(ed.year),
         }))
         .filter((ed) => ed.degree || ed.university || Number.isFinite(ed.year));
       const hasLocation =
         lawyerLocation &&
-        Object.values(lawyerLocation).some((value) => value && String(value).trim().length > 0);
+        Object.values(lawyerLocation).some(
+          (value) => value && String(value).trim().length > 0,
+        );
       const hasProfileDetails =
         !!lawyerProfileImage?.file ||
         cleanedSpecializations.length > 0 ||
@@ -292,7 +285,9 @@ export default function Dashboard() {
         cleanedEducation.length > 0 ||
         hasLocation ||
         (lawyerDescription && lawyerDescription.trim().length > 0) ||
-        (lawyerExperience !== "" && lawyerExperience !== null && lawyerExperience !== undefined);
+        (lawyerExperience !== "" &&
+          lawyerExperience !== null &&
+          lawyerExperience !== undefined);
 
       if (createdLawyerId && hasProfileDetails) {
         const formData = new FormData();
@@ -306,22 +301,32 @@ export default function Dashboard() {
           formData.append("education", JSON.stringify(cleanedEducation));
         }
         if (cleanedSpecializations.length > 0) {
-          formData.append("specializations", JSON.stringify(cleanedSpecializations));
+          formData.append(
+            "specializations",
+            JSON.stringify(cleanedSpecializations),
+          );
         }
         if (cleanedFees.length > 0) {
           formData.append("feesByCategory", JSON.stringify(cleanedFees));
         }
-        if (lawyerExperience !== "" && lawyerExperience !== null && lawyerExperience !== undefined) {
+        if (
+          lawyerExperience !== "" &&
+          lawyerExperience !== null &&
+          lawyerExperience !== undefined
+        ) {
           formData.append("experience", String(lawyerExperience));
         }
         if (lawyerDescription && lawyerDescription.trim().length > 0) {
           formData.append("bio", lawyerDescription.trim());
         }
 
-        await requestWithFallback(
-          "patch",
-          `/api/lawyers/complete-profile/${createdLawyerId}`,
+        // Complete profile with image upload - server route
+        await axios.patch(
+          `${API_URL}/api/lawyers/complete-profile/${createdLawyerId}`,
           formData,
+          {
+            headers: { "Content-Type": "multipart/form-data" },
+          },
         );
       }
 
@@ -359,7 +364,7 @@ export default function Dashboard() {
     }
 
     try {
-      await requestWithFallback("delete", `/api/users/${userId}`);
+      await axios.delete(`${API_URL}/api/users/${userId}`);
       await fetchUsers();
       alert("User deleted successfully");
     } catch (error) {
@@ -379,13 +384,12 @@ export default function Dashboard() {
     }
 
     try {
-      await requestWithFallback("put", `/api/users/${userId}`, {
+      await axios.put(`${API_URL}/api/users/${userId}`, {
         isActive: false,
       });
       await fetchUsers();
       alert("User marked as inactive");
     } catch (error) {
-      // Backend may still update isActive=false but return 404 for inactive users.
       if (error?.response?.status === 404) {
         await fetchUsers();
         alert("User marked as inactive");
@@ -409,13 +413,9 @@ export default function Dashboard() {
 
     setVerificationLoading({ id: lawyerId, action: "approve" });
     try {
-      await requestWithFallback(
-        "put",
-        `/api/lawyers/update-lawyer/${lawyerId}`,
-        {
-          verification: "Approved",
-        },
-      );
+      await axios.put(`${API_URL}/api/lawyers/update-lawyer/${lawyerId}`, {
+        verification: "Approved",
+      });
       setAllLawyers((prev) =>
         prev.map((lawyer) =>
           lawyer._id === lawyerId
@@ -451,10 +451,7 @@ export default function Dashboard() {
 
     setVerificationLoading({ id: lawyerId, action: "reject" });
     try {
-      await requestWithFallback(
-        "delete",
-        `/api/lawyers/delete-lawyer/${lawyerId}`,
-      );
+      await axios.delete(`${API_URL}/api/lawyers/delete-lawyer/${lawyerId}`);
       setAllLawyers((prev) => prev.filter((lawyer) => lawyer._id !== lawyerId));
       setLawyers((prev) => prev.filter((lawyer) => lawyer._id !== lawyerId));
       alert("Lawyer rejected successfully");
@@ -470,11 +467,29 @@ export default function Dashboard() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#F7F9FC]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen flex-col bg-[#F7F9FC] font-sans lg:flex-row overflow-auto lg:overflow-hidden">
-      {/* Sidebar */}
+      {isSidebarOpen && (
+        <button
+          type="button"
+          aria-label="Close sidebar"
+          onClick={() => setIsSidebarOpen(false)}
+          className="fixed inset-0 z-30 bg-black/40 lg:hidden"
+        />
+      )}
+
       <aside
-        className="w-full bg-white border-b border-gray-200 px-6 py-6 flex flex-col justify-between lg:w-65 lg:border-b-0 lg:border-r lg:max-h-screen lg:overflow-y-auto"
+        className={`fixed inset-y-0 left-0 z-40 w-72 bg-white border-r border-gray-200 px-6 py-6 flex flex-col justify-between transform transition-transform duration-200 ease-out lg:static lg:translate-x-0 lg:w-65 lg:border-b-0 lg:max-h-screen lg:overflow-y-auto ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
         style={{ scrollbarWidth: "thin", scrollbarColor: "#d1d5db #f3f4f6" }}
       >
         <div>
@@ -486,6 +501,14 @@ export default function Dashboard() {
               <p className="font-semibold leading-none">EsueBook</p>
               <span className="text-xs text-gray-400">Admin Controller</span>
             </div>
+            <button
+              type="button"
+              aria-label="Close sidebar"
+              onClick={() => setIsSidebarOpen(false)}
+              className="ml-auto inline-flex items-center justify-center rounded-lg border border-gray-200 p-2 text-gray-500 hover:bg-gray-50 lg:hidden"
+            >
+              <X size={18} />
+            </button>
           </div>
 
           <nav className="space-y-6">
@@ -593,6 +616,61 @@ export default function Dashboard() {
                     </li>
                   );
                 })}
+                <li>
+                  <div
+                    onClick={() =>
+                      setIsAppointmentMenuOpen((prev) => {
+                        const next = !prev;
+                        if (
+                          next &&
+                          activeMenu !== "user-appointments" &&
+                          activeMenu !== "lawyer-appointments"
+                        ) {
+                          setActiveMenu("user-appointments");
+                        }
+                        return next;
+                      })
+                    }
+                    className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all ${
+                      activeMenu === "user-appointments" ||
+                      activeMenu === "lawyer-appointments"
+                        ? "bg-blue-50 text-blue-600 font-medium"
+                        : "text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <CalendarDays size={18} /> Appointments
+                    </div>
+                    <ChevronDown
+                      size={16}
+                      className={`transition-transform ${isAppointmentMenuOpen ? "rotate-180" : ""}`}
+                    />
+                  </div>
+                  {isAppointmentMenuOpen && (
+                    <ul className="mt-2 space-y-1">
+                      <li
+                        onClick={() => handleMenuClick("user-appointments")}
+                        className={`ml-6 flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all ${
+                          activeMenu === "user-appointments"
+                            ? "bg-blue-50 text-blue-600 font-medium"
+                            : "text-gray-600 hover:bg-gray-100"
+                        }`}
+                      >
+                        User Appointments
+                      </li>
+                      <li
+                        onClick={() => handleMenuClick("lawyer-appointments")}
+                        className={`ml-6 flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all ${
+                          activeMenu === "lawyer-appointments"
+                            ? "bg-blue-50 text-blue-600 font-medium"
+                            : "text-gray-600 hover:bg-gray-100"
+                        }`}
+                      >
+                        Lawyer Appointments
+                      </li>
+                    </ul>
+                  )}
+                </li>
               </ul>
             </div>
           </nav>
@@ -615,7 +693,6 @@ export default function Dashboard() {
         </div>
       </aside>
 
-      {/* Main Content */}
       <main
         className={`flex-1 p-4 sm:p-6 lg:p-8 pb-10 ${
           activeMenu === "lawyers"
@@ -625,18 +702,28 @@ export default function Dashboard() {
               : "overflow-auto"
         }`}
       >
-        {/* Header */}
         <div className="flex flex-col gap-4 mb-6 lg:mb-8 lg:flex-row lg:justify-between lg:items-center">
-          <h1 className="text-xl sm:text-2xl font-semibold">
-            {activeMenu === "overview" && "Dashboard Overview"}
-            {activeMenu === "users" && "User Management"}
-            {activeMenu === "lawyers" && "Lawyer Management"}
-            {activeMenu === "verification" && "Verification Queue"}
-            {activeMenu === "financial" && "Financial"}
-            {activeMenu === "appointments" && "Appointments"}
-            {activeMenu === "reports" && "Reports"}
-            {activeMenu === "settings" && "Settings"}
-          </h1>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              aria-label="Open sidebar"
+              onClick={() => setIsSidebarOpen(true)}
+              className="inline-flex items-center justify-center rounded-lg border border-gray-200 p-2 text-gray-600 hover:bg-gray-50 lg:hidden"
+            >
+              <Menu size={18} />
+            </button>
+            <h1 className="text-xl sm:text-2xl font-semibold">
+              {activeMenu === "overview" && "Dashboard Overview"}
+              {activeMenu === "users" && "User Management"}
+              {activeMenu === "lawyers" && "Lawyer Management"}
+              {activeMenu === "verification" && "Verification Queue"}
+              {activeMenu === "financials" && "Financials"}
+              {activeMenu === "user-appointments" && "User Appointments"}
+              {activeMenu === "lawyer-appointments" && "Lawyer Appointments"}
+              {activeMenu === "reports" && "Reports"}
+              {activeMenu === "settings" && "Settings"}
+            </h1>
+          </div>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
             <div className="relative w-full sm:w-auto">
@@ -648,11 +735,6 @@ export default function Dashboard() {
                 className="pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg w-full sm:w-[320px] hover:border-blue-500 hover:ring-2 hover:ring-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                 placeholder="Search for clients, lawyers or invoices"
               />
-            </div>
-            <div className="relative">
-              <div className="bg-blue-100 p-2 rounded-full inline-flex items-center justify-center">
-                <Bell className="text-blue-600" />
-              </div>
             </div>
             <div className="flex items-center gap-2">
               <img
@@ -667,7 +749,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Overview Content */}
         {activeMenu === "overview" && (
           <Overview
             usersCount={Array.isArray(users) ? users.length : 0}
@@ -682,7 +763,6 @@ export default function Dashboard() {
           />
         )}
 
-        {/* User Management Content */}
         {activeMenu === "users" && (
           <UserManagement
             mode="users"
@@ -793,7 +873,6 @@ export default function Dashboard() {
             setUsers={setUsers}
           />
         )}
-        {/* Verification Queue Content */}
         {activeMenu === "verification" && (
           <VerificationQueue
             allLawyers={AllLawyers}
@@ -804,16 +883,14 @@ export default function Dashboard() {
           />
         )}
 
-        {/* Financials Content */}
         {activeMenu === "financials" && <Financials />}
 
-        {/* Appointments Content */}
-        {activeMenu === "appointments" && <Appointments />}
+        {activeMenu === "user-appointments" && <UserAppointments />}
 
-        {/* Reports Content */}
+        {activeMenu === "lawyer-appointments" && <LawyerAppointments />}
+
         {activeMenu === "reports" && <Reports />}
 
-        {/* Settings Content */}
         {activeMenu === "settings" && <SettingsPage />}
       </main>
     </div>

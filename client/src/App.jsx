@@ -34,7 +34,7 @@ const App = () => {
     <Suspense fallback={<LoadingFallback />}>
       <Router>
         <Routes>
-          <Route path="*" element={<PageNotFound/>} />
+          <Route path="*" element={<PageNotFound />} />
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<AboutUs/>} />
           <Route path="/contact" element={<ContactUs/>} />
@@ -76,7 +76,7 @@ const App = () => {
           <Route path="/admin/manage-users" element={<div>Manage Users</div>} />
           <Route
             path="/admin/manage-lawyers"
-            element={<LawyerCardSkeleton/>||<div>Manage Lawyers</div>}
+            element={<LawyerCardSkeleton /> || <div>Manage Lawyers</div>}
           />
         </Routes>
         <AiChatWidget />

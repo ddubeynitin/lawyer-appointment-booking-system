@@ -10,7 +10,6 @@ import { TfiMenuAlt } from "react-icons/tfi";
 import useFetch from "../../hooks/useFetch";
 
 const ClientDashboard = () => {
-  const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [appointmentHistory, setAppointmentHistory] = useState([]);
@@ -92,14 +91,19 @@ const ClientDashboard = () => {
       return firstDate - secondDate;
     })[0];
 
+  useEffect(() => {
+    if (user) {
+      setUserId(user.id || user._id);
+    }
+  }, [user]);
+
   const handleLogout = () => {
     logout();
     navigate("/");
   };
 
   const hour = new Date().getHours();
-  const greeting =
-    hour < 12 ? "Good Morning" : hour < 18 ? "Good Afternoon" : "Good Evening";
+  const greeting = hour < 12 ? "Good Morning" : hour < 18 ? "Good Afternoon" : "Good Evening";
 
   const fetchAppointmentHistory = async () => {
     try {
@@ -119,7 +123,6 @@ const ClientDashboard = () => {
         setShowProfileDropdown(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
