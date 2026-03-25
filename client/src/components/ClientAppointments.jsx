@@ -63,10 +63,10 @@ export default function ClientAppointments({ userId, userRole = "user" }) {
     setError(null);
     
     try {
-      let endpoint = "/api/appointments";
+      let endpoint = "/appointments";
       // If viewing as lawyer, filter by lawyerId
       if (viewType === "lawyer" && userId) {
-        endpoint = `/api/appointments/lawyer/${userId}`;
+        endpoint = `/appointments/lawyer/${userId}`;
       }
       
       const response = await requestWithFallback("get", endpoint);
@@ -98,7 +98,7 @@ export default function ClientAppointments({ userId, userRole = "user" }) {
     if (!confirm("Are you sure you want to cancel this appointment?")) return;
     
     try {
-      await requestWithFallback("put", `/api/appointments/${appointmentId}`, {
+      await requestWithFallback("put", `/appointments/${appointmentId}`, {
         status: "Rejected"
       });
       fetchAppointments();
@@ -112,7 +112,7 @@ export default function ClientAppointments({ userId, userRole = "user" }) {
   // Submit review
   const handleSubmitReview = async (appointmentId) => {
     try {
-      await requestWithFallback("post", "/api/reviews", {
+      await requestWithFallback("post", "/reviews", {
         lawyerId: appointments.find(a => a._id === appointmentId)?.lawyerId,
         appointmentId,
         rating: reviewData.rating,

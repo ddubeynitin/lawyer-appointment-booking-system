@@ -19,7 +19,7 @@ export default function UserAppointments() {
     setError(null);
     
     try {
-      const response = await axios.get(`${API_URL}/api/appointments`, { timeout: 10000 });
+      const response = await axios.get(`${API_URL}/appointments`, { timeout: 10000 });
       setAppointments(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
       if (err.code === 'ECONNABORTED') {
@@ -35,7 +35,7 @@ export default function UserAppointments() {
 
   const fetchUsers = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/users`, { timeout: 5000 });
+      const response = await axios.get(`${API_URL}/users`, { timeout: 5000 });
       setUsers(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
       console.error("Failed to fetch users:", err);

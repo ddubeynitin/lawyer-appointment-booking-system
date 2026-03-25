@@ -30,7 +30,7 @@ export default function LawyerAppointments() {
 
   const fetchLawyers = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/lawyers`, { timeout: 10000 });
+      const response = await axios.get(`${API_URL}/lawyers`, { timeout: 10000 });
       setLawyers(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
       console.error("Failed to fetch lawyers:", err);
@@ -39,7 +39,7 @@ export default function LawyerAppointments() {
 
   const fetchAppointments = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/appointments`, { timeout: 10000 });
+      const response = await axios.get(`${API_URL}/appointments`, { timeout: 10000 });
       setAppointments(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
       console.error("Failed to fetch appointments:", err);
@@ -54,7 +54,7 @@ export default function LawyerAppointments() {
     try {
       await Promise.all([fetchLawyers(), fetchAppointments()]);
     } catch (err) {
-      setError("Failed to load data. Please try again.");
+      setError("Failed to load data. Please try again.",err);
     } finally {
       setLoading(false);
       setRefreshing(false);
