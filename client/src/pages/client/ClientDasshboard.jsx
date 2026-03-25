@@ -91,11 +91,11 @@ const ClientDashboard = () => {
       return firstDate - secondDate;
     })[0];
 
-  useEffect(() => {
-    if (user) {
-      setUserId(user.id || user._id);
-    }
-  }, [user]);
+  // useEffect(() => {
+  //   if (user) {
+  //     setUserId(user.id || user._id);
+  //   }
+  // }, [user]);
 
   const handleLogout = () => {
     logout();
@@ -286,7 +286,7 @@ const ClientDashboard = () => {
           </nav>
 
           <div className="relative flex items-center gap-6">
-            <div
+            {/* <div
               className="relative cursor-pointer"
               onClick={() => setShowNotifications(!showNotifications)}
             >
@@ -303,7 +303,7 @@ const ClientDashboard = () => {
                   <li>Payment successful</li>
                 </ul>
               </div>
-            )}
+            )} */}
 
             <div className="relative" ref={profileRef}>
               <div
@@ -344,9 +344,9 @@ const ClientDashboard = () => {
                   >
                     View Profile
                   </button>
-                  <button className="w-full rounded-lg px-3 py-2 text-left transition hover:bg-gray-100">
+                  {/* <button className="w-full rounded-lg px-3 py-2 text-left transition hover:bg-gray-100">
                     Settings
-                  </button>
+                  </button> */}
                   <button
                     onClick={handleLogout}
                     className="w-full rounded-lg px-3 py-2 text-left text-red-600 transition hover:bg-red-50"
@@ -378,7 +378,7 @@ const ClientDashboard = () => {
 
             <div className="mt-4 flex flex-col items-center text-center">
               <img
-                src={user.profilePicture || userImg}
+                src={user.profilePicture || "/assets/images/user.png"}
                 className="mb-4 h-20 w-20 rounded-full"
                 alt="user"
               />
