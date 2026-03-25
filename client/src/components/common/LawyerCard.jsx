@@ -87,8 +87,9 @@ function LawyerCard({ lawyer }) {
                 Unavailable
               </span>
             )}
-          </div>
+          </span>
         </div>
+        {/* </div> */}
 
         <div className="w-full rounded-lg bg-amber-300 px-3 py-2 text-left text-lg font-bold text-slate-800 sm:w-auto">
           {lawyer.feesByCategory && lawyer.feesByCategory.length > 0 ? (
@@ -105,15 +106,15 @@ function LawyerCard({ lawyer }) {
                 ))}
               </select>
               <FaChevronDown className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-white" />
-            </div>
+            </div>):
             <span className="text-sm text-slate-500">
               ({lawyer.totalReviews} reviews)
             </span>
-          </div>
-        )}
+        }
+        </div>
 
-        {/* Buttons */}
-        <div className="flex gap-3 mt-5">
+        
+        {/* <div className="flex gap-3 mt-5">
           <Link
             to={`/lawyer/lawyer-profile/${lawyer._id}`}
             className="flex-1 border-2 border-slate-200 hover:border-blue-500 hover:bg-blue-50 rounded-xl py-2.5 text-center text-sm font-semibold text-slate-700 hover:text-blue-700 transition-all"
@@ -128,7 +129,7 @@ function LawyerCard({ lawyer }) {
           >
             Book Now
           </motion.button>
-        </div>
+        </div> */}
       </div>
 
       <div className="mt-4 flex flex-col gap-3 sm:flex-row">

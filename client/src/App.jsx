@@ -2,16 +2,18 @@ import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import React, { Suspense, lazy } from "react";
 import "./App.css";
 import LoadingFallback from "./components/LoadingFallback";
-import PageNotFound from "./pages/PageNotFound";
 import LawyerCardSkeleton from "./components/layout/LawyerCardSkeleton";
-import AppointmentSchedulingPage from "./pages/client/AppointmentSchedulingPage";
-import AppointmentRequestsPage from "./pages/lawyer/AppointmentRequestsPage";
-import LawyerCalendarPage from "./pages/lawyer/LawyerCalendarPage";
 import AiChatWidget from "./components/ai/AiChatWidget";
-import AboutUs from "./pages/AboutUs";
-import ContactUs from "./pages/ContactUs";
 
 // Lazy load components
+
+const PageNotFound = lazy(() => import("./pages/PageNotFound"));
+const AppointmentSchedulingPage = lazy(() => import("./pages/client/AppointmentSchedulingPage"));
+const AppointmentRequestsPage = lazy(() => import("./pages/lawyer/AppointmentRequestsPage"));
+const LawyerCalendarPage = lazy(() => import("./pages/lawyer/LawyerCalendarPage"));
+const AboutUs = lazy(() => import("./pages/AboutUs"));
+const ContactUs = lazy(() => import("./pages/ContactUs"));
+
 const Registration = lazy(() => import("./pages/auth/Register"));
 const ClientDashboard = lazy(() => import("./pages/client/ClientDasshboard"));
 const AdminDashBoard = lazy(() => import("./pages/admin/AdminDashBoard"));
@@ -23,9 +25,6 @@ const MyAppointments = lazy(() => import("./pages/client/MyAppointments"));
 const Home = lazy(() => import("./pages/Home"));
 const CompleteLawyerProfile = lazy(
   () => import("./pages/auth/CompleteLawyerProfile"),
-);
-const AppointmentConfirmation = lazy(
-  () => import("./pages/client/AppointmentConfirmation"),
 );
 const LawyerProfile = lazy(() => import("./pages/lawyer/LawyerProfile"));
 
