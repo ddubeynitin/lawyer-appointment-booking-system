@@ -6,7 +6,7 @@ import { FaGavel } from "react-icons/fa";
 import { useAuth } from "../../context/AuthContext";
 
 const LawyerHeader = () => {
-  const [showNotifications, setShowNotifications] = useState(false);
+  // const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [isMenuVisible, setIsMenuVisible] = useState(false);
 
@@ -153,7 +153,7 @@ const LawyerHeader = () => {
           </nav>
 
           <div className="relative flex items-center gap-6">
-            <div
+            {/* <div
               className="relative cursor-pointer"
               onClick={() => setShowNotifications(!showNotifications)}
             >
@@ -170,7 +170,7 @@ const LawyerHeader = () => {
                   <li>Payment received</li>
                 </ul>
               </div>
-            )}
+            )} */}
 
             <div className="relative" ref={profileRef}>
               <img

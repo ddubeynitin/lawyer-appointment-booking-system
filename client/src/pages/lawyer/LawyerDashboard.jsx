@@ -253,16 +253,16 @@ const LawyerDashboard = () => {
               )}
             </Card>
 
-            <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-4">
+            {/* <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-4">
               <h4 className="mb-2 font-semibold">Quick Notes</h4>
               <textarea
                 placeholder="Type a note..."
                 className="h-24 w-full bg-transparent text-sm outline-none"
               />
               <button className="mt-2 text-sm text-blue-600">Save</button>
-            </div>
+            </div> */}
 
-            <div className="rounded-3xl bg-linear-to-b from-blue-700 to-blue-900 p-6 text-center text-white shadow-xl">
+            {/* <div className="rounded-3xl bg-linear-to-b from-blue-700 to-blue-900 p-6 text-center text-white shadow-xl">
               <h4 className="mb-2 flex justify-center font-semibold">
                 Need urgent assistance?
               </h4>
@@ -274,7 +274,7 @@ const LawyerDashboard = () => {
                   Quick Match
                 </button>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       </main>
