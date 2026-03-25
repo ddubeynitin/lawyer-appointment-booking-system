@@ -53,7 +53,7 @@ function LoginPage() {
   // );
   const navigate = useNavigate();
   const { login } = useAuth();
-
+  
   const validateEmail = (value) => {
     const re = /^\S+@\S+\.\S+$/;
     if (!value || !re.test(value)) {

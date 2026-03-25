@@ -22,6 +22,28 @@ const getLawyerById = async (req, res) => {
   }
 };
 
+const getFeaturedLawyers = async (req, res) => {
+  try {
+    const lawyers = await Lawyer.find({
+      isFeatured: true,
+    })
+      .select("name specializations experience profileImage rating")
+      .limit(4);
+
+    res.status(200).json({
+      success: true,
+      count: lawyers.length,
+      lawyers
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch featured lawyers",
+      error: error.message
+    });
+  }
+};
+
 const updateLawyer = async (req, res) => {
   try {
     const lawyer = await Lawyer.findByIdAndUpdate(req.params.id, req.body, {
@@ -32,6 +54,24 @@ const updateLawyer = async (req, res) => {
       return res.status(404).json({ message: "Lawyer not found or inactive" });
     }
     res.status(200).json(lawyer);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const updateFeaturedLawyerStatus = async (req, res) => {
+  try {
+    const { isFeatured } = req.body;
+
+    const lawyer = await Lawyer.findByIdAndUpdate(
+      req.params.id,
+      { isFeatured },
+      { new: true }
+    );
+    if (!lawyer) {
+      return res.status(404).json({ message: "Lawyer not found" });
+    }
+    res.status(200).json({ message: "Featured status updated successfully", lawyer });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -155,4 +195,6 @@ module.exports = {
   completeLawyerProfile,
   deleteLawyer,
   verificationLawyer,
+  getFeaturedLawyers,
+  updateFeaturedLawyerStatus
 };

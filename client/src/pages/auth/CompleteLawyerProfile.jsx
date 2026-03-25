@@ -5,12 +5,13 @@ import {
   FaBuilding,
   FaGraduationCap,
   FaImage,
+  FaArrowLeft,
 } from "react-icons/fa";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { API_URL } from "../../utils/api";
 import LoadingFallback from "../../components/LoadingFallback.jsx";
-
+import { MdCancel } from "react-icons/md";
 const specializationOptions = [
   "Criminal",
   "Civil",
@@ -52,6 +53,13 @@ const CompleteLawyerProfile = () => {
     setFormData((prev) => ({
       ...prev,
       profileImage: file,
+    }));
+  };
+
+  const removeImage = () => {
+    setFormData((prev) => ({
+      ...prev,
+      profileImage: null,
     }));
   };
 
@@ -253,25 +261,30 @@ const CompleteLawyerProfile = () => {
   };
 
   return (
-    <div className="h-screen bg-[url('./assets/images/bg-white.jpg')] bg-cover bg-center py-5 px-6 overflow-scroll font-barlow">
+    <div className="h-screen bg-[url('./assets/images/bg-white.jpg')] bg-cover bg-center py-5 lg:px-6 px-2 overflow-scroll font-barlow">
       {isSubmitting && (
         <div className="absolute w-full h-screen top-[50%] left-[50%] bg-white/40 transform -translate-x-1/2 -translate-y-1/2 flex justify-center items-center z-20">
-          <LoadingFallback/>
+          <LoadingFallback />
         </div>
-       )} 
-      <div className="max-w-5xl mx-auto bg-white rounded-3xl shadow-2xl p-5 border border-slate-200">
-        <h2 className="text-4xl font-bold text-center mb-2">
+      )}
+      <div className="max-w-5xl mx-auto bg-white rounded-3xl shadow-2xl lg:p-5 pt-3 border border-slate-200">
+        <button onClick={() =>navigate(-1)} className="border p-3 hover:transition hover:transform hover:duration-75 hover:after:content-['Home'] border-dashed border-gray-300 rounded-2xl flex items-center gap-2 text-slate-500 hover:text-slate-700">
+          <FaArrowLeft />
+        </button>
+        <h2 className="lg:text-4xl text-lg font-bold text-center mb-2">
           Complete Your Professional Profile
         </h2>
         <p className="text-center text-slate-500 mb-2">Step {step} of 3</p>
 
-        <form onSubmit={handleSubmit} className="space-y-10">
+        <form onSubmit={handleSubmit} className="lg:space-y-10">
           {/* ================= STEP 1 ================= */}
           {step === 1 && (
             <SectionCard icon={<FaUserTie />} title="Basic Information">
               <FileInput
                 label="Upload Profile Image"
                 onChange={handleImageChange}
+                onRemove={removeImage}
+                value={formData.profileImage}
                 error={errors.profileImage}
               />
 
@@ -285,27 +298,25 @@ const CompleteLawyerProfile = () => {
               />
 
               <div className="flex justify-between`">
-
-
-              <Input
-                label="Years of Experience"
-                placeholder="e.g. 5"
-                type="number"
-                name="experience"
-                value={formData.experience}
-                onChange={handleChange}
-                error={errors.experience}
+                <Input
+                  label="Years of Experience"
+                  placeholder="e.g. 5"
+                  type="number"
+                  name="experience"
+                  value={formData.experience}
+                  onChange={handleChange}
+                  error={errors.experience}
                 />
 
-              <Input
-                label="Practice Court"
-                placeholder="e.g. Supreme Court, High Court, etc."
-                name="practiceCourt"
-                value={formData.practiceCourt}
-                onChange={handleChange}
-                error={errors.practiceCourt}
-              />
-                </div>
+                <Input
+                  label="Practice Court"
+                  placeholder="e.g. Supreme Court, High Court, etc."
+                  name="practiceCourt"
+                  value={formData.practiceCourt}
+                  onChange={handleChange}
+                  error={errors.practiceCourt}
+                />
+              </div>
 
               <NextBtn onClick={nextStep} disabled={isSubmitting} />
             </SectionCard>
@@ -384,7 +395,10 @@ const CompleteLawyerProfile = () => {
                 <label className="font-semibold block mb-4">Education</label>
 
                 {formData.education.map((edu, index) => (
-                  <div key={index} className="border border-gray-300 p-4 rounded-xl mb-4">
+                  <div
+                    key={index}
+                    className="border border-gray-300 p-4 rounded-xl mb-4"
+                  >
                     <div className="grid md:grid-cols-3 gap-4">
                       <Input
                         placeholder="Degree"
@@ -456,24 +470,23 @@ const CompleteLawyerProfile = () => {
                 error={errors.address}
               />
               <div className="flex">
-
-              <Input
-                label="City"
-                placeholder="e.g. Surat"
-                name="city"
-                value={formData.city}
-                onChange={handleChange}
-                error={errors.city}
+                <Input
+                  label="City"
+                  placeholder="e.g. Surat"
+                  name="city"
+                  value={formData.city}
+                  onChange={handleChange}
+                  error={errors.city}
                 />
-              <Input
-                label="State"
-                placeholder="e.g. Gujarat"
-                name="state"
-                value={formData.state}
-                onChange={handleChange}
-                error={errors.state}
+                <Input
+                  label="State"
+                  placeholder="e.g. Gujarat"
+                  name="state"
+                  value={formData.state}
+                  onChange={handleChange}
+                  error={errors.state}
                 />
-                </div>
+              </div>
 
               <div className="flex gap-4 mt-8">
                 <BackBtn onClick={prevStep} disabled={isSubmitting} />
@@ -496,8 +509,8 @@ const CompleteLawyerProfile = () => {
 /* ================= UI COMPONENTS ================= */
 
 const SectionCard = ({ icon, title, children }) => (
-  <div className="bg-slate-50 p-8 rounded-2xl shadow-md space-y-6">
-    <div className="flex items-center gap-3 text-blue-600 text-xl font-semibold">
+  <div className="bg-slate-50 lg:p-8 p-3 rounded-2xl shadow-md lg:space-y-6 space-y-3">
+    <div className="flex items-center gap-3 text-blue-600 lg:text-xl font-semibold">
       {icon}
       {title}
     </div>
@@ -508,7 +521,11 @@ const SectionCard = ({ icon, title, children }) => (
 const Input = ({ label, error, placeholder, ...props }) => (
   <div className="w-full mr-3 font-barlow">
     {label && <label className="font-semibold block mb-2">{label}</label>}
-    <input {...props} className="w-full bg-gray-100 p-3 rounded-xl" placeholder={placeholder}/>
+    <input
+      {...props}
+      className="w-full bg-gray-100 p-3 rounded-xl"
+      placeholder={placeholder}
+    />
     {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
   </div>
 );
@@ -525,16 +542,51 @@ const TextArea = ({ label, error, ...props }) => (
   </div>
 );
 
-const FileInput = ({ label, error, ...props }) => (
-  <div className="bg-[url('./assets/images/pattern-bg.jpg')]  flex flex-col items-center justify-center gap-3 border-2 border-dashed border-gray-300 rounded-xl p-6 cursor-pointer hover:bg-gray-50 transition">
-    <FaImage className="text-gray-400 text-3xl mb-2" />
-    <label className="font-semibold block mb-2 text-center">{label}</label>
-    <input
-      type="file"
-      {...props}
-      className="w-50  bg-linear-to-r from-blue-600 to-indigo-600 text-white p-2 rounded-md text-sm cursor-pointer hover:bg-blue-600 transition"
-    />
-    {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+const FileInput = ({ label, error, onRemove, value, ...props }) => (
+  <div className="bg-[url('./assets/images/pattern-bg.jpg')]  lg:flex items-center justify-center gap-3 border-2 border-dashed border-gray-300 rounded-xl p-6 cursor-pointer hover:bg-gray-50 transition overflow-hidden">
+    <div className="flex flex-col items-center justify-center gap-3 border-2 border-dashed border-gray-300 rounded-xl p-6 cursor-pointer bg-gray-50 transition">
+      <FaImage className="text-gray-400 text-3xl mb-2" />
+      <label className="font-semibold block mb-2 text-center">{label}</label>
+      <input
+        type="file"
+        {...props}
+        className="w-50  bg-linear-to-r from-blue-600 to-indigo-600 text-white p-2 rounded-md text-sm cursor-pointer hover:bg-blue-600 transition duration-300"
+      />
+      {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+    </div>
+    {/* Image Preview Area */}
+    <div className=" lg:h-45 relative overflow-hidden flex lg:flex-row flex-col items-center justify-center gap-3 border-2 border-dashed border-gray-300 rounded-xl p-2 mt-2 cursor-pointer bg-gray-50 transition">
+      {value ? (
+        <>
+          <img
+            src={URL.createObjectURL(value)}
+            alt="Preview"
+            className="w-full h-full object-cover border border-gray-300 border-dotted rounded-xl"
+          />
+          <MdCancel 
+            className="absolute top-0 right-0 text-2xl text-red-500 cursor-pointer hover:text-red-700 transition-colors "
+            onClick={onRemove}
+          />
+        </>
+      ) : (
+        <div className="text-gray-400">No image selected for preview</div>
+      )}
+      {value ? (
+        <>
+          <img
+            src={URL.createObjectURL(value)}
+            alt="Preview"
+            className="w-40 h-40 rounded-full object-cover border border-gray-300 border-dotted"
+          />
+          <MdCancel 
+            className="absolute top-0 right-0 text-2xl text-red-500 cursor-pointer hover:text-red-700 transition-colors"
+            onClick={onRemove}
+          />
+        </>
+      ) : (
+        ""
+      )}
+    </div>
   </div>
 );
 

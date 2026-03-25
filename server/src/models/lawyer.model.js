@@ -110,6 +110,16 @@ const lawyerSchema = new mongoose.Schema(
       default: true,
     },
 
+    isFeatured: {
+      type: Boolean,
+      default: false,
+    },
+
+    totalAppointments: {
+      type: Number,
+      default: 0,
+    },
+
     verification: {
       type: String,
       enum: ["Pending", "Approved", "Rejected"],

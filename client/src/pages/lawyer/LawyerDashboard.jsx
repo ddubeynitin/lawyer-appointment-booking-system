@@ -1,120 +1,281 @@
-import {
-  FaCalendarAlt,
-  FaSearch,
-  FaGavel,
-} from "react-icons/fa";
-import { LuBellRing } from "react-icons/lu";
-import { useState, useRef, useEffect } from "react";
-import ClientAppointments from "../../components/ClientAppointments";
+import { FaCalendarAlt, FaVideo } from "react-icons/fa";
+import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
+import useFetch from "../../hooks/useFetch";
+import { API_URL } from "../../utils/api";
+import LawyerHeader from "../../components/common/LawyerHeader";
+import { Link } from "react-router-dom";
+
+const SCHEDULE_TIME_SLOTS = [
+  "09:00 AM",
+  "09:30 AM",
+  "10:00 AM",
+  "10:30 AM",
+  "11:30 AM",
+  "02:00 PM",
+  "03:30 PM",
+];
+
+const getTodayDateInputValue = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = `${today.getMonth() + 1}`.padStart(2, "0");
+  const day = `${today.getDate()}`.padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+};
+
+const formatScheduleDateLabel = (date) =>
+  new Date(`${date}T00:00:00`).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 
 const LawyerDashboard = () => {
-  const { user } = useAuth();
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [showProfile, setShowProfile] = useState(false);
-  const [userId, setUserId] = useState(null);
-  const profileRef = useRef(null);
 
-  useEffect(() => {
-    if (user) {
-      setUserId(user.id || user._id);
-    }
-  }, [user]);
+  const [selectedDate, setSelectedDate] = useState(getTodayDateInputValue);
+  const { user } = useAuth();
+
+  const { data, loading, error } = useFetch(
+    `${API_URL}/appointments/lawyer/${user.id}?status=Pending`,
+  );
+  const { data: allAppointmentsData, loading: allAppointmentsLoading } = useFetch(
+    `${API_URL}/appointments/lawyer/${user.id}`,
+  );
+  const { data: scheduleData, loading: scheduleLoading } = useFetch(
+    `${API_URL}/appointments/lawyer/${user.id}?date=${selectedDate}`,
+  );
+
+  const appointments = data?.appointments || [];
+  const allAppointments = allAppointmentsData?.appointments || [];
+  const totalAppointments = data?.totalAppointments || 0;
+  const pendingAppointments = data?.pendingAppointments || 0;
+  const selectedDateAppointments = scheduleData?.appointments || [];
+  const selectedDateSlots = new Map(
+    selectedDateAppointments.map((appointment) => [
+      appointment.timeSlot,
+      appointment,
+    ]),
+  );
+  const selectedDateLabel = formatScheduleDateLabel(selectedDate);
+  const upcomingAppointment = allAppointments
+    .filter((appointment) => {
+      if (!appointment?.date || !appointment?.timeSlot) return false;
+
+      const appointmentDateTime = new Date(
+        `${new Date(appointment.date).toISOString().split("T")[0]} ${appointment.timeSlot}`,
+      );
+
+      return (
+        !Number.isNaN(appointmentDateTime.getTime()) &&
+        appointmentDateTime >= new Date() &&
+        appointment.status !== "Rejected" &&
+        appointment.status !== "Completed"
+      );
+    })
+    .sort((firstAppointment, secondAppointment) => {
+      const firstDate = new Date(
+        `${new Date(firstAppointment.date).toISOString().split("T")[0]} ${firstAppointment.timeSlot}`,
+      );
+      const secondDate = new Date(
+        `${new Date(secondAppointment.date).toISOString().split("T")[0]} ${secondAppointment.timeSlot}`,
+      );
+
+      return firstDate - secondDate;
+    })[0];
+
 
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Good Morning" : hour < 18 ? "Good Afternoon" : "Good Evening";
-  const lawyerName = user?.name || "Lawyer";
+  const greeting =
+    hour < 12 ? "Good Morning" : hour < 18 ? "Good Afternoon" : "Good Evening";
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (profileRef.current && !profileRef.current.contains(event.target)) {
-        setShowProfile(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-100 to-gray-200">
-      <header className="bg-white/70 backdrop-blur-lg border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <FaGavel className="text-blue-700 text-xl" />
-            <span className="font-bold text-xl text-gray-800">EsueBook</span>
-          </div>
-          <nav className="hidden md:flex items-center gap-6 font-medium text-gray-600">
-            <span className="text-blue-600 font-semibold">Dashboard</span>
-            <span className="hover:text-blue-600 cursor-pointer">Calendar</span>
-            <span className="hover:text-blue-600 cursor-pointer">Requests</span>
-            <span className="hover:text-blue-600 cursor-pointer">Clients</span>
-          </nav>
-          <div className="flex items-center gap-6 relative">
-            <div className="relative cursor-pointer" onClick={() => setShowNotifications(!showNotifications)}>
-              <LuBellRing className="text-gray-700 text-xl" />
-              <span className="absolute -top-1 -right-1 bg-red-500 w-2 h-2 rounded-full"></span>
-            </div>
-            {showNotifications && (
-              <div className="absolute right-0 top-12 w-72 bg-white shadow-xl rounded-xl p-4 z-50">
-                <h4 className="font-semibold mb-3">Notifications</h4>
-                <ul className="space-y-2 text-sm text-gray-600">
-                  <li>📅 New appointment booked by client</li>
-                  <li>💬 New message from client</li>
-                  <li>💳 Payment received</li>
-                </ul>
-              </div>
-            )}
-            <div className="relative" ref={profileRef}>
-              <img src={user?.profileImage?.url || "https://i.pravatar.cc/40?img=12"} alt="profile" onClick={() => setShowProfile(!showProfile)} className="w-9 h-9 rounded-full ring-2 ring-blue-500 cursor-pointer" />
-              {showProfile && (
-                <div className="absolute right-0 mt-3 w-72 bg-white rounded-2xl shadow-2xl border border-gray-100 p-5 z-50">
-                  <div className="flex items-center gap-4 mb-4">
-                    <img src={user?.profileImage?.url || "https://i.pravatar.cc/80?img=12"} alt="lawyer" className="w-14 h-14 rounded-full" />
+      <LawyerHeader/>
+      <main className="mx-auto max-w-7xl space-y-10 px-6 py-10">
+        <div>
+          <h1 className="flex flex-col lg:flex-row text-3xl font-bold text-gray-800">
+            {greeting}, <span className="text-blue-600">{user.name}</span>
+          </h1>
+          <p className="mt-1 text-gray-500">
+            Here&apos;s what&apos;s happening in your practice today.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            title="Total Appointments"
+            value={loading ? "..." : totalAppointments}
+            icon={<FaCalendarAlt />}
+          />
+          <StatCard
+            title="Pending Requests"
+            value={loading ? "..." : pendingAppointments}
+            sub={error ? "Unable to load" : undefined}
+          />
+        </div>
+        {/* Up Next Appointment */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="space-y-6 lg:col-span-2">
+            <Card
+              title="Up Next"
+              badge={
+                upcomingAppointment
+                  ? new Date(upcomingAppointment.date).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    })
+                  : "No upcoming"
+              }
+            >
+              {allAppointmentsLoading ? (
+                <p className="text-sm text-gray-500">Loading next appointment...</p>
+              ) : upcomingAppointment ? (
+                <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+                  <div className="flex items-center gap-4">
+                    <img
+                      src="/assets/images/user.png"
+                      className="h-14 w-14 rounded-lg"
+                      alt="client"
+                    />
                     <div>
-                      <h4 className="font-semibold text-gray-800">{lawyerName}</h4>
-                      <p className="text-sm text-gray-500">{user?.role === "lawyer" ? "Lawyer" : "User"}</p>
+                      <p className="font-semibold">
+                        {upcomingAppointment.userId?.name || "Client"}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {upcomingAppointment.caseCategory} • {upcomingAppointment.timeSlot}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {new Date(upcomingAppointment.date).toLocaleDateString(
+                          "en-US",
+                          {
+                            weekday: "long",
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          },
+                        )}
+                      </p>
                     </div>
                   </div>
-                  <div className="border-t border-gray-100 my-3"></div>
-                  <div className="space-y-2 text-sm">
-                    <button className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100">View Profile</button>
-                    <button className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100">Account Settings</button>
-                    <button className="w-full text-left px-3 py-2 rounded-lg hover:bg-red-50 text-red-600">Logout</button>
+
+                  <div className="flex gap-3">
+                    <button className="rounded-lg border border-gray-200 px-4 py-2 text-sm">
+                      Details
+                    </button>
+                    <button className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm text-white">
+                      <FaVideo /> Join Meeting
+                    </button>
                   </div>
                 </div>
+              ) : (
+                <p className="text-sm text-gray-500">
+                  No upcoming appointments scheduled.
+                </p>
               )}
+            </Card>
+
+            <Card
+              title="Daily Schedule"
+              right={
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(event) => setSelectedDate(event.target.value)}
+                  className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 outline-none focus:border-blue-500"
+                />
+              }
+            >
+              <p className="mb-4 text-sm text-gray-500">
+                Showing all time slots for {selectedDateLabel}
+              </p>
+              {scheduleLoading ? (
+                <p className="text-sm text-gray-500">Loading schedule...</p>
+              ) : (
+                SCHEDULE_TIME_SLOTS.map((time) => {
+                  const bookedAppointment = selectedDateSlots.get(time);
+
+                  return (
+                    <ScheduleItem
+                      key={time}
+                      time={time}
+                      title={
+                        bookedAppointment
+                          ? `${bookedAppointment.userId?.name || "Client"} booked this slot`
+                          : "Available slot"
+                      }
+                      sub={
+                        bookedAppointment
+                          ? `${bookedAppointment.caseCategory} • ${bookedAppointment.status}`
+                          : "No appointment booked"
+                      }
+                      status={bookedAppointment ? "booked" : "available"}
+                    />
+                  );
+                })
+              )}
+            </Card>
+          </div>
+
+          <div className="space-y-7">
+            <Card
+              title="New Requests"
+              action={
+                <Link
+                  to="/lawyer/appointment-requests"
+                  className="text-sm text-blue-600"
+                >
+                  View All
+                </Link>
+              }
+            >
+              {loading ? (
+                <p className="text-sm text-gray-500">
+                  Loading pending appointments...
+                </p>
+              ) : appointments.length > 0 ? (
+                appointments.map((appointment) => (
+                  <RequestItem
+                    key={appointment._id}
+                    name={appointment.userId?.name || "Client"}
+                    type={appointment.caseCategory}
+                    date={appointment.date}
+                    timeSlot={appointment.timeSlot}
+                    status={appointment.status}
+                  />
+                ))
+              ) : (
+                <p className="text-sm text-gray-500">
+                  No pending appointments found.
+                </p>
+              )}
+            </Card>
+
+            <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-4">
+              <h4 className="mb-2 font-semibold">Quick Notes</h4>
+              <textarea
+                placeholder="Type a note..."
+                className="h-24 w-full bg-transparent text-sm outline-none"
+              />
+              <button className="mt-2 text-sm text-blue-600">Save</button>
+            </div>
+
+            <div className="rounded-3xl bg-linear-to-b from-blue-700 to-blue-900 p-6 text-center text-white shadow-xl">
+              <h4 className="mb-2 flex justify-center font-semibold">
+                Need urgent assistance?
+              </h4>
+              <p className="mb-4 flex justify-center text-sm">
+                Match with a client or urgent case immediately.
+              </p>
+              <div className="flex justify-center">
+                <button className="w-40 rounded-xl bg-white px-4 py-2 text-sm font-medium text-blue-600 hover:bg-gray-200">
+                  Quick Match
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-6 py-10 space-y-10">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800">{greeting}, <span className="text-blue-600">{lawyerName}</span></h1>
-          <p className="text-gray-500 mt-1">Here's what's happening in your practice today.</p>
-        </div>
-
-        <div className="bg-linear-to-b from-blue-700 to-blue-950 rounded-xl p-10 text-white shadow-xl">
-          <h2 className="text-2xl font-semibold text-center mb-3">Search Clients or Cases</h2>
-          <div className="flex justify-center">
-            <div className="flex bg-white rounded-full overflow-hidden max-w-xl w-full">
-              <div className="flex items-center justify-center px-4 text-gray-400"><FaSearch /></div>
-              <input type="text" placeholder="Client name, case ID..." className="flex-1 px-3 py-2 outline-none text-gray-700" />
-              <button className="bg-blue-600 hover:bg-blue-700 px-6 text-white font-medium">Search</button>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard title="Appointments Today" value="4" icon={<FaCalendarAlt />} />
-          <StatCard title="Pending Requests" value="3" sub="+1 new" />
-          <StatCard title="Active Clients" value="128" sub="+5%" />
-          <StatCard title="Hours Billed" value="32.5" sub="This week" />
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h3 className="text-xl font-semibold mb-4">My Appointments</h3>
-          <ClientAppointments userId={userId} userRole="lawyer" />
         </div>
       </main>
     </div>
@@ -122,13 +283,77 @@ const LawyerDashboard = () => {
 };
 
 const StatCard = ({ title, value, sub, icon }) => (
-  <div className="bg-white rounded-xl p-4 shadow-sm">
-    <div className="flex justify-between items-center mb-2">
+  <div className="rounded-xl bg-white p-4 shadow-sm">
+    <div className="mb-2 flex items-center justify-between">
       <p className="text-sm text-gray-600">{title}</p>
       {icon && <span className="text-blue-600">{icon}</span>}
     </div>
     <p className="text-2xl font-bold">{value}</p>
     {sub && <p className="text-xs text-green-600">{sub}</p>}
+  </div>
+);
+
+const Card = ({ title, badge, action, right, children }) => (
+  <div className="rounded-xl bg-white p-4 shadow-sm">
+    <div className="mb-4 flex items-center justify-between gap-3">
+      <h3 className="font-semibold">{title}</h3>
+      {badge && (
+        <span className="rounded-full bg-blue-100 px-3 py-1 text-xs text-blue-600">
+          {badge}
+        </span>
+      )}
+      {action &&
+        (typeof action === "string" ? (
+          <span className="text-sm text-blue-600">{action}</span>
+        ) : (
+          action
+        ))}
+      {right &&
+        (typeof right === "string" ? (
+          <span className="text-sm text-gray-500">{right}</span>
+        ) : (
+          right
+        ))}
+    </div>
+    {children}
+  </div>
+);
+
+const ScheduleItem = ({ time, title, sub, status }) => (
+  <div
+    className={`flex gap-4 border-l-4 py-3 pl-4 ${
+      status === "booked"
+        ? "border-red-400 bg-red-50"
+        : "border-green-500 bg-green-50"
+    }`}
+  >
+    <span className="w-20 text-sm text-gray-500">{time}</span>
+    <div>
+      <p className="font-medium">{title}</p>
+      {sub && <p className="text-xs text-gray-500">{sub}</p>}
+    </div>
+  </div>
+);
+
+const RequestItem = ({ name, type, date, timeSlot, status }) => (
+  <div className="mb-4 flex items-center justify-between">
+    <div>
+      <p className="font-medium">{name}</p>
+      <p className="text-xs text-gray-500">{type}</p>
+      <p className="text-xs text-gray-400">
+        {new Date(date).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })}{" "}
+        at {timeSlot}
+      </p>
+    </div>
+    <div className="flex gap-2">
+      <span className="rounded-lg bg-yellow-100 px-3 py-1 text-xs text-yellow-700">
+        {status}
+      </span>
+    </div>
   </div>
 );
 

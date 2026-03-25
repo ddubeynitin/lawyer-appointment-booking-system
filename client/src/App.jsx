@@ -3,8 +3,13 @@ import React, { Suspense, lazy } from "react";
 import "./App.css";
 import LoadingFallback from "./components/LoadingFallback";
 import PageNotFound from "./pages/PageNotFound";
-import CustomCursor from "./components/layout/CustomCursor";
 import LawyerCardSkeleton from "./components/layout/LawyerCardSkeleton";
+import AppointmentSchedulingPage from "./pages/client/AppointmentSchedulingPage";
+import AppointmentRequestsPage from "./pages/lawyer/AppointmentRequestsPage";
+import LawyerCalendarPage from "./pages/lawyer/LawyerCalendarPage";
+import AiChatWidget from "./components/ai/AiChatWidget";
+import AboutUs from "./pages/AboutUs";
+import ContactUs from "./pages/ContactUs";
 
 // Lazy load components
 const Registration = lazy(() => import("./pages/auth/Register"));
@@ -27,11 +32,13 @@ const LawyerProfile = lazy(() => import("./pages/lawyer/LawyerProfile"));
 const App = () => {
   return (
     <Suspense fallback={<LoadingFallback />}>
-      <CustomCursor />
       <Router>
         <Routes>
           <Route path="*" element={<PageNotFound />} />
           <Route path="/" element={<Home />} />
+          <Route path="/about" element={<AboutUs/>} />
+          <Route path="/contact" element={<ContactUs/>} />
+
           <Route path="/complete-profile" element={<CompleteLawyerProfile />} />
           <Route path="/auth/login" element={<LoginPage />} />
           <Route path="/auth/register" element={<Registration />} />
@@ -41,12 +48,12 @@ const App = () => {
             element={<ClientDashboard />}
           />
           <Route
-            path="/client/appointment-scheduling"
-            element={<MyAppointments />}
+            path="/client/appointment-scheduling/:id"
+            element={<AppointmentSchedulingPage/>}
           />
           <Route
-            path="/client/appointment-confirmation"
-            element={<AppointmentConfirmation />}
+            path="/client/appointment-history"
+            element={<MyAppointments />}
           />
           <Route path="/client/lawyer-list" element={<LawyersList />} />
 
@@ -55,9 +62,14 @@ const App = () => {
             element={<LawyerDashboard />}
           />
           <Route
-            path="/lawyer/lawyer-profile/:id"
-            element={<LawyerProfile />}
+            path="/lawyer/appointment-requests"
+            element={<AppointmentRequestsPage/>}
           />
+          <Route
+            path="/lawyer/calendar"
+            element={<LawyerCalendarPage />}
+          />
+          <Route path="/lawyer/lawyer-profile/:id" element={<LawyerProfile />} />
 
           <Route path="/admin/admin-login" element={<AdminLoginPage />} />
           <Route path="/admin/admin-dashboard" element={<AdminDashBoard />} />
@@ -67,6 +79,7 @@ const App = () => {
             element={<LawyerCardSkeleton /> || <div>Manage Lawyers</div>}
           />
         </Routes>
+        <AiChatWidget />
       </Router>
     </Suspense>
   );

@@ -1,147 +1,284 @@
-# Lawyer Appointment Booking System
+# JustifAi - Lawyer Appointment Booking System
 
-This project is a web-based application designed to facilitate seamless appointment booking between clients and lawyers. The system will allow clients to view lawyer availability, schedule appointments, and receive confirmations. Lawyers will be able to manage their schedules, accept or decline appointments, and maintain client records.
+JustifAi is a full-stack web application for booking lawyer consultations, managing legal profiles, and handling appointment workflows across client, lawyer, and admin dashboards. The project includes a React + Vite frontend, an Express + MongoDB backend, lawyer profile image uploads through Cloudinary, and an AI legal assistant powered by Gemini.
 
-## Highlights
-- React + Vite client with Tailwind CSS.
-- Node.js + Express server with MongoDB (via Mongoose models).
-- Core domain models already defined: Users, Lawyers, Appointments, Payments, Reviews, Notifications.
+## What's Included
+
+- Role-based authentication for `user`, `lawyer`, and `admin`
+- Client dashboard with lawyer search, appointment history, and profile editing
+- Lawyer dashboard with pending requests, daily schedule view, and profile pages
+- Admin dashboard for user management, lawyer onboarding, and verification workflows
+- Lawyer profile completion flow with image upload support
+- Appointment creation, listing, filtering, approval/rejection updates, and history views
+- Availability management for lawyer time slots
+- Lawyer reviews with automatic rating and total review recalculation
+- Platform stats endpoint used for dashboard metrics
+- Embedded AI legal assistant for legal/platform questions
 
 ## Tech Stack
-- Frontend: React, Vite, Tailwind CSS, React Router, Axios
-- Backend: Node.js, Express, Mongoose
-- Database: MongoDB (not wired yet in `server.js`)
+
+- Frontend: React 19, Vite, React Router, Axios, Tailwind CSS v4, Framer Motion, HeroUI
+- Backend: Node.js, Express 5, Mongoose, JWT, bcrypt, multer, Cloudinary
+- Database: MongoDB
+- AI: Google Gemini via `@google/genai`
 
 ## Project Structure
-- `client/`: React UI (Vite)
-- `server/`: Express API
-- `server/src/models/`: Mongoose schemas (Users, Lawyers, Appointments, Payments, Reviews, Notifications)
-- `server/src/controllers/`, `routes/`, `middlewares/`, `services/`, `utils/`, `validations/`: placeholders for API implementation
 
-## Getting Started
+```text
+.
+|-- client/                 # React frontend
+|   |-- src/pages/          # Client, lawyer, admin, auth pages
+|   |-- src/components/     # Shared UI, admin widgets, AI chat widget
+|   |-- src/context/        # Auth context
+|   `-- src/utils/api.js    # Frontend API base URL
+|
+`-- server/                 # Express backend
+    |-- src/config/         # DB, env, Cloudinary config
+    |-- src/controllers/    # Route handlers
+    |-- src/models/         # Mongoose models
+    |-- src/routes/         # API routes
+    |-- src/services/       # AI service
+    `-- src/middlewares/    # Upload/auth/role middleware
+```
 
-### Prerequisites
-- Node.js 18+ recommended
-- npm 9+
-- MongoDB instance (local or hosted)
+## Main User Flows
 
-### Install Dependencies
+### Clients
+
+- Register and log in
+- Search lawyers by name, specialization, and location
+- View recommended lawyers
+- Book appointments and review appointment history
+- Update personal profile details from the dashboard
+
+### Lawyers
+
+- Register with a license number
+- Complete profile with bio, education, specializations, fees, and profile image
+- View pending appointment requests
+- Review daily schedule by selected date
+- See upcoming appointments and public lawyer profile details
+
+### Admins
+
+- Log in to the admin dashboard
+- Create users and lawyers
+- Review lawyer verification queue
+- Approve or reject lawyer onboarding
+- View overview, appointment, report, financial, and settings panels
+
+## Backend API Overview
+
+Base URL: `http://localhost:3000`
+
+### Auth
+
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+
+### Users
+
+- `GET /api/users`
+- `GET /api/users/:id`
+- `PUT /api/users/:id`
+- `DELETE /api/users/:id`
+
+### Lawyers
+
+- `GET /api/lawyers`
+- `GET /api/lawyers/featured`
+- `GET /api/lawyers/:id`
+- `PUT /api/lawyers/update-lawyer/:id`
+- `PATCH /api/lawyers/featured/:id`
+- `PATCH /api/lawyers/complete-profile/:id`
+- `PATCH /api/lawyers/lawyer-verification/:id`
+- `DELETE /api/lawyers/delete-lawyer/:id`
+
+### Appointments
+
+- `POST /api/appointments`
+- `GET /api/appointments`
+- `GET /api/appointments/:id`
+- `PUT /api/appointments/:id`
+- `DELETE /api/appointments/:id`
+- `GET /api/appointments/lawyer/:id`
+- `GET /api/appointments/user/:id`
+
+`GET /api/appointments/lawyer/:id` supports:
+
+- `?status=Pending`
+- `?date=YYYY-MM-DD`
+
+### Availability
+
+- `POST /api/availability`
+- `GET /api/availability/:lawyerId/:date`
+- `GET /api/availability/lawyer/:lawyerId`
+- `PATCH /api/availability/book-slot`
+- `DELETE /api/availability/:id`
+
+### Reviews
+
+- `POST /api/reviews`
+- `GET /api/reviews/lawyer/:lawyerId`
+- `GET /api/reviews/:id`
+- `PUT /api/reviews/:id`
+- `DELETE /api/reviews/:id`
+
+### Stats
+
+- `GET /api/stats`
+
+Returns:
+
+- total clients
+- active lawyers
+- total appointments
+- average satisfaction rating
+
+### AI Assistant
+
+- `POST /api/ai/generate`
+- `GET /api/ai/self-test`
+
+The AI assistant is scoped to legal questions and platform-related guidance.
+
+## Data Models
+
+### User
+
+- `name`, `email`, `phone`, `password`
+- `role` = `user`
+- `isActive`
+
+### Lawyer
+
+- Basic auth fields plus `licenseNo`
+- `profileImage`, `location`, `bio`, `practiceCourt`
+- `education[]`
+- `specializations[]`
+- `feesByCategory[]`
+- `experience`, `rating`, `totalReviews`, `totalAppointments`
+- `verification`, `isFeatured`, `isProfileComplete`, `isActive`
+
+### Appointment
+
+- `userId`, `lawyerId`
+- `lawyerName`, `lawyerSpecialization`
+- `caseCategory`, `caseDescription`
+- `date`, `timeSlot`, `feeCharged`
+- `status`, `isActive`
+
+Unique index:
+
+- `lawyerId + date + timeSlot`
+
+### Availability
+
+- `lawyerId`, `date`
+- `slots[]` with time and booking state
+
+### Review
+
+- `userId`, `lawyerId`
+- `rating`, `comment`
+
+Review updates automatically sync lawyer `rating` and `totalReviews`.
+
+## Environment Variables
+
+Create `server/.env`:
+
+```bash
+PORT=3000
+MONGO_URI=mongodb://127.0.0.1:27017/justifai
+FRONTEND_URL=http://localhost:5173
+JWT_SECRET=your_jwt_secret
+JWT_EXPIRES_IN=7d
+
+CLOUD_NAME=your_cloudinary_cloud_name
+CLOUD_API_KEY=your_cloudinary_api_key
+CLOUD_API_SECRET=your_cloudinary_api_secret
+
+GEMINI_API_KEY=your_gemini_api_key
+GEMINI_MODEL=gemini-2.5-flash
+```
+
+Create `client/.env`:
+
+```bash
+VITE_API_BASE_URL=http://localhost:3000/api
+```
+
+## Installation
+
+```bash
+git clone <your-repo-url>
+cd lawyer-appointment-booking-system
+```
+
+Install frontend dependencies:
+
 ```bash
 cd client
 npm install
+```
 
+Install backend dependencies:
+
+```bash
 cd ../server
 npm install
 ```
 
-### Environment Variables
-Create or update `server/.env`:
-```bash
-PORT=3000
-```
-Add your MongoDB URI once you wire it in `server.js`:
-```bash
-MONGODB_URI=mongodb://localhost:27017/lawyer_appointments
-```
+## Running Locally
 
-### Run the App (Dev)
+Start the backend:
+
 ```bash
-# Terminal 1 - server
 cd server
-node server.js
+npm start
+```
 
-# Terminal 2 - client
+Start the frontend:
+
+```bash
 cd client
 npm run dev
 ```
 
-Client defaults to `http://localhost:5173`, server defaults to `http://localhost:3000`.
+Default local URLs:
 
-## Current API
-The API is currently a minimal stub:
-- `GET /` → `API Running...`
+- Frontend: `http://localhost:5173`
+- Backend: `http://localhost:3000`
 
-## Data Model (Mongoose)
-### User (`user.model.js`)
-- `name`, `email` (unique), `password`, `phone`
-- `role` (enum: `user`), `isActive`
-- Timestamps: `createdAt` only
+## Available Scripts
 
-### Lawyer (`lawyer.model.js`)
-- `name`, `email` (unique), `password`, `profileImage`, `phone`
-- `location` (address, city, state)
-- `education[]` (degree, university, year)
-- `licenseNo` (unique)
-- `specializations[]` (enum: Criminal, Civil, Corporate, Family, Property)
-- `feesByCategory[]` (category + fee)
-- `experience`, `rating`, `totalReviews`, `availability`, `verification`, `isActive`
-- Timestamps: `createdAt` only
-
-### Appointment (`appointment.model.js`)
-- `userId` (User ref), `lawyerId` (Lawyer ref)
-- `lawyerName`, `lawyerSpecialization`
-- `caseCategory` (enum), `caseDescription`
-- `date`, `timeSlot`, `feeCharged`
-- `status` (Pending/Approved/Rejected/Completed), `isActive`
-- Unique index on (`lawyerId`, `date`, `timeSlot`)
-
-### Availability (`availability.model.js`)
-- `lawyerId` (Lawyer ref), `date`
-- `slots[]` (time, isBooked)
-- Unique index on (`lawyerId`, `date`)
-
-### Payment (`payment.model.js`)
-- `appointmentId` (Appointment ref, unique)
-- `transactionId` (unique), `amount`
-- `paymentStatus` (Success/Failed), `paymentMode` (UPI/Card/NetBanking)
-- Timestamps: `createdAt` only
-
-### Review (`review.model.js`)
-- `userId` (User ref), `lawyerId` (Lawyer ref)
-- `rating` (1-5), `comment`
-- Unique index on (`userId`, `lawyerId`)
-
-### Notification (`notification.model.js`)
-- `appointmentId` (Appointment ref), `userId` (User ref), `lawyerId` (Lawyer ref)
-- `notificationMsg`, `isRead`
-- Indexes on `userId`, `lawyerId`, `createdAt`
-
-### Cancellation (`cancellation.model.js`)
-- `appointmentId` (Appointment ref, unique)
-- `userId` (User ref), `lawyerId` (Lawyer ref)
-- Timestamps: `createdAt` only
-
-### Admin (`admin.model.js`)
-- `name`, `email` (unique), `password`
-- `role` (enum: `admin`)
-
-## Developer Guide (Best Practices)
-- Keep models in `server/src/models/` and route handlers in `server/src/controllers/`.
-- Add API routes under `server/src/routes/` and mount them in `server.js`.
-- Use `server/src/validations/` for request validation schemas.
-- Prefer environment variables for secrets and connection strings.
-- Add consistent error handling middleware in `server/src/middlewares/`.
-- Use DTOs or service layer in `server/src/services/` when business logic grows.
-
-## Roadmap Ideas
-- Connect MongoDB and implement CRUD routes.
-- Authentication and role-based access (client, lawyer, admin).
-- Appointment scheduling with availability checks.
-- Payments integration and status tracking.
-- Notifications (email/SMS/in-app).
-- Admin dashboard and analytics.
-
-## Scripts
 ### Client
+
 - `npm run dev` - start Vite dev server
-- `npm run build` - build production assets
-- `npm run preview` - preview build
-- `npm run lint` - lint client code
+- `npm run build` - create production build
+- `npm run preview` - preview production build
+- `npm run lint` - run ESLint
 
 ### Server
-- `npm test` - placeholder (no tests yet)
 
-## Contributing
-- Keep commits small and focused.
-- Add tests when introducing new behavior.
-- Update this README when you add new endpoints or env vars.
+- `npm start` - run the backend with nodemon
+- `npm test` - placeholder test script
+
+## Current Notes
+
+- MongoDB connection is active through `server/src/config/db.js`
+- CORS is restricted by `FRONTEND_URL`
+- Lawyer profile uploads require valid Cloudinary credentials
+- The frontend expects `VITE_API_BASE_URL` for API requests
+- Payment routes and models exist in the codebase, but payment routes are not currently mounted in `server.js`
+- Automated tests are not set up yet
+
+## Future Improvements
+
+- Protect routes with the existing auth and role middleware
+- Add payment gateway integration to the live API
+- Add notifications and real-time updates
+- Add automated tests for frontend and backend flows
+- Harden validation and centralized error handling
