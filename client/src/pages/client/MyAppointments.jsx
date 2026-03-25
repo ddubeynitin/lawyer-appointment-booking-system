@@ -4,6 +4,7 @@ import { CalendarDays, Filter, Search } from "lucide-react";
 import ClientHeader from "../../components/common/ClientHeader";
 import { useAuth } from "../../context/AuthContext";
 import { API_URL } from "../../utils/api";
+import { startAppointmentPayment } from "../../utils/razorpay";
 
 const STATUS_OPTIONS = ["All", "Pending", "Approved", "Rejected", "Completed"];
 const ALL_CATEGORIES = "All";
@@ -23,13 +24,22 @@ const getStatusClasses = (status) => {
   return "bg-gray-100 text-gray-600";
 };
 
+const getPaymentStatusClasses = (status) => {
+  if (status === "Success") return "bg-green-100 text-green-700";
+  if (status === "Created") return "bg-amber-100 text-amber-700";
+  if (status === "Failed") return "bg-red-100 text-red-700";
+  return "bg-slate-100 text-slate-600";
+};
+
 export default function MyAppointments() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const userId = user?.id || user?._id;
 
   const [appointments, setAppointments] = useState([]);
+  const [paymentStatuses, setPaymentStatuses] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [processingPaymentId, setProcessingPaymentId] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [categoryFilter, setCategoryFilter] = useState(ALL_CATEGORIES);
@@ -59,6 +69,46 @@ export default function MyAppointments() {
 
     fetchAppointments();
   }, [userId]);
+
+  useEffect(() => {
+    const fetchPaymentStatuses = async () => {
+      if (!token || appointments.length === 0) {
+        setPaymentStatuses({});
+        return;
+      }
+
+      try {
+        const headers = {
+          Authorization: `Bearer ${token}`,
+        };
+
+        const paymentEntries = await Promise.all(
+          appointments.map(async (appointment) => {
+            try {
+              const response = await axios.get(
+                `${API_URL}/payments/appointment/${appointment._id}`,
+                { headers }
+              );
+
+              return [appointment._id, response.data?.payment?.paymentStatus || "Not Started"];
+            } catch (paymentError) {
+              if (paymentError.response?.status === 404) {
+                return [appointment._id, "Not Started"];
+              }
+
+              return [appointment._id, "Unknown"];
+            }
+          })
+        );
+
+        setPaymentStatuses(Object.fromEntries(paymentEntries));
+      } catch (fetchError) {
+        console.error("Failed to fetch payment statuses:", fetchError);
+      }
+    };
+
+    fetchPaymentStatuses();
+  }, [appointments, token]);
 
   const categoryOptions = useMemo(() => {
     const uniqueCategories = [
@@ -123,6 +173,35 @@ export default function MyAppointments() {
     setSearchTerm("");
     setStatusFilter("All");
     setCategoryFilter(ALL_CATEGORIES);
+  };
+
+  const handlePayNow = async (appointment) => {
+    if (!token) {
+      setError("Your session has expired. Please log in again to continue payment.");
+      return;
+    }
+
+    try {
+      setError("");
+      setProcessingPaymentId(appointment._id);
+      await startAppointmentPayment({
+        appointmentId: appointment._id,
+        token,
+        user,
+      });
+
+      setPaymentStatuses((currentStatuses) => ({
+        ...currentStatuses,
+        [appointment._id]: "Success",
+      }));
+    } catch (paymentError) {
+      setError(
+        paymentError.message ||
+          "Unable to complete payment right now. Please try again."
+      );
+    } finally {
+      setProcessingPaymentId("");
+    }
   };
 
   return (
@@ -240,12 +319,14 @@ export default function MyAppointments() {
             </div>
           ) : (
             <>
-              <div className="hidden grid-cols-[1.1fr_1.1fr_1fr_0.9fr_0.9fr] gap-4 border-b border-slate-200 bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-600 md:grid">
+              <div className="hidden grid-cols-[1.1fr_1.1fr_1fr_0.9fr_0.9fr_0.9fr_0.9fr] gap-4 border-b border-slate-200 bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-600 md:grid">
                 <span>Date</span>
                 <span>Lawyer</span>
                 <span>Category</span>
                 <span>Status</span>
                 <span>Fee</span>
+                <span>Payment</span>
+                <span>Action</span>
               </div>
 
               <div className="divide-y divide-slate-100">
@@ -254,7 +335,7 @@ export default function MyAppointments() {
                     key={appointment._id}
                     className="px-6 py-5 transition hover:bg-slate-50"
                   >
-                    <div className="hidden items-start gap-4 md:grid md:grid-cols-[1.1fr_1.1fr_1fr_0.9fr_0.9fr]">
+                    <div className="hidden items-start gap-4 md:grid md:grid-cols-[1.1fr_1.1fr_1fr_0.9fr_0.9fr_0.9fr_0.9fr]">
                       <div>
                         <p className="font-medium text-slate-800">
                           {formatAppointmentDate(appointment.date)}
@@ -296,6 +377,33 @@ export default function MyAppointments() {
                         <p className="font-medium text-slate-800">
                           Rs {appointment.feeCharged}
                         </p>
+                      </div>
+
+                      <div>
+                        <span
+                          className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getPaymentStatusClasses(
+                            paymentStatuses[appointment._id] || "Not Started",
+                          )}`}
+                        >
+                          {paymentStatuses[appointment._id] || "Not Started"}
+                        </span>
+                      </div>
+
+                      <div>
+                        {paymentStatuses[appointment._id] !== "Success" ? (
+                          <button
+                            type="button"
+                            onClick={() => handlePayNow(appointment)}
+                            disabled={processingPaymentId === appointment._id}
+                            className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
+                          >
+                            {processingPaymentId === appointment._id ? "Opening..." : "Pay Now"}
+                          </button>
+                        ) : (
+                          <span className="text-sm font-medium text-green-600">
+                            Paid
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -343,6 +451,12 @@ export default function MyAppointments() {
                             Rs {appointment.feeCharged}
                           </p>
                         </div>
+                        <div>
+                          <p className="text-slate-500">Payment</p>
+                          <p className="font-medium text-slate-800">
+                            {paymentStatuses[appointment._id] || "Not Started"}
+                          </p>
+                        </div>
                       </div>
 
                       <div>
@@ -351,6 +465,17 @@ export default function MyAppointments() {
                           {appointment.caseDescription}
                         </p>
                       </div>
+
+                      {paymentStatuses[appointment._id] !== "Success" && (
+                        <button
+                          type="button"
+                          onClick={() => handlePayNow(appointment)}
+                          disabled={processingPaymentId === appointment._id}
+                          className="w-full rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
+                        >
+                          {processingPaymentId === appointment._id ? "Opening Payment..." : "Pay Now"}
+                        </button>
+                      )}
                     </div>
                   </article>
                 ))}

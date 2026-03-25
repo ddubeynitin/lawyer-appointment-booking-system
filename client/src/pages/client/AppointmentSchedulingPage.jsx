@@ -7,6 +7,7 @@ import { useAuth } from "../../context/AuthContext";
 import { API_URL } from "../../utils/api";
 import useFetch from "../../hooks/useFetch";
 import LoadingFallback from "../../components/LoadingFallback";
+import { startAppointmentPayment } from "../../utils/razorpay";
 
 const TIME_SLOTS = [
   "09:00 AM",
@@ -53,7 +54,7 @@ const getDateTimeFromDateAndSlot = (dateValue, slot) => {
 const AppointmentSchedulingPage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const { data: lawyersData, loading: lawyersLoading } = useFetch(`${API_URL}/lawyers`);
 
   const [selectedLawyerId, setSelectedLawyerId] = useState("");
@@ -147,14 +148,20 @@ const AppointmentSchedulingPage = () => {
       return;
     }
 
+    if (!token) {
+      setError("Your session has expired. Please log in again to continue.");
+      return;
+    }
+
     if (!selectedLawyer || !selectedTimeSlot || !caseDescription.trim()) {
       setError("Please select a lawyer, choose a time slot, and describe your case.");
       return;
     }
 
     setSubmitting(true);
+    let appointmentRecord = null;
     try {
-      await axios.post(`${API_URL}/appointments`, {
+      const appointmentResponse = await axios.post(`${API_URL}/appointments`, {
         userId: user.id,
         lawyerId: selectedLawyer._id,
         lawyerName: selectedLawyer.name,
@@ -167,7 +174,16 @@ const AppointmentSchedulingPage = () => {
         feeCharged: selectedFee,
       });
 
+      appointmentRecord = appointmentResponse.data;
+
+      await startAppointmentPayment({
+        appointmentId: appointmentRecord._id,
+        token,
+        user,
+      });
+
       setBookingDetails({
+        appointmentId: appointmentRecord._id,
         lawyerName: selectedLawyer.name,
         lawyerSpecialization:
           selectedLawyer.specializations?.[0] || "General Practice",
@@ -175,12 +191,30 @@ const AppointmentSchedulingPage = () => {
         timeSlot: selectedTimeSlot,
         caseCategory,
         feeCharged: selectedFee,
+        paymentStatus: "Success",
+        paymentActionRequired: false,
       });
       setSelectedTimeSlot("");
       setCaseDescription("");
     } catch (submitError) {
+      if (appointmentRecord?._id) {
+        setBookingDetails({
+          appointmentId: appointmentRecord._id,
+          lawyerName: selectedLawyer.name,
+          lawyerSpecialization:
+            selectedLawyer.specializations?.[0] || "General Practice",
+          date: selectedDate,
+          timeSlot: selectedTimeSlot,
+          caseCategory,
+          feeCharged: selectedFee,
+          paymentStatus: "Created",
+          paymentActionRequired: true,
+        });
+      }
+
       setError(
         submitError.response?.data?.error ||
+          submitError.message ||
           "Unable to book this appointment right now.",
       );
     } finally {
@@ -202,10 +236,14 @@ const AppointmentSchedulingPage = () => {
               ✓
             </div>
             <h1 className="text-2xl font-bold text-slate-800">
-              Appointment Booked Successfully
+              {bookingDetails.paymentStatus === "Success"
+                ? "Appointment Booked Successfully"
+                : "Appointment Created, Payment Pending"}
             </h1>
             <p className="mt-2 text-slate-500">
-              Your consultation has been confirmed and saved to your dashboard.
+              {bookingDetails.paymentStatus === "Success"
+                ? "Your consultation has been confirmed and saved to your dashboard."
+                : "Your appointment was created, but payment is still pending. You can complete it from My Appointments."}
             </p>
 
             <div className="mt-6 rounded-2xl bg-slate-50 p-5 text-left">
@@ -246,15 +284,31 @@ const AppointmentSchedulingPage = () => {
                     Rs {bookingDetails.feeCharged}
                   </span>
                 </div>
+                <div className="flex justify-between gap-4">
+                  <span>Payment</span>
+                  <span className="font-medium text-slate-800">
+                    {bookingDetails.paymentStatus}
+                  </span>
+                </div>
               </div>
             </div>
 
-            <button
-              onClick={() => navigate("/client/client-dashboard")}
-              className="mt-6 rounded-2xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
-            >
-              Go To Dashboard
-            </button>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
+              <button
+                onClick={() => navigate("/client/client-dashboard")}
+                className="rounded-2xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+              >
+                Go To Dashboard
+              </button>
+              {bookingDetails.paymentActionRequired && (
+                <button
+                  onClick={() => navigate("/client/appointment-history")}
+                  className="rounded-2xl border border-slate-200 px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                >
+                  Complete Payment Later
+                </button>
+              )}
+            </div>
           </div>
         </main>
       </div>
@@ -427,7 +481,7 @@ const AppointmentSchedulingPage = () => {
               disabled={submitting || !selectedLawyerId}
               className="w-full rounded-2xl bg-linear-to-r from-blue-600 to-blue-700 px-6 py-4 text-sm font-semibold text-white shadow-lg transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {submitting ? "Booking Appointment..." : "Confirm Appointment"}
+              {submitting ? "Booking And Opening Payment..." : "Book And Pay"}
             </button>
           </form>
 
