@@ -2,7 +2,47 @@ import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { CalendarDays, Search, RefreshCw, CheckCircle, XCircle, Clock, AlertCircle } from "lucide-react";
 
-const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+// API URL with fallback mechanism
+const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
+
+const normalizeBaseUrl = (url = "") => url.trim().replace(/\/+$/, "");
+
+const API_BASE_CANDIDATES = Array.from(
+  new Set(
+    [
+      normalizeBaseUrl(VITE_API_BASE_URL),
+      normalizeBaseUrl(window.location.origin),
+      "http://localhost:3000",
+      "http://127.0.0.1:3000",
+      "http://localhost:5000",
+      "http://127.0.0.1:5000",
+    ].filter(Boolean),
+  ),
+);
+
+const requestWithFallback = async (method, path, payload = null, timeout = 10000) => {
+  let lastError;
+
+  for (const baseUrl of API_BASE_CANDIDATES) {
+    try {
+      const response = await axios({
+        method,
+        url: `${baseUrl}${path}`,
+        data: payload,
+        timeout,
+      });
+      return response;
+    } catch (error) {
+      lastError = error;
+      const isNetworkError = !error?.response;
+      if (!isNetworkError) {
+        throw error;
+      }
+    }
+  }
+
+  throw lastError;
+};
 
 export default function UserAppointments() {
   const [appointments, setAppointments] = useState([]);
@@ -19,9 +59,19 @@ export default function UserAppointments() {
     setError(null);
     
     try {
-      const response = await axios.get(`${API_URL}/api/appointments`, { timeout: 10000 });
-      setAppointments(Array.isArray(response.data) ? response.data : []);
+      const response = await requestWithFallback("get", "/api/appointments");
+      // Handle both response formats - direct array or wrapped object
+      let appointmentsData = [];
+      if (Array.isArray(response.data)) {
+        appointmentsData = response.data;
+      } else if (response.data?.appointments) {
+        appointmentsData = response.data.appointments;
+      } else if (response.data?.data) {
+        appointmentsData = Array.isArray(response.data.data) ? response.data.data : [];
+      }
+      setAppointments(appointmentsData);
     } catch (err) {
+      console.error("Failed to fetch appointments:", err);
       if (err.code === 'ECONNABORTED') {
         setError("Request timed out. Please check if the server is running.");
       } else {
@@ -35,8 +85,16 @@ export default function UserAppointments() {
 
   const fetchUsers = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/users`, { timeout: 5000 });
-      setUsers(Array.isArray(response.data) ? response.data : []);
+      const response = await requestWithFallback("get", "/api/users", null, 5000);
+      let usersData = [];
+      if (Array.isArray(response.data)) {
+        usersData = response.data;
+      } else if (response.data?.users) {
+        usersData = response.data.users;
+      } else if (response.data?.data) {
+        usersData = Array.isArray(response.data.data) ? response.data.data : [];
+      }
+      setUsers(usersData);
     } catch (err) {
       console.error("Failed to fetch users:", err);
     }
