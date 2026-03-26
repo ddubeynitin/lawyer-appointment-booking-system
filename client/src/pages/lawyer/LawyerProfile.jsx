@@ -410,7 +410,7 @@ const LawyerProfile = () => {
                     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                       <p className="text-slate-500">Session format</p>
                       <p className="mt-2 font-semibold text-slate-800">
-                        Video / Office
+                        Office
                       </p>
                     </div>
                     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">

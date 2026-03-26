@@ -251,7 +251,7 @@ const ClientDashboard = () => {
                       Your Dashboard
                     </Link>
                   ) : null}
-                  <Link className="font-semibold text-blue-600">Dashboard</Link>
+                  {/* <Link className="font-semibold text-blue-600">Dashboard</Link> */}
                   <Link
                     to="/client/appointment-history"
                     className="hover:text-blue-600"
