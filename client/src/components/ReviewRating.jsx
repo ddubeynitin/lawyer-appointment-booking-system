@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { Star, Send, X, CheckCircle } from "lucide-react";
 import axios from "axios";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+import { API_URL } from "../utils/api";
 
 export default function ReviewRating({ 
   appointment, 
@@ -73,7 +72,7 @@ export default function ReviewRating({
   // Success State
   if (success) {
     return (
-      <div className={`bg-white rounded-2xl p-6 ${isStandalone ? 'w-full' : 'w-96'} text-center`}>
+      <div className={`bg-white rounded-2xl p-6 ${isStandalone ? "w-full" : "w-full max-w-md"} text-center`}>
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <CheckCircle className="w-8 h-8 text-green-600" />
         </div>
@@ -84,7 +83,7 @@ export default function ReviewRating({
   }
 
   return (
-    <div className={`bg-white rounded-2xl p-6 ${isStandalone ? 'w-full max-w-lg mx-auto' : 'w-96'}`}>
+    <div className={`bg-white rounded-2xl p-6 ${isStandalone ? "w-full max-w-lg mx-auto" : "w-full max-w-md"}`}>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>

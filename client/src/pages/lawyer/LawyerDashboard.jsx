@@ -1,5 +1,6 @@
 import { FaCalendarAlt, FaVideo } from "react-icons/fa";
-import { useState } from "react";
+import { CalendarDays, Clock3, FileText, Mail, Phone, UserRound, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import useFetch from "../../hooks/useFetch";
 import { API_URL } from "../../utils/api";
@@ -35,6 +36,7 @@ const formatScheduleDateLabel = (date) =>
 const LawyerDashboard = () => {
 
   const [selectedDate, setSelectedDate] = useState(getTodayDateInputValue);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
   const { user } = useAuth();
 
   const { data, loading, error } = useFetch(
@@ -90,6 +92,23 @@ const LawyerDashboard = () => {
   const greeting =
     hour < 12 ? "Good Morning" : hour < 18 ? "Good Afternoon" : "Good Evening";
 
+  useEffect(() => {
+    if (!selectedAppointment) return undefined;
+
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
+        setSelectedAppointment(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleEscape);
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      window.removeEventListener("keydown", handleEscape);
+      document.body.style.overflow = "";
+    };
+  }, [selectedAppointment]);
 
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-100 to-gray-200">
@@ -162,12 +181,16 @@ const LawyerDashboard = () => {
                   </div>
 
                   <div className="flex gap-3">
-                    <button className="rounded-lg border border-gray-200 px-4 py-2 text-sm">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedAppointment(upcomingAppointment)}
+                      className="rounded-lg border border-gray-200 px-4 py-2 text-sm transition hover:border-blue-300 hover:text-blue-600"
+                    >
                       Details
                     </button>
-                    <button className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm text-white">
+                    {/* <button className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm text-white">
                       <FaVideo /> Join Meeting
-                    </button>
+                    </button> */}
                   </div>
                 </div>
               ) : (
@@ -278,6 +301,11 @@ const LawyerDashboard = () => {
           </div>
         </div>
       </main>
+
+      <AppointmentDetailsModal
+        appointment={selectedAppointment}
+        onClose={() => setSelectedAppointment(null)}
+      />
     </div>
   );
 };
@@ -354,6 +382,158 @@ const RequestItem = ({ name, type, date, timeSlot, status }) => (
         {status}
       </span>
     </div>
+  </div>
+);
+
+const AppointmentDetailsModal = ({ appointment, onClose }) => {
+  if (!appointment) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 px-4 backdrop-blur-md"
+      onClick={onClose}
+      role="presentation"
+    >
+      <div
+        className="relative w-full max-w-4xl rounded-[28px] border border-white/70 bg-white/95 p-6 shadow-2xl sm:p-8"
+        onClick={(event) => event.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="appointment-details-title"
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-4 top-4 rounded-full border border-slate-200 bg-white p-2 text-slate-500 transition hover:border-slate-300 hover:text-slate-800"
+          aria-label="Close appointment details"
+        >
+          <X size={18} />
+        </button>
+
+        <div className="grid gap-6 lg:grid-cols-[1.2fr_0.95fr]">
+          <section className="rounded-3xl bg-slate-50 p-5 sm:p-6">
+            <div className="flex items-start gap-4">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-blue-100 text-blue-600">
+                <CalendarDays size={24} />
+              </div>
+              <div>
+                <p className="text-sm font-medium uppercase tracking-[0.18em] text-blue-600">
+                  Appointment Details
+                </p>
+                <h2
+                  id="appointment-details-title"
+                  className="mt-2 text-2xl font-semibold text-slate-800"
+                >
+                  {appointment.caseCategory} Consultation
+                </h2>
+                <p className="mt-2 text-sm text-slate-500">
+                  Review the scheduled meeting and the client information in one place.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <ModalInfoCard
+                icon={<CalendarDays size={16} />}
+                label="Appointment Date"
+                value={new Date(appointment.date).toLocaleDateString("en-US", {
+                  weekday: "long",
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              />
+              <ModalInfoCard
+                icon={<Clock3 size={16} />}
+                label="Time Slot"
+                value={appointment.timeSlot}
+              />
+              <ModalInfoCard
+                icon={<FileText size={16} />}
+                label="Status"
+                value={appointment.status}
+              />
+              <ModalInfoCard
+                icon={<FileText size={16} />}
+                label="Consultation Fee"
+                value={`Rs ${appointment.feeCharged}`}
+              />
+            </div>
+
+            <div className="mt-5 rounded-3xl bg-white p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                Case Description
+              </p>
+              <p className="mt-3 text-sm leading-7 text-slate-700">
+                {appointment.caseDescription || "No case description provided."}
+              </p>
+            </div>
+          </section>
+
+          <section className="rounded-3xl bg-blue-600 p-5 text-white sm:p-6">
+            <div className="flex items-center gap-3">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15">
+                <UserRound size={24} />
+              </div>
+              <div>
+                <p className="text-sm font-medium uppercase tracking-[0.18em] text-blue-100">
+                  Client Details
+                </p>
+                <h3 className="mt-1 text-xl font-semibold">
+                  {appointment.userId?.name || "Client"}
+                </h3>
+              </div>
+            </div>
+
+            <div className="mt-6 space-y-3">
+              <ClientInfoRow
+                icon={<Mail size={16} />}
+                label="Email"
+                value={appointment.userId?.email || "Not provided"}
+              />
+              <ClientInfoRow
+                icon={<Phone size={16} />}
+                label="Phone"
+                value={appointment.userId?.phone || "Not provided"}
+              />
+              <ClientInfoRow
+                icon={<FileText size={16} />}
+                label="Appointment ID"
+                value={appointment._id}
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="mt-6 w-full rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-blue-700 transition hover:bg-blue-50"
+            >
+              Close
+            </button>
+          </section>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const ModalInfoCard = ({ icon, label, value }) => (
+  <div className="rounded-2xl bg-white p-4">
+    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+      <span className="text-blue-600">{icon}</span>
+      <span>{label}</span>
+    </div>
+    <p className="mt-2 text-sm font-medium text-slate-800">{value}</p>
+  </div>
+);
+
+const ClientInfoRow = ({ icon, label, value }) => (
+  <div className="rounded-2xl bg-white/10 p-4 backdrop-blur-sm">
+    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-blue-100">
+      <span>{icon}</span>
+      <span>{label}</span>
+    </div>
+    <p className="mt-2 break-all text-sm font-medium text-white">{value}</p>
   </div>
 );
 
