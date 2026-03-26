@@ -59,17 +59,8 @@ export default function UserAppointments() {
     setError(null);
     
     try {
-      const response = await requestWithFallback("get", "/api/appointments");
-      // Handle both response formats - direct array or wrapped object
-      let appointmentsData = [];
-      if (Array.isArray(response.data)) {
-        appointmentsData = response.data;
-      } else if (response.data?.appointments) {
-        appointmentsData = response.data.appointments;
-      } else if (response.data?.data) {
-        appointmentsData = Array.isArray(response.data.data) ? response.data.data : [];
-      }
-      setAppointments(appointmentsData);
+      const response = await axios.get(`${API_URL}/appointments`, { timeout: 10000 });
+      setAppointments(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
       console.error("Failed to fetch appointments:", err);
       if (err.code === 'ECONNABORTED') {
@@ -85,16 +76,8 @@ export default function UserAppointments() {
 
   const fetchUsers = async () => {
     try {
-      const response = await requestWithFallback("get", "/api/users", null, 5000);
-      let usersData = [];
-      if (Array.isArray(response.data)) {
-        usersData = response.data;
-      } else if (response.data?.users) {
-        usersData = response.data.users;
-      } else if (response.data?.data) {
-        usersData = Array.isArray(response.data.data) ? response.data.data : [];
-      }
-      setUsers(usersData);
+      const response = await axios.get(`${API_URL}/users`, { timeout: 5000 });
+      setUsers(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
       console.error("Failed to fetch users:", err);
     }

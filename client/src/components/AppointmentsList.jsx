@@ -59,7 +59,7 @@ export default function AppointmentsList() {
     setError(null);
     
     try {
-      const response = await requestWithFallback("get", "/api/appointments");
+      const response = await requestWithFallback("get", "/appointments");
       setAppointments(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
       console.error("Failed to fetch appointments:", err);

@@ -107,7 +107,7 @@ export default function Dashboard() {
 
   const fetchUsers = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/users`);
+      const response = await axios.get(`${API_URL}/users`);
       setUsers(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error("Failed to fetch users:", error);
@@ -117,7 +117,7 @@ export default function Dashboard() {
 
   const fetchLawyers = async () => {
     try {
-      const res = await axios.get(`${API_URL}/api/lawyers`);
+      const res = await axios.get(`${API_URL}/lawyers`);
       const lawyerList = Array.isArray(res.data) ? res.data : [];
       setAllLawyers(lawyerList);
       setLawyers(lawyerList);
@@ -176,7 +176,7 @@ export default function Dashboard() {
     }
 
     try {
-      const response = await axios.post(`${API_URL}/api/auth/register`, {
+      const response = await axios.post(`${API_URL}/auth/register`, {
         name: userName,
         email: userEmail,
         phone: userPhone,
@@ -241,7 +241,7 @@ export default function Dashboard() {
     }
 
     try {
-      const response = await axios.post(`${API_URL}/api/auth/register`, {
+      const response = await axios.post(`${API_URL}/auth/register`, {
         name: lawyerName,
         email: lawyerEmail,
         phone: lawyerPhone,
@@ -322,7 +322,7 @@ export default function Dashboard() {
 
         // Complete profile with image upload - server route
         await axios.patch(
-          `${API_URL}/api/lawyers/complete-profile/${createdLawyerId}`,
+          `${API_URL}/lawyers/complete-profile/${createdLawyerId}`,
           formData,
           {
             headers: { "Content-Type": "multipart/form-data" },
@@ -364,7 +364,7 @@ export default function Dashboard() {
     }
 
     try {
-      await axios.delete(`${API_URL}/api/users/${userId}`);
+      await axios.delete(`${API_URL}/users/${userId}`);
       await fetchUsers();
       alert("User deleted successfully");
     } catch (error) {
@@ -384,7 +384,7 @@ export default function Dashboard() {
     }
 
     try {
-      await axios.put(`${API_URL}/api/users/${userId}`, {
+      await axios.put(`${API_URL}/users/${userId}`, {
         isActive: false,
       });
       await fetchUsers();
@@ -413,7 +413,7 @@ export default function Dashboard() {
 
     setVerificationLoading({ id: lawyerId, action: "approve" });
     try {
-      await axios.put(`${API_URL}/api/lawyers/update-lawyer/${lawyerId}`, {
+      await axios.put(`${API_URL}/lawyers/update-lawyer/${lawyerId}`, {
         verification: "Approved",
       });
       setAllLawyers((prev) =>
@@ -451,7 +451,7 @@ export default function Dashboard() {
 
     setVerificationLoading({ id: lawyerId, action: "reject" });
     try {
-      await axios.delete(`${API_URL}/api/lawyers/delete-lawyer/${lawyerId}`);
+      await axios.delete(`${API_URL}/lawyers/delete-lawyer/${lawyerId}`);
       setAllLawyers((prev) => prev.filter((lawyer) => lawyer._id !== lawyerId));
       setLawyers((prev) => prev.filter((lawyer) => lawyer._id !== lawyerId));
       alert("Lawyer rejected successfully");
@@ -476,7 +476,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-[#F7F9FC] font-sans lg:flex-row overflow-auto lg:overflow-hidden">
+    <div className="flex h-screen flex-col bg-[#F7F9FC] lg:flex-row overflow-auto lg:overflow-hidden font-barlow">
       {isSidebarOpen && (
         <button
           type="button"
@@ -498,7 +498,10 @@ export default function Dashboard() {
               <GoLaw />
             </div>
             <div>
-              <p className="font-semibold leading-none">EsueBook</p>
+              <p className="font-semibold leading-none text-2xl">
+                Justif
+                <span className="text-blue-500">Ai</span>
+              </p>
               <span className="text-xs text-gray-400">Admin Controller</span>
             </div>
             <button
@@ -738,11 +741,11 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center gap-2">
               <img
-                src="https://i.pravatar.cc/40"
+                src="/assets/images/profile.png"
                 className="rounded-full w-9 h-9 cursor-pointer hover:shadow-lg hover:scale-110 transition-all duration-200"
               />
               <div className="text-sm">
-                <p className="font-medium leading-none">Alex Sterling</p>
+                <p className="font-medium leading-none">Jagannath Sahu</p>
                 <span className="text-xs text-gray-400">Super Admin</span>
               </div>
             </div>

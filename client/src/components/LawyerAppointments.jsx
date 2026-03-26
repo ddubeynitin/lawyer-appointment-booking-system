@@ -70,16 +70,8 @@ export default function LawyerAppointments() {
 
   const fetchLawyers = async () => {
     try {
-      const response = await requestWithFallback("get", "/api/lawyers");
-      let lawyersData = [];
-      if (Array.isArray(response.data)) {
-        lawyersData = response.data;
-      } else if (response.data?.lawyers) {
-        lawyersData = response.data.lawyers;
-      } else if (response.data?.data) {
-        lawyersData = Array.isArray(response.data.data) ? response.data.data : [];
-      }
-      setLawyers(lawyersData);
+      const response = await axios.get(`${API_URL}/api/lawyers`, { timeout: 10000 });
+      setLawyers(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
       console.error("Failed to fetch lawyers:", err);
     }
@@ -87,16 +79,8 @@ export default function LawyerAppointments() {
 
   const fetchAppointments = async () => {
     try {
-      const response = await requestWithFallback("get", "/api/appointments");
-      let appointmentsData = [];
-      if (Array.isArray(response.data)) {
-        appointmentsData = response.data;
-      } else if (response.data?.appointments) {
-        appointmentsData = response.data.appointments;
-      } else if (response.data?.data) {
-        appointmentsData = Array.isArray(response.data.data) ? response.data.data : [];
-      }
-      setAppointments(appointmentsData);
+      const response = await axios.get(`${API_URL}/api/appointments`, { timeout: 10000 });
+      setAppointments(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
       console.error("Failed to fetch appointments:", err);
     }
@@ -110,7 +94,7 @@ export default function LawyerAppointments() {
     try {
       await Promise.all([fetchLawyers(), fetchAppointments()]);
     } catch (err) {
-      setError("Failed to load data. Please try again.");
+      setError("Failed to load data. Please try again.",err);
     } finally {
       setLoading(false);
       setRefreshing(false);
