@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
-import { CalendarDays, Filter, Search } from "lucide-react";
+import { CalendarDays, Filter, Search, Star } from "lucide-react";
 import ClientHeader from "../../components/common/ClientHeader";
+import ReviewRating from "../../components/ReviewRating";
 import { useAuth } from "../../context/AuthContext";
 import { API_URL } from "../../utils/api";
 
@@ -33,6 +34,8 @@ export default function MyAppointments() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [categoryFilter, setCategoryFilter] = useState(ALL_CATEGORIES);
+  const [reviews, setReviews] = useState([]);
+  const [selectedAppointmentForReview, setSelectedAppointmentForReview] = useState(null);
 
   useEffect(() => {
     const fetchAppointments = async () => {
@@ -58,6 +61,25 @@ export default function MyAppointments() {
     };
 
     fetchAppointments();
+  }, [userId]);
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      if (!userId) {
+        setReviews([]);
+        return;
+      }
+
+      try {
+        const response = await axios.get(`${API_URL}/reviews/user/${userId}`);
+        setReviews(response.data || []);
+      } catch (fetchError) {
+        console.error("Failed to fetch client reviews:", fetchError);
+        setReviews([]);
+      }
+    };
+
+    fetchReviews();
   }, [userId]);
 
   const categoryOptions = useMemo(() => {
@@ -123,6 +145,19 @@ export default function MyAppointments() {
     setSearchTerm("");
     setStatusFilter("All");
     setCategoryFilter(ALL_CATEGORIES);
+  };
+
+  const reviewedAppointmentIds = useMemo(() => {
+    return new Set(
+      reviews
+        .map((review) => review.appointmentId?._id || review.appointmentId)
+        .filter(Boolean),
+    );
+  }, [reviews]);
+
+  const handleReviewSubmitted = (createdReview) => {
+    setReviews((currentReviews) => [createdReview, ...currentReviews]);
+    setSelectedAppointmentForReview(null);
   };
 
   return (
@@ -240,21 +275,25 @@ export default function MyAppointments() {
             </div>
           ) : (
             <>
-              <div className="hidden grid-cols-[1.1fr_1.1fr_1fr_0.9fr_0.9fr] gap-4 border-b border-slate-200 bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-600 md:grid">
+              <div className="hidden grid-cols-[1.1fr_1.1fr_1fr_0.9fr_0.9fr_1fr] gap-4 border-b border-slate-200 bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-600 md:grid">
                 <span>Date</span>
                 <span>Lawyer</span>
                 <span>Category</span>
                 <span>Status</span>
                 <span>Fee</span>
+                <span>Action</span>
               </div>
 
               <div className="divide-y divide-slate-100">
-                {filteredAppointments.map((appointment) => (
-                  <article
-                    key={appointment._id}
-                    className="px-6 py-5 transition hover:bg-slate-50"
-                  >
-                    <div className="hidden items-start gap-4 md:grid md:grid-cols-[1.1fr_1.1fr_1fr_0.9fr_0.9fr]">
+                {filteredAppointments.map((appointment) => {
+                  const hasReview = reviewedAppointmentIds.has(appointment._id);
+
+                  return (
+                    <article
+                      key={appointment._id}
+                      className="px-6 py-5 transition hover:bg-slate-50"
+                    >
+                    <div className="hidden items-start gap-4 md:grid md:grid-cols-[1.1fr_1.1fr_1fr_0.9fr_0.9fr_1fr]">
                       <div>
                         <p className="font-medium text-slate-800">
                           {formatAppointmentDate(appointment.date)}
@@ -296,6 +335,28 @@ export default function MyAppointments() {
                         <p className="font-medium text-slate-800">
                           Rs {appointment.feeCharged}
                         </p>
+                      </div>
+
+                      <div>
+                        {appointment.status === "Completed" ? (
+                          hasReview ? (
+                            <span className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                              <Star size={12} className="fill-current" />
+                              Reviewed
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedAppointmentForReview(appointment)}
+                              className="inline-flex items-center gap-2 rounded-full bg-yellow-100 px-3 py-1 text-xs font-semibold text-yellow-700 transition hover:bg-yellow-200"
+                            >
+                              <Star size={12} className="fill-current" />
+                              Review & Rate
+                            </button>
+                          )
+                        ) : (
+                          <span className="text-sm text-slate-400">Not available</span>
+                        )}
                       </div>
                     </div>
 
@@ -351,13 +412,56 @@ export default function MyAppointments() {
                           {appointment.caseDescription}
                         </p>
                       </div>
+
+                      <div className="pt-1">
+                        {appointment.status === "Completed" ? (
+                          hasReview ? (
+                            <span className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                              <Star size={12} className="fill-current" />
+                              Reviewed
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedAppointmentForReview(appointment)}
+                              className="inline-flex items-center gap-2 rounded-full bg-yellow-100 px-3 py-1 text-xs font-semibold text-yellow-700"
+                            >
+                              <Star size={12} className="fill-current" />
+                              Review & Rate
+                            </button>
+                          )
+                        ) : null}
+                      </div>
                     </div>
                   </article>
-                ))}
+                  );
+                })}
               </div>
             </>
           )}
         </section>
+
+        {selectedAppointmentForReview ? (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 px-4 backdrop-blur-md"
+            onClick={() => setSelectedAppointmentForReview(null)}
+            role="presentation"
+          >
+            <div
+              className="w-full max-w-lg"
+              onClick={(event) => event.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Review and rating"
+            >
+              <ReviewRating
+                appointment={selectedAppointmentForReview}
+                onClose={() => setSelectedAppointmentForReview(null)}
+                onSubmitSuccess={handleReviewSubmitted}
+              />
+            </div>
+          </div>
+        ) : null}
       </main>
     </div>
   );
