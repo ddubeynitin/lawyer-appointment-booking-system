@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Review = require("../models/review.model");
 const Lawyer = require("../models/lawyer.model");
+const Appointment = require("../models/appointment.model");
 
 const syncLawyerReviewStats = async (lawyerId) => {
   if (!lawyerId) return;
@@ -31,11 +32,57 @@ const syncLawyerReviewStats = async (lawyerId) => {
 // Create a review
 const createReview = async (req, res) => {
   try {
-    const review = new Review(req.body);
+    const { lawyerId, appointmentId, rating, comment } = req.body;
+    const userId = req.user?.id || req.body.userId;
+
+    if (!userId || !lawyerId || !appointmentId || !rating) {
+      return res.status(400).json({
+        error: "User, lawyer, appointment, and rating are required",
+      });
+    }
+
+    const appointment = await Appointment.findById(appointmentId);
+
+    if (!appointment) {
+      return res.status(404).json({ error: "Appointment not found" });
+    }
+
+    if (appointment.userId.toString() !== userId.toString()) {
+      return res.status(403).json({
+        error: "You can only review your own completed appointments",
+      });
+    }
+
+    if (appointment.lawyerId.toString() !== lawyerId.toString()) {
+      return res.status(400).json({
+        error: "This appointment does not belong to the selected lawyer",
+      });
+    }
+
+    if (appointment.status !== "Completed") {
+      return res.status(400).json({
+        error: "You can submit a review only after the appointment is completed",
+      });
+    }
+
+    const review = new Review({
+      userId,
+      lawyerId,
+      appointmentId,
+      rating,
+      comment,
+    });
+
     await review.save();
     await syncLawyerReviewStats(review.lawyerId);
     res.status(201).json(review);
   } catch (error) {
+    if (error?.code === 11000) {
+      return res.status(400).json({
+        error: "You have already submitted a review for this appointment",
+      });
+    }
+
     res.status(500).json({ error: error.message });
   }
 };
@@ -47,6 +94,19 @@ const getReviewsByLawyer = async (req, res) => {
     const reviews = await Review.find({ lawyerId })
     .populate("userId", "name") // fetch only name
     .sort({ createdAt: -1 });
+    res.json(reviews);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Get reviews created by a specific user
+const getReviewsByUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const reviews = await Review.find({ userId })
+      .select("appointmentId lawyerId rating comment createdAt")
+      .sort({ createdAt: -1 });
     res.json(reviews);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -114,4 +174,11 @@ const deleteReview = async (req, res) => {
   }
 };
 
-module.exports = { createReview, getReviewsByLawyer, getReviewById, updateReview, deleteReview };
+module.exports = {
+  createReview,
+  getReviewsByLawyer,
+  getReviewsByUser,
+  getReviewById,
+  updateReview,
+  deleteReview,
+};
