@@ -560,7 +560,7 @@ const Home = () => {
       </section>
 
       {/* ================= FOOTER ================= */}
-      <footer className="bg-black/90 text-slate-400 py-16 mt-20 overflow-hidden">
+      <footer className="bg-black/90 text-slate-400 py-16  overflow-hidden">
         <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-10 justify-center items-center ">
           <div className=" flex flex-col justify-center items-center ">
             <h3 className="text-white lg:text-6xl text-3xl font-semibold mb-4 font-barlow">

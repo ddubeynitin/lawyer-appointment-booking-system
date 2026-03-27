@@ -6,7 +6,7 @@ import { TfiMenuAlt } from "react-icons/tfi";
 import { Link, useNavigate } from 'react-router-dom';
 
 const ClientHeader = () => {
-    const [showNotifications, setShowNotifications] = useState(false);
+    // const [showNotifications, setShowNotifications] = useState(false);
     const [showProfileModal, setShowProfileModal] = useState(false);
     const [isMenuVisible, setIsMenuVisible] = useState(false);
     const [showProfileDropdown, setShowProfileDropdown] = useState(false);
@@ -85,7 +85,7 @@ const ClientHeader = () => {
           </nav>
 
           <div className="relative flex items-center gap-6">
-            <div
+            {/* <div
               className="relative cursor-pointer"
               onClick={() => setShowNotifications(!showNotifications)}
             >
@@ -102,7 +102,7 @@ const ClientHeader = () => {
                   <li>Payment successful</li>
                 </ul>
               </div>
-            )}
+            )} */}
 
             <div className="relative" ref={profileRef}>
               <div

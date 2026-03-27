@@ -306,6 +306,7 @@ function LawyerList() {
                 showShadow
                 color="primary"
                 size="lg"
+                className="cursor-pointer border border-gray-300 hover:bg-blue-500 hover:font-bold hover:text-white rounded-2xl"
               />
             </div>
           )}
