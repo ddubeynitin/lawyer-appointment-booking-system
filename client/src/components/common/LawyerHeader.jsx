@@ -36,7 +36,7 @@ const LawyerHeader = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/70 backdrop-blur-lg">
+      <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/70 backdrop-blur-lg font-barlow">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div onClick={showMenu} className="sm:hidden">
             <TfiMenuAlt />
@@ -66,6 +66,19 @@ const LawyerHeader = () => {
                         }
                       >
                         Calendar
+                      </span>
+                    )}
+                  </NavLink>
+                  <NavLink to="/lawyer/manage-availability">
+                    {({ isActive }) => (
+                      <span
+                        className={
+                          isActive
+                            ? "font-semibold text-blue-600"
+                            : "cursor-pointer hover:text-blue-600"
+                        }
+                      >
+                        Manage Availability
                       </span>
                     )}
                   </NavLink>
@@ -130,6 +143,19 @@ const LawyerHeader = () => {
                   }
                 >
                   Calendar
+                </span>
+              )}
+            </NavLink>
+            <NavLink to="/lawyer/manage-availability">
+              {({ isActive }) => (
+                <span
+                  className={
+                    isActive
+                      ? "font-semibold text-blue-600"
+                      : "cursor-pointer hover:text-blue-600"
+                  }
+                >
+                  Management
                 </span>
               )}
             </NavLink>

@@ -136,9 +136,9 @@ const AiChatWidget = () => {
           type="button"
           onClick={() => setIsOpen((current) => !current)}
           aria-label="Open AI assistant"
-          className="flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-br from-blue-600 via-cyan-500 to-teal-500 text-white shadow-2xl transition hover:scale-105"
+          className="flex lg:h-20 lg:w-20 h-16 w-16 items-center justify-center rounded-full bg-linear-to-br from-blue-600 via-cyan-500 to-teal-500 text-white shadow-2xl transition hover:scale-105 animate-bounce"
         >
-          <Sparkles size={26} />
+          <Sparkles size={26} /> <span className="text-3xl font-barlow font-bold">Ai</span>
         </button>
       </div>
 
@@ -151,7 +151,7 @@ const AiChatWidget = () => {
             }
           }}
         >
-          <div className="fixed bottom-0 right-0 border border-amber-300 flex h-[85vh] w-full flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl lg:bottom-5 lg:right-5 lg:h-167.5 lg:w-107.5 lg:rounded-3xl">
+          <div className="fixed bottom-0 right-0 border border-amber-300 flex h-[85vh] w-full flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl lg:bottom-5 lg:right-5 lg:h-167.5 lg:w-107.5 lg:rounded-3xl font-barlow">
             <div className="flex items-center justify-between bg-linear-to-r from-slate-900 via-blue-900 to-slate-800 px-5 py-4 text-white">
               <div className="flex items-center gap-3">
                 <div className="rounded-2xl bg-white/10 p-2">

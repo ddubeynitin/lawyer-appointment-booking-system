@@ -20,6 +20,7 @@ const AdminDashBoard = lazy(() => import("./pages/admin/AdminDashBoard"));
 const LoginPage = lazy(() => import("./pages/auth/LoginPage"));
 const AdminLoginPage = lazy(() => import("./pages/admin/AdminLoginPage"));
 const LawyerDashboard = lazy(() => import("./pages/lawyer/LawyerDashboard"));
+const ManageAvailabilityAndFees = lazy(() => import("./pages/lawyer/ManageAvailabilityAndFees"));
 const LawyersList = lazy(() => import("./pages/client/LawyersList"));
 const MyAppointments = lazy(() => import("./pages/client/MyAppointments"));
 const Home = lazy(() => import("./pages/Home"));
@@ -67,6 +68,10 @@ const App = () => {
           <Route
             path="/lawyer/calendar"
             element={<LawyerCalendarPage />}
+          />
+          <Route
+            path="/lawyer/manage-availability"
+            element={<ManageAvailabilityAndFees />}
           />
           <Route path="/lawyer/lawyer-profile/:id" element={<LawyerProfile />} />
 
