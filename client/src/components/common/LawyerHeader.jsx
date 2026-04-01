@@ -82,6 +82,19 @@ const LawyerHeader = () => {
                       </span>
                     )}
                   </NavLink>
+                  <NavLink to="/lawyer/earnings">
+                    {({ isActive }) => (
+                      <span
+                        className={
+                          isActive
+                            ? "font-semibold text-blue-600"
+                            : "cursor-pointer hover:text-blue-600"
+                        }
+                      >
+                        Earnings
+                      </span>
+                    )}
+                  </NavLink>
                   <NavLink to="/lawyer/appointment-requests">
                     {({ isActive }) => (
                       <span
@@ -156,6 +169,19 @@ const LawyerHeader = () => {
                   }
                 >
                   Management
+                </span>
+              )}
+            </NavLink>
+            <NavLink to="/lawyer/earnings">
+              {({ isActive }) => (
+                <span
+                  className={
+                    isActive
+                      ? "font-semibold text-blue-600"
+                      : "cursor-pointer hover:text-blue-600"
+                  }
+                >
+                  Earnings
                 </span>
               )}
             </NavLink>

@@ -34,6 +34,13 @@ const formatScheduleDateLabel = (date) =>
     year: "numeric",
   });
 
+const formatCurrency = (value = 0) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(Number(value || 0));
+
 const normalizeTimeSlot = (time) => {
   const match = String(time || "").trim().match(/^(\d{1,2}):(\d{2})\s?(AM|PM)$/i);
   if (!match) return "";
@@ -66,6 +73,9 @@ const LawyerDashboard = () => {
   const allAppointments = allAppointmentsData?.appointments || [];
   const totalAppointments = data?.totalAppointments || 0;
   const pendingAppointments = data?.pendingAppointments || 0;
+  const completedRevenue = allAppointments
+    .filter((appointment) => appointment?.status === "Completed")
+    .reduce((sum, appointment) => sum + Number(appointment?.feeCharged || 0), 0);
   const selectedDateLabel = formatScheduleDateLabel(selectedDate);
   const selectedDateSlots = Array.isArray(selectedDateAvailability?.slots)
     ? selectedDateAvailability.slots
@@ -170,7 +180,7 @@ const LawyerDashboard = () => {
   }, [selectedAppointment]);
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-gray-100 to-gray-200 fon">
+    <div className="min-h-screen bg-linear-to-br from-gray-100 to-gray-200 font-barlow">
       <LawyerHeader/>
       <main className="mx-auto max-w-7xl space-y-10 px-6 py-10">
         <div>
@@ -182,7 +192,7 @@ const LawyerDashboard = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <StatCard
             title="Total Appointments"
             value={loading ? "..." : totalAppointments}
@@ -192,6 +202,15 @@ const LawyerDashboard = () => {
             title="Pending Requests"
             value={loading ? "..." : pendingAppointments}
             sub={error ? "Unable to load" : undefined}
+          />
+          <StatCard
+            title="Total Earnings"
+            value={allAppointmentsLoading ? "..." : formatCurrency(completedRevenue)}
+            sub={
+              <Link to="/lawyer/earnings" className="font-medium text-blue-600">
+                View earnings details
+              </Link>
+            }
           />
         </div>
         {/* Up Next Appointment */}
@@ -388,7 +407,12 @@ const StatCard = ({ title, value, sub, icon }) => (
       {icon && <span className="text-blue-600">{icon}</span>}
     </div>
     <p className="text-2xl font-bold">{value}</p>
-    {sub && <p className="text-xs text-green-600">{sub}</p>}
+    {sub &&
+      (typeof sub === "string" ? (
+        <p className="text-xs text-green-600">{sub}</p>
+      ) : (
+        sub
+      ))}
   </div>
 );
 

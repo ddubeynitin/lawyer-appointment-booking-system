@@ -18,6 +18,8 @@ const TIME_SLOTS = [
   "03:30 PM",
 ];
 
+const TIME_SLOT_REGEX = /^(\d{1,2}):(\d{2})\s?(AM|PM)$/i;
+
 const CASE_CATEGORIES = ["Criminal", "Civil", "Corporate", "Family", "Property"];
 
 const getTodayDateInputValue = () => {
@@ -50,6 +52,34 @@ const getDateTimeFromDateAndSlot = (dateValue, slot) => {
   return new Date(year, month - 1, day, hours, rawMinutes, 0, 0);
 };
 
+const normalizeTimeSlot = (time) => {
+  const match = String(time || "").trim().match(TIME_SLOT_REGEX);
+  if (!match) return "";
+
+  const hours = Number(match[1]);
+  const minutes = match[2];
+  const meridiem = match[3].toUpperCase();
+
+  if (!Number.isFinite(hours) || hours < 1 || hours > 12) {
+    return "";
+  }
+
+  return `${String(hours).padStart(2, "0")}:${minutes} ${meridiem}`;
+};
+
+const normalizeAvailabilitySlots = (slots = []) =>
+  slots
+    .map((slot) => ({
+      time: normalizeTimeSlot(
+        typeof slot === "string" ? slot : slot?.time || slot?.startTime,
+      ),
+      isBooked:
+        slot?.isBooked === true ||
+        slot?.booked === true ||
+        slot?.isAvailable === false,
+    }))
+    .filter((slot) => slot.time);
+
 const AppointmentSchedulingPage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -62,6 +92,7 @@ const AppointmentSchedulingPage = () => {
   const [caseCategory, setCaseCategory] = useState(CASE_CATEGORIES[0]);
   const [caseDescription, setCaseDescription] = useState("");
   const [bookedSlots, setBookedSlots] = useState([]);
+  const [availabilitySlots, setAvailabilitySlots] = useState([]);
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [bookingDetails, setBookingDetails] = useState(null);
@@ -97,29 +128,65 @@ const AppointmentSchedulingPage = () => {
     return feeMatch?.fee || 0;
   }, [selectedLawyer, caseCategory]);
 
+  const timeSlotsToDisplay = availabilitySlots.length > 0
+    ? availabilitySlots
+    : TIME_SLOTS.map((slot) => ({
+        time: slot,
+        isBooked: false,
+      }));
+  const isUsingDynamicAvailability = availabilitySlots.length > 0;
+
   useEffect(() => {
-    const fetchBookedSlots = async () => {
+    const fetchScheduleData = async () => {
       if (!selectedLawyerId || !selectedDate) {
         setBookedSlots([]);
+        setAvailabilitySlots([]);
         return;
       }
 
       setSlotsLoading(true);
+
       try {
-        const response = await axios.get(
-          `${API_URL}/appointments/lawyer/${selectedLawyerId}?date=${selectedDate}`,
-        );
-        const appointments = response.data?.appointments || [];
-        setBookedSlots(appointments.map((appointment) => appointment.timeSlot));
+        const [appointmentsResponse, availabilityResponse] = await Promise.allSettled([
+          axios.get(
+            `${API_URL}/appointments/lawyer/${selectedLawyerId}?date=${selectedDate}`,
+          ),
+          axios.get(`${API_URL}/availability/${selectedLawyerId}/${selectedDate}`),
+        ]);
+
+        if (appointmentsResponse.status === "fulfilled") {
+          const appointments = appointmentsResponse.value.data?.appointments || [];
+          setBookedSlots(appointments.map((appointment) => appointment.timeSlot));
+        } else {
+          console.error("Failed to fetch booked slots:", appointmentsResponse.reason);
+          setBookedSlots([]);
+        }
+
+        if (availabilityResponse.status === "fulfilled") {
+          const responseData = availabilityResponse.value.data;
+          const slots = Array.isArray(responseData?.slots)
+            ? responseData.slots
+            : Array.isArray(responseData)
+              ? responseData
+              : [];
+
+          setAvailabilitySlots(normalizeAvailabilitySlots(slots));
+        } else if (availabilityResponse.reason?.response?.status === 404) {
+          setAvailabilitySlots([]);
+        } else {
+          console.error("Failed to fetch availability:", availabilityResponse.reason);
+          setAvailabilitySlots([]);
+        }
       } catch (fetchError) {
-        console.error("Failed to fetch booked slots:", fetchError);
+        console.error("Failed to fetch schedule data:", fetchError);
         setBookedSlots([]);
+        setAvailabilitySlots([]);
       } finally {
         setSlotsLoading(false);
       }
     };
 
-    fetchBookedSlots();
+    fetchScheduleData();
   }, [selectedLawyerId, selectedDate]);
 
   useEffect(() => {
@@ -136,6 +203,26 @@ const AppointmentSchedulingPage = () => {
       setSelectedTimeSlot("");
     }
   }, [selectedDate, selectedTimeSlot]);
+
+  useEffect(() => {
+    if (!selectedTimeSlot) {
+      return;
+    }
+
+    const slotStillExists = timeSlotsToDisplay.some(
+      (slot) => (slot.time || slot) === selectedTimeSlot,
+    );
+
+    const slotIsBooked = isUsingDynamicAvailability
+      ? timeSlotsToDisplay.some(
+          (slot) => (slot.time || slot) === selectedTimeSlot && slot.isBooked,
+        )
+      : bookedSlots.includes(selectedTimeSlot);
+
+    if (!slotStillExists || slotIsBooked) {
+      setSelectedTimeSlot("");
+    }
+  }, [bookedSlots, isUsingDynamicAvailability, selectedTimeSlot, timeSlotsToDisplay]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -352,7 +439,9 @@ const AppointmentSchedulingPage = () => {
                 <div>
                   <h3 className="font-semibold">Available Time Slots</h3>
                   <p className="text-sm text-slate-500">
-                    Booked and past slots are disabled automatically.
+                    {isUsingDynamicAvailability
+                      ? "Showing the lawyer's saved availability for this date."
+                      : "Booked and past slots are disabled automatically."}
                   </p>
                 </div>
               </div>
@@ -360,38 +449,50 @@ const AppointmentSchedulingPage = () => {
               {slotsLoading ? (
                 <p className="text-sm text-slate-500">Loading available slots...</p>
               ) : (
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  {TIME_SLOTS.map((slot) => {
-                    const isBooked = bookedSlots.includes(slot);
-                    const isPastSlot = (() => {
-                      const slotDateTime = getDateTimeFromDateAndSlot(
-                        selectedDate,
-                        slot,
+                <div className="space-y-3">
+                  {isUsingDynamicAvailability && (
+                    <p className="text-sm text-emerald-700">
+                      {availabilitySlots.length} time slot
+                      {availabilitySlots.length === 1 ? "" : "s"} available for this date.
+                    </p>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {timeSlotsToDisplay.map((slot) => {
+                      const slotTime = slot.time || slot;
+                      const isBooked = isUsingDynamicAvailability
+                        ? slot.isBooked || bookedSlots.includes(slotTime)
+                        : bookedSlots.includes(slotTime);
+                      const isPastSlot = (() => {
+                        const slotDateTime = getDateTimeFromDateAndSlot(
+                          selectedDate,
+                          slotTime,
+                        );
+
+                        return slotDateTime ? slotDateTime < new Date() : false;
+                      })();
+                      const isSelected = selectedTimeSlot === slotTime;
+                      const isDisabled = isBooked || isPastSlot;
+
+                      return (
+                        <button
+                          key={slotTime}
+                          type="button"
+                          disabled={isDisabled}
+                          onClick={() => setSelectedTimeSlot(slotTime)}
+                          className={`rounded-2xl border px-4 py-3 text-sm font-medium transition ${
+                            isDisabled
+                              ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
+                              : isSelected
+                                ? "border-blue-600 bg-blue-600 text-white"
+                                : "border-slate-200 bg-white text-slate-700 hover:border-blue-500"
+                          }`}
+                        >
+                          {slotTime}
+                        </button>
                       );
-
-                      return slotDateTime ? slotDateTime < new Date() : false;
-                    })();
-                    const isSelected = selectedTimeSlot === slot;
-                    const isDisabled = isBooked || isPastSlot;
-
-                    return (
-                      <button
-                        key={slot}
-                        type="button"
-                        disabled={isDisabled}
-                        onClick={() => setSelectedTimeSlot(slot)}
-                        className={`rounded-2xl border px-4 py-3 text-sm font-medium transition ${
-                          isDisabled
-                            ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
-                            : isSelected
-                              ? "border-blue-600 bg-blue-600 text-white"
-                              : "border-slate-200 bg-white text-slate-700 hover:border-blue-500"
-                        }`}
-                      >
-                        {slot}
-                      </button>
-                    );
-                  })}
+                    })}
+                  </div>
                 </div>
               )}
             </section>

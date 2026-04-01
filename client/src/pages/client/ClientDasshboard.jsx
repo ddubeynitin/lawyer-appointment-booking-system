@@ -225,7 +225,7 @@ const ClientDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-gray-100 to-gray-200">
+    <div className="min-h-screen bg-linear-to-br from-gray-100 to-gray-200 font-barlow">
       <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/70 backdrop-blur-lg">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div onClick={showMenu} className="sm:hidden">

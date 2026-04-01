@@ -151,8 +151,8 @@ const AiChatWidget = () => {
             }
           }}
         >
-          <div className="fixed bottom-0 right-0 border border-amber-300 flex h-[85vh] w-full flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl lg:bottom-5 lg:right-5 lg:h-167.5 lg:w-107.5 lg:rounded-3xl font-barlow">
-            <div className="flex items-center justify-between bg-linear-to-r from-slate-900 via-blue-900 to-slate-800 px-5 py-4 text-white">
+          <div className="fixed bottom-0 right-0  flex h-[85vh] w-full flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl lg:bottom-5 lg:right-5 lg:h-167.5 lg:w-107.5 lg:rounded-3xl font-barlow">
+            <div className="flex items-center justify-between bg-linear-to-r from-blue-800 via-blue-700 to-blue-600 px-5 py-4 text-white">
               <div className="flex items-center gap-3">
                 <div className="rounded-2xl bg-white/10 p-2">
                   <Bot size={20} />
