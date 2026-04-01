@@ -1,4 +1,62 @@
 const Appointment = require("../models/appointment.model");
+const Availability = require("../models/availability.model");
+
+const TIME_SLOT_REGEX = /^(\d{1,2}):(\d{2})\s?(AM|PM)$/i;
+
+const normalizeTimeSlot = (time) => {
+  const match = String(time || "").trim().match(TIME_SLOT_REGEX);
+  if (!match) return "";
+
+  const hours = Number(match[1]);
+  const minutes = match[2];
+  const meridiem = match[3].toUpperCase();
+
+  if (!Number.isFinite(hours) || hours < 1 || hours > 12) {
+    return "";
+  }
+
+  return `${String(hours).padStart(2, "0")}:${minutes} ${meridiem}`;
+};
+
+const getDateKey = (dateValue) => {
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toISOString().split("T")[0];
+};
+
+const syncAvailabilitySlotStatus = async ({ lawyerId, date, timeSlot, isBooked }) => {
+  const dateKey = getDateKey(date);
+  const normalizedTime = normalizeTimeSlot(timeSlot);
+
+  if (!lawyerId || !dateKey || !normalizedTime) {
+    return null;
+  }
+
+  const availabilityDate = new Date(`${dateKey}T00:00:00.000Z`);
+  let availability = await Availability.findOne({ lawyerId, date: availabilityDate });
+
+  if (!availability) {
+    availability = new Availability({
+      lawyerId,
+      date: availabilityDate,
+      slots: [{ time: normalizedTime, isBooked }],
+    });
+  } else {
+    const slotIndex = availability.slots.findIndex(
+      (slot) => normalizeTimeSlot(slot.time) === normalizedTime,
+    );
+
+    if (slotIndex >= 0) {
+      availability.slots[slotIndex].time = normalizedTime;
+      availability.slots[slotIndex].isBooked = isBooked;
+    } else {
+      availability.slots.push({ time: normalizedTime, isBooked });
+    }
+  }
+
+  await availability.save();
+  return availability;
+};
 
 const getAppointmentDateTime = (appointmentDate, timeSlot) => {
   if (!appointmentDate || !timeSlot) {
@@ -82,6 +140,19 @@ const buildLawyerAppointmentQuery = (lawyerId, queryParams = {}) => {
 const createAppointment = async (req, res) => {
   try {
     const appointment = await Appointment.create(req.body);
+
+    try {
+      await syncAvailabilitySlotStatus({
+        lawyerId: appointment.lawyerId,
+        date: appointment.date,
+        timeSlot: appointment.timeSlot,
+        isBooked: true,
+      });
+    } catch (syncError) {
+      await Appointment.findByIdAndDelete(appointment._id);
+      throw syncError;
+    }
+
     res.status(201).json(appointment);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -139,8 +210,36 @@ const getAppointmentById = async (req, res) => {
 
 const updateAppointment = async (req, res) => {
   try {
-    const appointment = await Appointment.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const existingAppointment = await Appointment.findById(req.params.id);
+    if (!existingAppointment) return res.status(404).json({ error: "Appointment not found" });
+
+    const previousStatus = existingAppointment.status;
+    const appointment = await Appointment.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+    });
     if (!appointment) return res.status(404).json({ error: "Appointment not found" });
+
+    try {
+      if (req.body?.status === "Rejected") {
+        await syncAvailabilitySlotStatus({
+          lawyerId: existingAppointment.lawyerId,
+          date: existingAppointment.date,
+          timeSlot: existingAppointment.timeSlot,
+          isBooked: false,
+        });
+      } else if (req.body?.status === "Approved" || req.body?.status === "Pending") {
+        await syncAvailabilitySlotStatus({
+          lawyerId: existingAppointment.lawyerId,
+          date: existingAppointment.date,
+          timeSlot: existingAppointment.timeSlot,
+          isBooked: true,
+        });
+      }
+    } catch (syncError) {
+      await Appointment.findByIdAndUpdate(req.params.id, { status: previousStatus });
+      throw syncError;
+    }
+
     res.json(appointment);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -151,6 +250,14 @@ const deleteAppointment = async (req, res) => {
   try {
     const appointment = await Appointment.findByIdAndDelete(req.params.id);
     if (!appointment) return res.status(404).json({ error: "Appointment not found" });
+
+    await syncAvailabilitySlotStatus({
+      lawyerId: appointment.lawyerId,
+      date: appointment.date,
+      timeSlot: appointment.timeSlot,
+      isBooked: false,
+    });
+
     res.json({ message: "Appointment deleted successfully" });
   } catch (err) {
     res.status(500).json({ error: err.message });
