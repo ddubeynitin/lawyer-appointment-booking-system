@@ -161,7 +161,7 @@ export default function MyAppointments() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 font-barlow">
       <ClientHeader />
 
       <main className="mx-auto max-w-7xl space-y-8 px-6 py-10">

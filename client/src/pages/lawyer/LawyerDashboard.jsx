@@ -1,11 +1,12 @@
 import { FaCalendarAlt, FaVideo } from "react-icons/fa";
 import { CalendarDays, Clock3, FileText, Mail, Phone, UserRound, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 import useFetch from "../../hooks/useFetch";
 import { API_URL } from "../../utils/api";
 import LawyerHeader from "../../components/common/LawyerHeader";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const SCHEDULE_TIME_SLOTS = [
   "09:00 AM",
@@ -33,11 +34,34 @@ const formatScheduleDateLabel = (date) =>
     year: "numeric",
   });
 
+const formatCurrency = (value = 0) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(Number(value || 0));
+
+const normalizeTimeSlot = (time) => {
+  const match = String(time || "").trim().match(/^(\d{1,2}):(\d{2})\s?(AM|PM)$/i);
+  if (!match) return "";
+
+  const hours = Number(match[1]);
+  const minutes = match[2];
+  const meridiem = match[3].toUpperCase();
+
+  if (!Number.isFinite(hours) || hours < 1 || hours > 12) return "";
+
+  return `${String(hours).padStart(2, "0")}:${minutes} ${meridiem}`;
+};
+
 const LawyerDashboard = () => {
 
   const [selectedDate, setSelectedDate] = useState(getTodayDateInputValue);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [selectedDateAvailability, setSelectedDateAvailability] = useState(null);
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const { data, loading, error } = useFetch(
     `${API_URL}/appointments/lawyer/${user.id}?status=Pending`,
@@ -45,22 +69,26 @@ const LawyerDashboard = () => {
   const { data: allAppointmentsData, loading: allAppointmentsLoading } = useFetch(
     `${API_URL}/appointments/lawyer/${user.id}`,
   );
-  const { data: scheduleData, loading: scheduleLoading } = useFetch(
-    `${API_URL}/appointments/lawyer/${user.id}?date=${selectedDate}`,
-  );
-
   const appointments = data?.appointments || [];
   const allAppointments = allAppointmentsData?.appointments || [];
   const totalAppointments = data?.totalAppointments || 0;
   const pendingAppointments = data?.pendingAppointments || 0;
-  const selectedDateAppointments = scheduleData?.appointments || [];
-  const selectedDateSlots = new Map(
-    selectedDateAppointments.map((appointment) => [
-      appointment.timeSlot,
-      appointment,
-    ]),
-  );
+  const completedRevenue = allAppointments
+    .filter((appointment) => appointment?.status === "Completed")
+    .reduce((sum, appointment) => sum + Number(appointment?.feeCharged || 0), 0);
   const selectedDateLabel = formatScheduleDateLabel(selectedDate);
+  const selectedDateSlots = Array.isArray(selectedDateAvailability?.slots)
+    ? selectedDateAvailability.slots
+        .map((slot) => ({
+          time: normalizeTimeSlot(typeof slot === "string" ? slot : slot?.time || slot?.startTime),
+          isBooked:
+            slot?.isBooked === true ||
+            slot?.booked === true ||
+            slot?.isAvailable === false,
+        }))
+        .filter((slot) => slot.time)
+    : [];
+  const hasAvailabilityForSelectedDate = selectedDateSlots.length > 0;
   const upcomingAppointment = allAppointments
     .filter((appointment) => {
       if (!appointment?.date || !appointment?.timeSlot) return false;
@@ -87,6 +115,47 @@ const LawyerDashboard = () => {
       return firstDate - secondDate;
     })[0];
 
+  useEffect(() => {
+    if (!user?.id || !selectedDate) {
+      setSelectedDateAvailability(null);
+      return undefined;
+    }
+
+    let isMounted = true;
+
+    const fetchAvailability = async () => {
+      setAvailabilityLoading(true);
+
+      try {
+        const response = await axios.get(
+          `${API_URL}/availability/${user.id}/${selectedDate}`,
+        );
+
+        if (isMounted) {
+          setSelectedDateAvailability(response.data || null);
+        }
+      } catch (fetchError) {
+        if (fetchError?.response?.status !== 404) {
+          console.error("Failed to load availability:", fetchError);
+        }
+
+        if (isMounted) {
+          setSelectedDateAvailability(null);
+        }
+      } finally {
+        if (isMounted) {
+          setAvailabilityLoading(false);
+        }
+      }
+    };
+
+    fetchAvailability();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedDate, user?.id]);
+
 
   const hour = new Date().getHours();
   const greeting =
@@ -111,7 +180,7 @@ const LawyerDashboard = () => {
   }, [selectedAppointment]);
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-gray-100 to-gray-200">
+    <div className="min-h-screen bg-linear-to-br from-gray-100 to-gray-200 font-barlow">
       <LawyerHeader/>
       <main className="mx-auto max-w-7xl space-y-10 px-6 py-10">
         <div>
@@ -123,7 +192,7 @@ const LawyerDashboard = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <StatCard
             title="Total Appointments"
             value={loading ? "..." : totalAppointments}
@@ -133,6 +202,15 @@ const LawyerDashboard = () => {
             title="Pending Requests"
             value={loading ? "..." : pendingAppointments}
             sub={error ? "Unable to load" : undefined}
+          />
+          <StatCard
+            title="Total Earnings"
+            value={allAppointmentsLoading ? "..." : formatCurrency(completedRevenue)}
+            sub={
+              <Link to="/lawyer/earnings" className="font-medium text-blue-600">
+                View earnings details
+              </Link>
+            }
           />
         </div>
         {/* Up Next Appointment */}
@@ -211,33 +289,45 @@ const LawyerDashboard = () => {
                 />
               }
             >
-              <p className="mb-4 text-sm text-gray-500">
-                Showing all time slots for {selectedDateLabel}
-              </p>
-              {scheduleLoading ? (
+              {availabilityLoading ? (
                 <p className="text-sm text-gray-500">Loading schedule...</p>
+              ) : hasAvailabilityForSelectedDate ? (
+                <>
+                  <p className="mb-4 text-sm text-gray-500">
+                    Showing your saved availability for {selectedDateLabel}
+                  </p>
+                  <div className="space-y-3">
+                    {selectedDateSlots.map((slot) => (
+                      <ScheduleItem
+                        key={slot.time}
+                        time={slot.time}
+                        title={slot.isBooked ? "Booked slot" : "Available slot"}
+                        sub={
+                          slot.isBooked
+                            ? "This consultation time is already reserved"
+                            : "Open for new bookings"
+                        }
+                        status={slot.isBooked ? "booked" : "available"}
+                      />
+                    ))}
+                  </div>
+                </>
               ) : (
-                SCHEDULE_TIME_SLOTS.map((time) => {
-                  const bookedAppointment = selectedDateSlots.get(time);
-
-                  return (
-                    <ScheduleItem
-                      key={time}
-                      time={time}
-                      title={
-                        bookedAppointment
-                          ? `${bookedAppointment.userId?.name || "Client"} booked this slot`
-                          : "Available slot"
-                      }
-                      sub={
-                        bookedAppointment
-                          ? `${bookedAppointment.caseCategory} • ${bookedAppointment.status}`
-                          : "No appointment booked"
-                      }
-                      status={bookedAppointment ? "booked" : "available"}
-                    />
-                  );
-                })
+                <div className="rounded-2xl border border-dashed border-blue-200 bg-blue-50 p-5 text-center">
+                  <p className="text-base font-semibold text-slate-800">
+                    Create schedule for this date
+                  </p>
+                  <p className="mt-2 text-sm text-gray-500">
+                    No availability has been set for {selectedDateLabel} yet.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/lawyer/manage-availability")}
+                    className="mt-4 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+                  >
+                    Create Schedule
+                  </button>
+                </div>
               )}
             </Card>
           </div>
@@ -317,7 +407,12 @@ const StatCard = ({ title, value, sub, icon }) => (
       {icon && <span className="text-blue-600">{icon}</span>}
     </div>
     <p className="text-2xl font-bold">{value}</p>
-    {sub && <p className="text-xs text-green-600">{sub}</p>}
+    {sub &&
+      (typeof sub === "string" ? (
+        <p className="text-xs text-green-600">{sub}</p>
+      ) : (
+        sub
+      ))}
   </div>
 );
 
@@ -538,3 +633,6 @@ const ClientInfoRow = ({ icon, label, value }) => (
 );
 
 export default LawyerDashboard;
+
+
+
