@@ -46,6 +46,10 @@ const Registration = () => {
     e.preventDefault();
     setError("");
 
+    if (formData.password.length < 8) {
+      return setError("Password must be at least 8 characters");
+    }
+
     if (formData.password !== formData.confirmPassword) {
       return setError("Passwords do not match");
     }
@@ -335,6 +339,7 @@ const ClientRegform = ({
             placeholder="Create password"
             onChange={handleChange}
             value={formData.password}
+            minLength={8}
             isPassword
             onToggle={() => setShowPassword(!showPassword)}
             showPassword={showPassword}
@@ -353,6 +358,7 @@ const ClientRegform = ({
             placeholder="Confirm password"
             onChange={handleChange}
             value={formData.confirmPassword}
+            minLength={8}
             isPassword
             onToggle={() => setShowPassword(!showPassword)}
             showPassword={showPassword}
@@ -471,6 +477,7 @@ const LawyerRegform = ({
             placeholder="Create password"
             onChange={handleChange}
             value={formData.password}
+            minLength={8}
             isPassword
             onToggle={() => setShowPassword(!showPassword)}
             showPassword={showPassword}
@@ -489,6 +496,7 @@ const LawyerRegform = ({
             placeholder="Confirm password"
             onChange={handleChange}
             value={formData.confirmPassword}
+            minLength={8}
             isPassword
             onToggle={() => setShowPassword(!showPassword)}
             showPassword={showPassword}
