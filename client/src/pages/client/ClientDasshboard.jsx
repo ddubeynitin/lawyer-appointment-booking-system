@@ -2,6 +2,7 @@ import { FaGavel, FaSearch, FaVideo, FaTimes } from "react-icons/fa";
 import { LuBellRing } from "react-icons/lu";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect, useMemo } from "react";
+import { MessageCircle } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import userImg from "../../assets/gifs/icons8-user.gif";
 import axios from "axios";
@@ -286,6 +287,15 @@ const ClientDashboard = () => {
           </nav>
 
           <div className="relative flex items-center gap-6">
+            <button
+              type="button"
+              onClick={() => navigate("/messages")}
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-blue-600 shadow-sm transition hover:border-blue-300 hover:bg-blue-50"
+              aria-label="Open messages"
+            >
+              <MessageCircle size={18} />
+            </button>
+
             {/* <div
               className="relative cursor-pointer"
               onClick={() => setShowNotifications(!showNotifications)}

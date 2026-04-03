@@ -29,6 +29,7 @@ const CompleteLawyerProfile = lazy(
   () => import("./pages/auth/CompleteLawyerProfile"),
 );
 const LawyerProfile = lazy(() => import("./pages/lawyer/LawyerProfile"));
+const MessagesPage = lazy(() => import("./pages/messages/MessagesPage"));
 
 const App = () => {
   return (
@@ -79,6 +80,7 @@ const App = () => {
             element={<ManageAvailabilityAndFees />}
           />
           <Route path="/lawyer/lawyer-profile/:id" element={<LawyerProfile />} />
+          <Route path="/messages" element={<MessagesPage />} />
 
           <Route path="/admin/admin-login" element={<AdminLoginPage />} />
           <Route path="/admin/admin-dashboard" element={<AdminDashBoard />} />
