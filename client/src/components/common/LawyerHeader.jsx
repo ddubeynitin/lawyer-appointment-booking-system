@@ -1,10 +1,10 @@
 import React, {useState, useEffect, useRef} from "react";
-import { LuBellRing } from "react-icons/lu";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { TfiMenuAlt } from "react-icons/tfi";
 import { FaGavel } from "react-icons/fa";
 import { MessageCircle } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import BookingNotifications from "../BookingNotifications";
 
 const LawyerHeader = () => {
   // const [showNotifications, setShowNotifications] = useState(false);
@@ -215,24 +215,12 @@ const LawyerHeader = () => {
               <MessageCircle size={18} />
             </button>
 
-            {/* <div
-              className="relative cursor-pointer"
-              onClick={() => setShowNotifications(!showNotifications)}
-            >
-              <LuBellRing className="text-xl text-gray-700" />
-              <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500"></span>
-            </div>
-
-            {showNotifications && (
-              <div className="absolute right-0 top-12 z-50 w-72 rounded-xl bg-white p-4 shadow-xl">
-                <h4 className="mb-3 font-semibold">Notifications</h4>
-                <ul className="space-y-2 text-sm text-gray-600">
-                  <li>Appointment booked by client</li>
-                  <li>New message from Sarah Jenkins</li>
-                  <li>Payment received</li>
-                </ul>
-              </div>
-            )} */}
+            {user?.id && (
+              <BookingNotifications
+                userId={user.id}
+                recipientType="lawyer"
+              />
+            )}
 
             <div className="relative" ref={profileRef}>
               <img

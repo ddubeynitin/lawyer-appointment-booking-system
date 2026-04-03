@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
-import { CalendarDays, Filter, Search, Star } from "lucide-react";
+import { CalendarDays, Clock3, Filter, Search, Star, X } from "lucide-react";
 import ClientHeader from "../../components/common/ClientHeader";
 import ReviewRating from "../../components/ReviewRating";
+import DateTimeSlotPicker from "../../components/DateTimeSlotPicker";
 import { useAuth } from "../../context/AuthContext";
+import { useLocation } from "react-router-dom";
 import { API_URL } from "../../utils/api";
 
 const STATUS_OPTIONS = ["All", "Pending", "Approved", "Rejected", "Completed"];
@@ -24,8 +26,36 @@ const getStatusClasses = (status) => {
   return "bg-gray-100 text-gray-600";
 };
 
+const RESCHEDULE_CUTOFF_HOURS = 3;
+
+const getAppointmentDateTime = (dateValue, timeSlot) => {
+  if (!dateValue || !timeSlot) return null;
+
+  const appointmentDate = new Date(dateValue);
+  if (Number.isNaN(appointmentDate.getTime())) return null;
+
+  const [time, meridiem] = String(timeSlot).split(" ");
+  const [rawHours, rawMinutes] = time.split(":").map(Number);
+  if (Number.isNaN(rawHours) || Number.isNaN(rawMinutes)) return null;
+
+  let hours = rawHours % 12;
+  if (meridiem === "PM") hours += 12;
+  appointmentDate.setHours(hours, rawMinutes, 0, 0);
+  return appointmentDate;
+};
+
+const formatLocalDate = (date) => {
+  if (!date) return "";
+
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 export default function MyAppointments() {
   const { user } = useAuth();
+  const location = useLocation();
   const userId = user?.id || user?._id;
 
   const [appointments, setAppointments] = useState([]);
@@ -36,6 +66,13 @@ export default function MyAppointments() {
   const [categoryFilter, setCategoryFilter] = useState(ALL_CATEGORIES);
   const [reviews, setReviews] = useState([]);
   const [selectedAppointmentForReview, setSelectedAppointmentForReview] = useState(null);
+  const [selectedAppointmentForReschedule, setSelectedAppointmentForReschedule] = useState(null);
+  const [rescheduleDate, setRescheduleDate] = useState(null);
+  const [rescheduleTime, setRescheduleTime] = useState("");
+  const [rescheduleReason, setRescheduleReason] = useState("");
+  const [rescheduleSubmitting, setRescheduleSubmitting] = useState(false);
+  const [rescheduleError, setRescheduleError] = useState("");
+  const [autoOpenedRescheduleId, setAutoOpenedRescheduleId] = useState("");
 
   useEffect(() => {
     const fetchAppointments = async () => {
@@ -146,6 +183,99 @@ export default function MyAppointments() {
     setStatusFilter("All");
     setCategoryFilter(ALL_CATEGORIES);
   };
+
+  const canRescheduleAppointment = (appointment) => {
+    if (!appointment || appointment.status !== "Approved" || appointment.rescheduleStatus === "Pending") {
+      return false;
+    }
+
+    const appointmentDateTime = getAppointmentDateTime(appointment.date, appointment.timeSlot);
+    if (!appointmentDateTime) {
+      return false;
+    }
+
+    const timeRemainingMs = appointmentDateTime.getTime() - Date.now();
+    return timeRemainingMs >= RESCHEDULE_CUTOFF_HOURS * 60 * 60 * 1000;
+  };
+
+  const openRescheduleModal = (appointment) => {
+    setSelectedAppointmentForReschedule(appointment);
+    setRescheduleDate(new Date(appointment.date));
+    setRescheduleTime("");
+    setRescheduleReason("");
+    setRescheduleError("");
+  };
+
+  const closeRescheduleModal = () => {
+    setSelectedAppointmentForReschedule(null);
+    setRescheduleDate(null);
+    setRescheduleTime("");
+    setRescheduleReason("");
+    setRescheduleError("");
+  };
+
+  const handleSubmitReschedule = async (event) => {
+    event.preventDefault();
+
+    if (!selectedAppointmentForReschedule || !rescheduleDate || !rescheduleTime) {
+      setRescheduleError("Please choose a new date and time slot.");
+      return;
+    }
+
+    try {
+      setRescheduleSubmitting(true);
+      setRescheduleError("");
+
+      await axios.put(`${API_URL}/appointments/${selectedAppointmentForReschedule._id}/reschedule-request`, {
+        userId,
+        date: formatLocalDate(rescheduleDate),
+        timeSlot: rescheduleTime,
+        reason: rescheduleReason.trim(),
+      });
+
+      await axios.get(`${API_URL}/appointments/user/${userId}`).then((response) => {
+        setAppointments(response.data?.appointments || []);
+      });
+      closeRescheduleModal();
+    } catch (submitError) {
+      setRescheduleError(
+        submitError.response?.data?.error || "Unable to submit your reschedule request right now.",
+      );
+    } finally {
+      setRescheduleSubmitting(false);
+    }
+  };
+
+  useEffect(() => {
+    const targetAppointmentId = location.state?.rescheduleAppointmentId;
+    if (!targetAppointmentId || appointments.length === 0) {
+      return;
+    }
+
+    if (autoOpenedRescheduleId === targetAppointmentId) {
+      return;
+    }
+
+    const targetAppointment = appointments.find(
+      (appointment) => appointment._id === targetAppointmentId,
+    );
+
+    if (!targetAppointment || targetAppointment.status !== "Approved") {
+      return;
+    }
+
+    const appointmentDateTime = getAppointmentDateTime(
+      targetAppointment.date,
+      targetAppointment.timeSlot,
+    );
+
+    if (!appointmentDateTime || appointmentDateTime.getTime() - Date.now() < RESCHEDULE_CUTOFF_HOURS * 60 * 60 * 1000) {
+      return;
+    }
+
+    openRescheduleModal(targetAppointment);
+    setAutoOpenedRescheduleId(targetAppointmentId);
+  }, [appointments, autoOpenedRescheduleId, location.state]);
 
   const reviewedAppointmentIds = useMemo(() => {
     return new Set(
@@ -338,6 +468,13 @@ export default function MyAppointments() {
                       </div>
 
                       <div>
+                        {appointment.rescheduleStatus === "Pending" ? (
+                          <span className="mb-2 inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+                            <Clock3 size={12} className="fill-current" />
+                            Reschedule Pending
+                          </span>
+                        ) : null}
+
                         {appointment.status === "Completed" ? (
                           hasReview ? (
                             <span className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
@@ -354,8 +491,19 @@ export default function MyAppointments() {
                               Review & Rate
                             </button>
                           )
+                        ) : canRescheduleAppointment(appointment) ? (
+                          <button
+                            type="button"
+                            onClick={() => openRescheduleModal(appointment)}
+                            className="inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700 transition hover:bg-blue-200"
+                          >
+                            <Clock3 size={12} className="fill-current" />
+                            Reschedule
+                          </button>
                         ) : (
-                          <span className="text-sm text-slate-400">Not available</span>
+                          <span className="text-sm text-slate-400">
+                            Not available
+                          </span>
                         )}
                       </div>
                     </div>
@@ -414,6 +562,13 @@ export default function MyAppointments() {
                       </div>
 
                       <div className="pt-1">
+                        {appointment.rescheduleStatus === "Pending" ? (
+                          <span className="mb-3 inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+                            <Clock3 size={12} className="fill-current" />
+                            Reschedule Pending
+                          </span>
+                        ) : null}
+
                         {appointment.status === "Completed" ? (
                           hasReview ? (
                             <span className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
@@ -430,6 +585,15 @@ export default function MyAppointments() {
                               Review & Rate
                             </button>
                           )
+                        ) : canRescheduleAppointment(appointment) ? (
+                          <button
+                            type="button"
+                            onClick={() => openRescheduleModal(appointment)}
+                            className="inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700"
+                          >
+                            <Clock3 size={12} className="fill-current" />
+                            Reschedule
+                          </button>
                         ) : null}
                       </div>
                     </div>
@@ -440,6 +604,109 @@ export default function MyAppointments() {
             </>
           )}
         </section>
+
+        {selectedAppointmentForReschedule ? (
+          <div
+            className="fixed h-screen inset-0 z-50 flex items-center justify-center bg-slate-950/35 px-4 backdrop-blur-md"
+            onClick={closeRescheduleModal}
+            role="presentation"
+          >
+            <div
+              className="w-full max-w-6xl   overflow-hidden rounded-3xl bg-white shadow-2xl"
+              onClick={(event) => event.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Reschedule appointment"
+            >
+              <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">
+                    Reschedule Appointment
+                  </p>
+                  <h2 className="mt-1 text-xl font-semibold text-slate-800">
+                    {selectedAppointmentForReschedule.lawyerName}
+                  </h2>
+                  <p className="text-sm text-slate-500">
+                    You can reschedule until 3 hours before the appointment time.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={closeRescheduleModal}
+                  className="rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+                  aria-label="Close reschedule dialog"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="grid gap-6 px-6 py-6 lg:grid-cols-[1.2fr_0.8fr] overflow-y-auto max-h-[80vh]">
+                <DateTimeSlotPicker
+                  lawyerId={selectedAppointmentForReschedule.lawyerId}
+                  selectedDate={rescheduleDate}
+                  selectedTime={rescheduleTime}
+                  onDateChange={setRescheduleDate}
+                  onTimeChange={setRescheduleTime}
+                />
+
+                <form onSubmit={handleSubmitReschedule} className="space-y-4 rounded-3xl bg-slate-50 p-6">
+                  <div>
+                    <p className="text-sm font-medium text-slate-600">Current Appointment</p>
+                    <p className="mt-1 text-lg font-semibold text-slate-800">
+                      {formatAppointmentDate(selectedAppointmentForReschedule.date)} at{" "}
+                      {selectedAppointmentForReschedule.timeSlot}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-sm font-medium text-slate-600">New Slot</p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Selected date:{" "}
+                      {rescheduleDate
+                        ? rescheduleDate.toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          })
+                        : "Not selected"}
+                    </p>
+                    <p className="text-sm text-slate-500">
+                      Selected time: {rescheduleTime || "Not selected"}
+                    </p>
+                  </div>
+
+                  <label className="block">
+                    <span className="mb-2 block text-sm font-medium text-slate-600">
+                      Reason for reschedule
+                    </span>
+                    <textarea
+                      rows="4"
+                      value={rescheduleReason}
+                      onChange={(event) => setRescheduleReason(event.target.value)}
+                      placeholder="Optional, but helpful for the lawyer"
+                      className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-slate-700 outline-none focus:border-blue-500"
+                    />
+                  </label>
+
+                  {rescheduleError ? (
+                    <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
+                      {rescheduleError}
+                    </div>
+                  ) : null}
+
+                  <button
+                    type="submit"
+                    disabled={rescheduleSubmitting}
+                    className="w-full rounded-2xl bg-linear-to-r from-blue-600 to-blue-700 px-6 py-4 text-sm font-semibold text-white shadow-lg transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    {rescheduleSubmitting ? "Submitting request..." : "Send Reschedule Request"}
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         {selectedAppointmentForReview ? (
           <div

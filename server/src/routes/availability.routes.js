@@ -4,8 +4,8 @@ const { createAvailability, getAvailabilityByLawyerAndDate, getAvailabilityByLaw
 
 // Create or update availability
 router.post("/", createAvailability);
-router.get("/:lawyerId/:date", getAvailabilityByLawyerAndDate);
 router.get("/lawyer/:lawyerId", getAvailabilityByLawyer);
+router.get("/:lawyerId/:date", getAvailabilityByLawyerAndDate);
 router.patch("/book-slot", updateBookedSlot);
 router.delete("/:id", deleteAvailability);
 

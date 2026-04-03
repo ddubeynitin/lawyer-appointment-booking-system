@@ -1,10 +1,10 @@
 import React, { useRef, useState } from 'react'
 import { FaGavel, FaSearch, FaVideo, FaTimes } from "react-icons/fa";
-import { LuBellRing } from "react-icons/lu";
 import { MessageCircle } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { TfiMenuAlt } from "react-icons/tfi";
 import { Link, useNavigate } from 'react-router-dom';
+import BookingNotifications from "../BookingNotifications";
 
 const ClientHeader = () => {
     // const [showNotifications, setShowNotifications] = useState(false);
@@ -95,24 +95,12 @@ const ClientHeader = () => {
               <MessageCircle size={18} />
             </button>
 
-            {/* <div
-              className="relative cursor-pointer"
-              onClick={() => setShowNotifications(!showNotifications)}
-            >
-              <LuBellRing className="text-xl text-gray-700" />
-              <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500"></span>
-            </div>
-
-            {showNotifications && (
-              <div className="absolute right-0 top-12 z-50 w-72 rounded-xl bg-white p-4 shadow-xl">
-                <h4 className="mb-3 font-semibold">Notifications</h4>
-                <ul className="space-y-2 text-sm text-gray-600">
-                  <li>Appointment confirmed</li>
-                  <li>Lawyer sent you a message</li>
-                  <li>Payment successful</li>
-                </ul>
-              </div>
-            )} */}
+            {user?.id && (
+              <BookingNotifications
+                userId={user.id}
+                recipientType="user"
+              />
+            )}
 
             <div className="relative" ref={profileRef}>
               <div

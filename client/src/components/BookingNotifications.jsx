@@ -11,10 +11,13 @@ import {
   DollarSign
 } from "lucide-react";
 import axios from "axios";
+import { API_URL } from "../utils/api";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-
-export default function BookingNotifications({ userId, onNotificationCount }) {
+export default function BookingNotifications({
+  userId,
+  recipientType = "user",
+  onNotificationCount,
+}) {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -30,7 +33,7 @@ export default function BookingNotifications({ userId, onNotificationCount }) {
     
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get(`${API_URL}/notifications/user/${userId}`, {
+      const response = await axios.get(`${API_URL}/notifications/${recipientType}/${userId}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -59,7 +62,7 @@ export default function BookingNotifications({ userId, onNotificationCount }) {
     try {
       const token = localStorage.getItem("token");
       await axios.put(
-        `${API_URL}/notifications/${notificationId}/read`,
+        `${API_URL}/notifications/${recipientType}/${userId}/${notificationId}/read`,
         {},
         {
           headers: {
@@ -82,7 +85,7 @@ export default function BookingNotifications({ userId, onNotificationCount }) {
     try {
       const token = localStorage.getItem("token");
       await axios.put(
-        `${API_URL}/notifications/user/${userId}/read-all`,
+        `${API_URL}/notifications/${recipientType}/${userId}/read-all`,
         {},
         {
           headers: {
@@ -120,7 +123,7 @@ export default function BookingNotifications({ userId, onNotificationCount }) {
     // Poll for new notifications every 30 seconds
     const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
-  }, [userId]);
+  }, [userId, recipientType]);
 
   // Handle dropdown toggle
   const handleToggle = () => {
@@ -143,6 +146,11 @@ export default function BookingNotifications({ userId, onNotificationCount }) {
       case "appointment_cancelled":
       case "appointment_rejected":
         return <XCircle className="w-5 h-5 text-red-500" />;
+      case "appointment_reschedule_requested":
+      case "appointment_rescheduled":
+        return <Calendar className="w-5 h-5 text-blue-500" />;
+      case "appointment_reschedule_rejected":
+        return <XCircle className="w-5 h-5 text-orange-500" />;
       case "appointment_reminder":
         return <Clock className="w-5 h-5 text-blue-500" />;
       case "new_message":
@@ -231,7 +239,7 @@ export default function BookingNotifications({ userId, onNotificationCount }) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className={`text-sm ${!notification.isRead ? "font-medium text-gray-800" : "text-gray-600"}`}>
-                        {notification.title || notification.message}
+                        {notification.title || notification.message || notification.notificationMsg}
                       </p>
                       {notification.description && (
                         <p className="text-xs text-gray-500 mt-0.5 truncate">
