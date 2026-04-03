@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import {
   CheckCircle,
+  Loader2,
   MapPin,
   Globe,
   Award,
@@ -169,6 +170,7 @@ const LawyerProfile = () => {
   const [availabilityData, setAvailabilityData] = useState([]);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [shareStatus, setShareStatus] = useState("");
+  const [creatingConversation, setCreatingConversation] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
   const canShowBookingCard = !user || user.role !== "lawyer";
@@ -271,6 +273,41 @@ const LawyerProfile = () => {
       }
 
       setShareStatus("Unable to share right now.");
+    }
+  };
+
+  const handleMessageClick = async () => {
+    const viewedLawyerId = id;
+
+    if (!viewedLawyerId) {
+      return;
+    }
+
+    const clientId = user?.id || user?._id;
+
+    if (!clientId) {
+      navigate(`/messages?lawyerId=${encodeURIComponent(viewedLawyerId)}`);
+      return;
+    }
+
+    try {
+      setCreatingConversation(true);
+      const response = await axios.post(`${API_URL}/messages/conversations/ensure`, {
+        clientId,
+        lawyerId: viewedLawyerId,
+      });
+
+      const conversationId = response.data?.conversationId;
+      navigate(
+        conversationId
+          ? `/messages?conversationId=${encodeURIComponent(conversationId)}`
+          : `/messages?lawyerId=${encodeURIComponent(viewedLawyerId)}`,
+      );
+    } catch (error) {
+      console.error("Failed to create conversation before opening messages:", error);
+      navigate(`/messages?lawyerId=${encodeURIComponent(viewedLawyerId)}`);
+    } finally {
+      setCreatingConversation(false);
     }
   };
 
@@ -442,9 +479,21 @@ const LawyerProfile = () => {
                   </div>
 
                   <div className="flex gap-4 mt-6">
-                    { user && user.role == "lawyer" ? " ": <button className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg transition">
-                      <MessageCircle size={18} /> Message
-                    </button>}
+                    {user && user.role == "lawyer" ? null : (
+                      <button
+                        type="button"
+                        onClick={handleMessageClick}
+                        disabled={creatingConversation}
+                        className="flex items-center gap-2 rounded-lg bg-slate-100 px-4 py-2 text-slate-700 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {creatingConversation ? (
+                          <Loader2 size={18} className="animate-spin" />
+                        ) : (
+                          <MessageCircle size={18} />
+                        )}
+                        {creatingConversation ? "Opening..." : "Message"}
+                      </button>
+                    )}
 
                     <button
                       type="button"
