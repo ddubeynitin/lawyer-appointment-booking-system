@@ -1,7 +1,11 @@
 const Appointment = require("../models/appointment.model");
 const Availability = require("../models/availability.model");
+const {
+  createAppointmentNotifications,
+} = require("../services/notification.service");
 
 const TIME_SLOT_REGEX = /^(\d{1,2}):(\d{2})\s?(AM|PM)$/i;
+const RESCHEDULE_CUTOFF_HOURS = 3;
 
 const normalizeTimeSlot = (time) => {
   const match = String(time || "").trim().match(TIME_SLOT_REGEX);
@@ -85,6 +89,70 @@ const getAppointmentDateTime = (appointmentDate, timeSlot) => {
   return appointmentDateTime;
 };
 
+const toAppointmentDate = (dateValue) => {
+  if (!dateValue) {
+    return null;
+  }
+
+  const normalized =
+    typeof dateValue === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dateValue)
+      ? new Date(`${dateValue}T00:00:00.000Z`)
+      : new Date(dateValue);
+
+  return Number.isNaN(normalized.getTime()) ? null : normalized;
+};
+
+const isWithinRescheduleWindow = (appointmentDateTime, now = new Date()) => {
+  if (!appointmentDateTime) {
+    return false;
+  }
+
+  const millisecondsUntilAppointment = appointmentDateTime.getTime() - now.getTime();
+  return millisecondsUntilAppointment >= RESCHEDULE_CUTOFF_HOURS * 60 * 60 * 1000;
+};
+
+const isFutureSlot = (dateValue, timeSlot, now = new Date()) => {
+  const appointmentDateTime = getAppointmentDateTime(dateValue, timeSlot);
+  return appointmentDateTime && appointmentDateTime.getTime() > now.getTime();
+};
+
+const findConflictingAppointment = async ({ lawyerId, date, timeSlot, ignoreAppointmentId }) => {
+  return Appointment.findOne({
+    lawyerId,
+    date,
+    timeSlot,
+    _id: { $ne: ignoreAppointmentId },
+    status: { $nin: ["Rejected"] },
+  }).lean();
+};
+
+const isSlotAvailableForLawyer = async ({ lawyerId, date, timeSlot, ignoreAppointmentId }) => {
+  const normalizedDate = toAppointmentDate(date);
+  if (!lawyerId || !normalizedDate || !timeSlot) {
+    return false;
+  }
+
+  const availability = await Availability.findOne({ lawyerId, date: normalizedDate }).lean();
+  if (availability) {
+    const slot = (availability.slots || []).find(
+      (slotEntry) => normalizeTimeSlot(slotEntry.time) === normalizeTimeSlot(timeSlot),
+    );
+
+    if (!slot || slot.isBooked) {
+      return false;
+    }
+  }
+
+  const conflict = await findConflictingAppointment({
+    lawyerId,
+    date: normalizedDate,
+    timeSlot,
+    ignoreAppointmentId,
+  });
+
+  return !conflict;
+};
+
 const syncCompletedAppointments = async (baseQuery = {}) => {
   const appointmentsToCheck = await Appointment.find({
     ...baseQuery,
@@ -115,9 +183,14 @@ const buildLawyerAppointmentQuery = (lawyerId, queryParams = {}) => {
   const query = { lawyerId };
   const status = queryParams.status?.trim();
   const date = queryParams.date?.trim();
+  const rescheduleStatus = queryParams.rescheduleStatus?.trim();
 
   if (status) {
     query.status = status;
+  }
+
+  if (rescheduleStatus) {
+    query.rescheduleStatus = rescheduleStatus;
   }
 
   if (date) {
@@ -139,7 +212,30 @@ const buildLawyerAppointmentQuery = (lawyerId, queryParams = {}) => {
 
 const createAppointment = async (req, res) => {
   try {
-    const appointment = await Appointment.create(req.body);
+    const appointmentDate = toAppointmentDate(req.body.date);
+    const timeSlot = normalizeTimeSlot(req.body.timeSlot);
+
+    if (!appointmentDate) {
+      return res.status(400).json({ error: "Valid appointment date is required" });
+    }
+
+    if (!timeSlot) {
+      return res.status(400).json({ error: "Valid time slot is required" });
+    }
+
+    const appointmentPayload = {
+      ...req.body,
+      date: appointmentDate,
+      timeSlot,
+      rescheduleStatus: null,
+      rescheduleRequestedBy: null,
+      rescheduleRequestedAt: null,
+      rescheduleRequestedDate: null,
+      rescheduleRequestedTimeSlot: null,
+      rescheduleReason: null,
+    };
+
+    const appointment = await Appointment.create(appointmentPayload);
 
     try {
       await syncAvailabilitySlotStatus({
@@ -147,6 +243,17 @@ const createAppointment = async (req, res) => {
         date: appointment.date,
         timeSlot: appointment.timeSlot,
         isBooked: true,
+      });
+
+      await createAppointmentNotifications({
+        appointment,
+        type: "appointment_created",
+        userTitle: "Appointment request received",
+        userDescription: `Your consultation with ${appointment.lawyerName} is waiting for review.`,
+        userMessage: `Your appointment request with ${appointment.lawyerName} for ${appointment.timeSlot} on ${new Date(appointment.date).toLocaleDateString()} has been received.`,
+        lawyerTitle: "New appointment request",
+        lawyerDescription: `${appointment.caseCategory} consultation from ${appointment.userId?.name || "a client"}.`,
+        lawyerMessage: `New appointment request from ${appointment.userId?.name || "a client"} for ${appointment.timeSlot} on ${new Date(appointment.date).toLocaleDateString()}.`,
       });
     } catch (syncError) {
       await Appointment.findByIdAndDelete(appointment._id);
@@ -235,12 +342,250 @@ const updateAppointment = async (req, res) => {
           isBooked: true,
         });
       }
+
+      if (req.body?.status && req.body.status !== previousStatus) {
+        await createAppointmentNotifications({
+          appointment,
+          type: `appointment_${req.body.status.toLowerCase()}`,
+          userTitle:
+            req.body.status === "Approved"
+              ? "Appointment approved"
+              : "Appointment updated",
+          userDescription:
+            req.body.status === "Approved"
+              ? `Your appointment with ${appointment.lawyerName} is now confirmed.`
+              : `Your appointment with ${appointment.lawyerName} has been updated to ${req.body.status.toLowerCase()}.`,
+          userMessage:
+            req.body.status === "Approved"
+              ? `Your appointment with ${appointment.lawyerName} for ${appointment.timeSlot} on ${new Date(appointment.date).toLocaleDateString()} has been approved.`
+              : `Your appointment with ${appointment.lawyerName} has been moved to ${req.body.status.toLowerCase()}.`,
+          lawyerTitle:
+            req.body.status === "Approved"
+              ? "Appointment approved"
+              : "Appointment updated",
+          lawyerDescription:
+            req.body.status === "Approved"
+              ? `Appointment with ${appointment.userId?.name || "a client"} has been confirmed.`
+              : `Appointment with ${appointment.userId?.name || "a client"} has been updated to ${req.body.status.toLowerCase()}.`,
+          lawyerMessage:
+            req.body.status === "Approved"
+              ? `You approved the appointment with ${appointment.userId?.name || "a client"} for ${appointment.timeSlot} on ${new Date(appointment.date).toLocaleDateString()}.`
+              : `Appointment with ${appointment.userId?.name || "a client"} has been updated.`,
+        });
+      }
     } catch (syncError) {
       await Appointment.findByIdAndUpdate(req.params.id, { status: previousStatus });
       throw syncError;
     }
 
     res.json(appointment);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+const requestReschedule = async (req, res) => {
+  try {
+    const { date, timeSlot, reason } = req.body;
+    const requestedDate = toAppointmentDate(date);
+    const normalizedTimeSlot = normalizeTimeSlot(timeSlot);
+    const appointment = await Appointment.findById(req.params.id);
+
+    if (!appointment) {
+      return res.status(404).json({ error: "Appointment not found" });
+    }
+
+    if (appointment.status !== "Approved") {
+      return res.status(400).json({
+        error: "Only approved appointments can be rescheduled",
+      });
+    }
+
+    if (appointment.rescheduleStatus === "Pending") {
+      return res.status(409).json({
+        error: "A reschedule request is already pending for this appointment",
+      });
+    }
+
+    if (!isWithinRescheduleWindow(getAppointmentDateTime(appointment.date, appointment.timeSlot))) {
+      return res.status(400).json({
+        error: "Rescheduling is allowed only up to 3 hours before the appointment",
+      });
+    }
+
+    if (!requestedDate || !normalizedTimeSlot) {
+      return res.status(400).json({
+        error: "New date and time slot are required",
+      });
+    }
+
+    if (!isFutureSlot(requestedDate, normalizedTimeSlot)) {
+      return res.status(400).json({
+        error: "Please choose a future time slot",
+      });
+    }
+
+    if (
+      getAppointmentDateTime(appointment.date, appointment.timeSlot)?.getTime() ===
+      getAppointmentDateTime(requestedDate, normalizedTimeSlot)?.getTime()
+    ) {
+      return res.status(400).json({
+        error: "Please choose a different date or time slot",
+      });
+    }
+
+    const slotAvailable = await isSlotAvailableForLawyer({
+      lawyerId: appointment.lawyerId,
+      date: requestedDate,
+      timeSlot: normalizedTimeSlot,
+      ignoreAppointmentId: appointment._id,
+    });
+
+    if (!slotAvailable) {
+      return res.status(409).json({
+        error: "The selected reschedule slot is no longer available",
+      });
+    }
+
+    appointment.rescheduleStatus = "Pending";
+    appointment.rescheduleRequestedBy = req.body.userId || appointment.userId;
+    appointment.rescheduleRequestedAt = new Date();
+    appointment.rescheduleRequestedDate = requestedDate;
+    appointment.rescheduleRequestedTimeSlot = normalizedTimeSlot;
+    appointment.rescheduleReason = String(reason || "").trim();
+    await appointment.save();
+
+    await createAppointmentNotifications({
+      appointment,
+      type: "appointment_reschedule_requested",
+      userTitle: "Reschedule request submitted",
+      userDescription: `Your reschedule request for ${appointment.lawyerName} has been sent.`,
+      userMessage: `Your request to move the appointment to ${normalizedTimeSlot} on ${requestedDate.toLocaleDateString()} was sent to the lawyer.`,
+      lawyerTitle: "Reschedule request received",
+      lawyerDescription: `A client asked to move an approved appointment.`,
+      lawyerMessage: `A reschedule request is waiting for approval for ${normalizedTimeSlot} on ${requestedDate.toLocaleDateString()}.`,
+    });
+
+    res.json({
+      message: "Reschedule request submitted successfully",
+      appointment,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+const respondToRescheduleRequest = async (req, res) => {
+  try {
+    const { action } = req.body;
+    const appointment = await Appointment.findById(req.params.id);
+
+    if (!appointment) {
+      return res.status(404).json({ error: "Appointment not found" });
+    }
+
+    if (appointment.rescheduleStatus !== "Pending") {
+      return res.status(400).json({
+        error: "There is no pending reschedule request for this appointment",
+      });
+    }
+
+    const requestedDate = appointment.rescheduleRequestedDate;
+    const requestedTimeSlot = appointment.rescheduleRequestedTimeSlot;
+
+    if (!requestedDate || !requestedTimeSlot) {
+      return res.status(400).json({
+        error: "Requested reschedule details are missing",
+      });
+    }
+
+    if (action === "Approved") {
+      const slotAvailable = await isSlotAvailableForLawyer({
+        lawyerId: appointment.lawyerId,
+        date: requestedDate,
+        timeSlot: requestedTimeSlot,
+        ignoreAppointmentId: appointment._id,
+      });
+
+      if (!slotAvailable) {
+        return res.status(409).json({
+          error: "The requested slot is no longer available",
+        });
+      }
+
+      const previousDate = appointment.date;
+      const previousTimeSlot = appointment.timeSlot;
+
+      appointment.date = requestedDate;
+      appointment.timeSlot = requestedTimeSlot;
+      appointment.rescheduleStatus = null;
+      appointment.rescheduleRequestedBy = null;
+      appointment.rescheduleRequestedAt = null;
+      appointment.rescheduleRequestedDate = null;
+      appointment.rescheduleRequestedTimeSlot = null;
+      appointment.rescheduleReason = null;
+      await appointment.save();
+
+      await syncAvailabilitySlotStatus({
+        lawyerId: appointment.lawyerId,
+        date: previousDate,
+        timeSlot: previousTimeSlot,
+        isBooked: false,
+      });
+
+      await syncAvailabilitySlotStatus({
+        lawyerId: appointment.lawyerId,
+        date: appointment.date,
+        timeSlot: appointment.timeSlot,
+        isBooked: true,
+      });
+
+      await createAppointmentNotifications({
+        appointment,
+        type: "appointment_rescheduled",
+        userTitle: "Appointment rescheduled",
+        userDescription: `Your appointment with ${appointment.lawyerName} was rescheduled.`,
+        userMessage: `Your appointment now takes place on ${new Date(appointment.date).toLocaleDateString()} at ${appointment.timeSlot}.`,
+        lawyerTitle: "Appointment rescheduled",
+        lawyerDescription: `The approved appointment was moved to a new slot.`,
+        lawyerMessage: `Appointment moved from ${new Date(previousDate).toLocaleDateString()} ${previousTimeSlot} to ${new Date(appointment.date).toLocaleDateString()} ${appointment.timeSlot}.`,
+      });
+
+      return res.json({
+        message: "Reschedule request approved",
+        appointment,
+      });
+    }
+
+    if (action === "Rejected") {
+      appointment.rescheduleStatus = "Rejected";
+      appointment.rescheduleRequestedBy = null;
+      appointment.rescheduleRequestedAt = null;
+      appointment.rescheduleRequestedDate = null;
+      appointment.rescheduleRequestedTimeSlot = null;
+      appointment.rescheduleReason = null;
+      await appointment.save();
+
+      await createAppointmentNotifications({
+        appointment,
+        type: "appointment_reschedule_rejected",
+        userTitle: "Reschedule request rejected",
+        userDescription: `Your lawyer could not approve the requested slot.`,
+        userMessage: `The requested reschedule for ${appointment.lawyerName} was rejected.`,
+        lawyerTitle: "Reschedule request rejected",
+        lawyerDescription: `The pending reschedule request was rejected.`,
+        lawyerMessage: `You rejected the reschedule request for this appointment.`,
+      });
+
+      return res.json({
+        message: "Reschedule request rejected",
+        appointment,
+      });
+    }
+
+    return res.status(400).json({
+      error: "Action must be Approved or Rejected",
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -301,4 +646,14 @@ const getAllUserAppointments = async (req, res) => {
   }
 };
 
-module.exports = { createAppointment, getAllAppointments, getAppointmentById, updateAppointment, deleteAppointment, getAllLawyerAppointments, getAllUserAppointments };
+module.exports = {
+  createAppointment,
+  getAllAppointments,
+  getAppointmentById,
+  updateAppointment,
+  requestReschedule,
+  respondToRescheduleRequest,
+  deleteAppointment,
+  getAllLawyerAppointments,
+  getAllUserAppointments,
+};

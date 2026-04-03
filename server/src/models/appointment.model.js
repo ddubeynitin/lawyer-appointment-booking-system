@@ -55,6 +55,34 @@ const appointmentSchema = new mongoose.Schema(
       enum: ["Pending", "Approved", "Rejected", "Completed"],
       default: "Pending"
     },
+
+    rescheduleStatus: {
+      type: String,
+      enum: ["Pending", "Approved", "Rejected"],
+      default: null
+    },
+
+    rescheduleRequestedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User"
+    },
+
+    rescheduleRequestedAt: {
+      type: Date
+    },
+
+    rescheduleRequestedDate: {
+      type: Date
+    },
+
+    rescheduleRequestedTimeSlot: {
+      type: String
+    },
+
+    rescheduleReason: {
+      type: String,
+      trim: true
+    },
     
     isActive: {
       type: Boolean,

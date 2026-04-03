@@ -1,8 +1,42 @@
 import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Clock, Calendar, Check } from "lucide-react";
 import axios from "axios";
+import { API_URL } from "../utils/api";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const formatLocalDate = (date) => {
+  if (!date) return "";
+
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const normalizeTimeSlot = (time) => {
+  const match = String(time || "").trim().match(/^(\d{1,2}):(\d{2})\s?(AM|PM)$/i);
+  if (!match) return "";
+
+  const hours = Number(match[1]);
+  const minutes = match[2];
+  const meridiem = match[3].toUpperCase();
+
+  if (!Number.isFinite(hours) || hours < 1 || hours > 12) {
+    return "";
+  }
+
+  return `${String(hours).padStart(2, "0")}:${minutes} ${meridiem}`;
+};
+
+const normalizeAvailabilitySlots = (slots = []) =>
+  slots
+    .map((slot) => ({
+      time: normalizeTimeSlot(typeof slot === "string" ? slot : slot?.time || slot?.startTime),
+      isBooked:
+        slot?.isBooked === true ||
+        slot?.booked === true ||
+        slot?.isAvailable === false,
+    }))
+    .filter((slot) => slot.time);
 
 export default function DateTimeSlotPicker({ 
   lawyerId, 
@@ -44,28 +78,24 @@ export default function DateTimeSlotPicker({
       try {
         const token = localStorage.getItem("token");
         const response = await axios.get(
-          `${API_URL}/availability/lawyer/${lawyerId}`,
+          `${API_URL}/availability/${lawyerId}/${formatLocalDate(selectedDate)}`,
           {
             headers: {
               Authorization: `Bearer ${token}`
-            },
-            params: {
-              date: selectedDate.toISOString().split('T')[0]
             }
           }
         );
 
-        // Handle different response formats
-        let slots = [];
-        if (Array.isArray(response.data)) {
-          slots = response.data;
-        } else if (response.data?.slots) {
-          slots = response.data.slots;
-        } else if (response.data?.data) {
-          slots = response.data.data;
-        }
+        const responseData = response.data;
+        const availabilityRecord = Array.isArray(responseData)
+          ? responseData[0]
+          : responseData;
 
-        setSelectedDateSlots(slots.filter(slot => slot.isAvailable !== false));
+        const slots = normalizeAvailabilitySlots(availabilityRecord?.slots || []);
+
+        setSelectedDateSlots(
+          slots.filter((slot) => slot.isBooked !== true),
+        );
       } catch (err) {
         console.error("Failed to fetch slots:", err);
         setError("Failed to load available time slots");
@@ -186,13 +216,13 @@ export default function DateTimeSlotPicker({
 
   return (
     <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-      <div className="flex items-center gap-2 mb-6">
+      <div className="flex items-center gap-2 mb-2">
         <Calendar className="w-5 h-5 text-blue-600" />
         <h3 className="font-semibold text-lg text-gray-800">Select Date & Time</h3>
       </div>
 
       {/* Date Selection - Calendar View */}
-      <div className="mb-6">
+      <div className="mb-1">
         <div className="flex items-center justify-between mb-4">
           <button 
             onClick={prevMonth}
@@ -271,11 +301,11 @@ export default function DateTimeSlotPicker({
             </div>
           ) : (
             <div className="grid grid-cols-3 gap-2">
-              {selectedDateSlots.map((slot) => {
-                const time = typeof slot === "string" ? slot : slot.time || slot.startTime;
+              {selectedDateSlots.map((slot, index) => {
+                const time = slot.time || `slot-${index}`;
                 return (
                   <button
-                    key={time}
+                    key={`${formatLocalDate(selectedDate)}-${time}-${index}`}
                     onClick={() => handleTimeSelect(time)}
                     className={`py-2.5 px-3 rounded-lg text-sm font-medium transition-all ${
                       isTimeSelected(time)

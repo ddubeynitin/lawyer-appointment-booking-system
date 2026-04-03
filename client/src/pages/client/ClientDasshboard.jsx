@@ -92,6 +92,29 @@ const ClientDashboard = () => {
       return firstDate - secondDate;
     })[0];
 
+  const getAppointmentDateTime = (appointment) => {
+    if (!appointment?.date || !appointment?.timeSlot) return null;
+
+    const appointmentDate = new Date(appointment.date);
+    if (Number.isNaN(appointmentDate.getTime())) return null;
+
+    const [time, meridiem] = String(appointment.timeSlot).split(" ");
+    const [rawHours, rawMinutes] = time.split(":").map(Number);
+    if (Number.isNaN(rawHours) || Number.isNaN(rawMinutes)) return null;
+
+    let hours = rawHours % 12;
+    if (meridiem === "PM") hours += 12;
+    appointmentDate.setHours(hours, rawMinutes, 0, 0);
+    return appointmentDate;
+  };
+
+  const canRescheduleAppointment = (appointment) => {
+    const appointmentDateTime = getAppointmentDateTime(appointment);
+    if (!appointmentDateTime) return false;
+
+    return appointment.status === "Approved" && appointmentDateTime.getTime() - Date.now() >= 3 * 60 * 60 * 1000;
+  };
+
   // useEffect(() => {
   //   if (user) {
   //     setUserId(user.id || user._id);
@@ -634,9 +657,19 @@ const ClientDashboard = () => {
                 <button className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm text-white">
                   <FaVideo /> Join Video Call
                 </button>
-                <button className="rounded-lg border px-4 py-2 text-sm">
-                  Reschedule
-                </button>
+                {canRescheduleAppointment(upcomingAppointment) ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigate("/client/appointment-history", {
+                        state: { rescheduleAppointmentId: upcomingAppointment._id },
+                      })
+                    }
+                    className="rounded-lg border px-4 py-2 text-sm"
+                  >
+                    Request Reschedule
+                  </button>
+                ) : null}
               </div>
             </>
           ) : (
