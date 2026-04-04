@@ -1,3 +1,4 @@
+const cloudinary = require("../config/cloudinary");
 const User = require('../models/user.model');
 
 const getAllUsers = async (req, res) => {
@@ -23,9 +24,46 @@ const getUserById = async (req, res) => {
 
 const updateUser = async (req, res) => {
     try {
+        const { name, email, phone, gender, city, state } = req.body;
+        const normalizedEmail = String(email || "").toLowerCase().trim();
+
+        if (!name || !normalizedEmail || !phone) {
+            return res.status(400).json({ message: "Name, email, and phone are required" });
+        }
+
+        if (gender && !["Male", "Female", "Other"].includes(String(gender).trim())) {
+            return res.status(400).json({ message: "Invalid gender value" });
+        }
+
+        const existingUser = await User.findOne({
+            email: normalizedEmail,
+            _id: { $ne: req.params.id },
+        });
+
+        if (existingUser) {
+            return res.status(400).json({ message: "Email already in use" });
+        }
+
+        const updateDoc = {
+            name: String(name).trim(),
+            email: normalizedEmail,
+            phone: String(phone).trim(),
+        };
+
+        if (gender !== undefined) updateDoc.gender = String(gender).trim();
+        if (city !== undefined) updateDoc.city = String(city || "").trim();
+        if (state !== undefined) updateDoc.state = String(state || "").trim();
+
+        if (req.file) {
+            const result = await cloudinary.uploader.upload(req.file.path, {
+                folder: "clients",
+            });
+            updateDoc.profilePicture = result.secure_url;
+        }
+
         const user = await User.findByIdAndUpdate(
             req.params.id,
-            req.body,
+            updateDoc,
             { new: true, runValidators: true }
         );
         if (!user || !user.isActive) {

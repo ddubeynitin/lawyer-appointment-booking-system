@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { FaGavel, FaUser, FaUserTie } from "react-icons/fa";
+import { FaGavel, FaHome, FaUser, FaUserTie } from "react-icons/fa";
 import { MdEmail } from "react-icons/md";
 import { CgLogIn } from "react-icons/cg";
 import { RiLockPasswordFill } from "react-icons/ri";
@@ -286,11 +286,19 @@ function LoginPage() {
 
         <div className="hidden lg:flex lg:w-1/2 relative bg-linear-to-br from-blue-600 via-indigo-600 to-purple-600 items-center justify-center p-10">
           <div className="text-white max-w-sm">
-            <h2 className="text-3xl font-bold mb-4">Welcome back!</h2>
+            <h2 className="text-3xl font-bold mb-4">Welcome 🙏</h2>
             <p className="text-sm opacity-90">
               Access your dashboard, manage your appointments, and connect with
               trusted legal professionals.
             </p>
+           
+            <Link
+              to="/"
+              className="mt-6 inline-flex items-center gap-2 bg-white/30 hover:bg-white/50 text-white font-semibold py-2 px-4 rounded-lg transition"
+            >
+              <FaHome />
+              Home
+            </Link>
           </div>
         </div>
 
@@ -300,9 +308,9 @@ function LoginPage() {
               <div className="w-8 h-8 rounded flex items-center justify-center text-black font-bold">
                 <FaGavel className="text-5xl" />
               </div>
-              <span className="font-bold text-5xl">
+              <Link to="/" className="font-bold text-5xl">
                 Justif<span className="text-blue-500">Ai</span>
-              </span>
+              </Link>
             </div>
 
             <h1 className="text-2xl font-semibold mb-1">{authTitle}</h1>

@@ -6,11 +6,13 @@ import {
   FaPhone,
   FaEnvelope,
   FaLock,
+  FaVenusMars,
   FaArrowRight,
   FaGavel,
   FaUserTie,
   FaEye,
   FaEyeSlash,
+  FaHome,
 } from "react-icons/fa";
 import { MdVerified } from "react-icons/md";
 import { IoAlertOutline } from "react-icons/io5";
@@ -18,8 +20,10 @@ import { API_URL } from "../../utils/api";
 import { isDisposableEmail } from "../../utils/emailValidation";
 import LoadingFallback from "../../components/LoadingFallback";
 
-const isValidAlphabeticName = (value) => /^[A-Za-z\s]+$/.test(String(value || "").trim());
-const isValidTenDigitPhone = (value) => /^[0-9]{10}$/.test(String(value || "").trim());
+const isValidAlphabeticName = (value) =>
+  /^[A-Za-z\s]+$/.test(String(value || "").trim());
+const isValidTenDigitPhone = (value) =>
+  /^[0-9]{10}$/.test(String(value || "").trim());
 
 const Registration = () => {
   const navigate = useNavigate();
@@ -30,13 +34,17 @@ const Registration = () => {
   const [otpLoading, setOtpLoading] = useState(false);
   const [otpError, setOtpError] = useState("");
   const [otpInfo, setOtpInfo] = useState("");
-  const [registrationVerificationToken, setRegistrationVerificationToken] = useState("");
+  const [registrationVerificationToken, setRegistrationVerificationToken] =
+    useState("");
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
+    gender: "",
+    city: "",
+    state: "",
     email: "",
     certNo: "", // For lawyers, this will be filled; for clients, it can be ignored
     password: "",
@@ -64,6 +72,9 @@ const Registration = () => {
   const getRegistrationPayload = () => ({
     name: formData.name.trim(),
     phone: formData.phone.trim(),
+    gender: formData.gender,
+    city: role === "client" ? formData.city.trim() : "",
+    state: role === "client" ? formData.state.trim() : "",
     email: formData.email.trim(),
     licenseNo: formData.certNo.trim(),
     password: formData.password,
@@ -78,6 +89,13 @@ const Registration = () => {
     if (!formData.phone.trim()) return "Phone number is required";
     if (!isValidTenDigitPhone(formData.phone)) {
       return "Phone number must contain exactly 10 digits.";
+    }
+    if (!formData.gender) {
+      return "Gender is required";
+    }
+    if (role === "client") {
+      if (!formData.city.trim()) return "City is required";
+      if (!formData.state.trim()) return "State is required";
     }
     if (!formData.email.trim()) return "Email address is required";
     if (isDisposableEmail(formData.email)) {
@@ -108,7 +126,10 @@ const Registration = () => {
 
   const requestRegistrationOtp = async () => {
     const payload = getRegistrationPayload();
-    const response = await axios.post(`${API_URL}/auth/register/request-otp`, payload);
+    const response = await axios.post(
+      `${API_URL}/auth/register/request-otp`,
+      payload,
+    );
     setOtpInfo(response.data?.message || "OTP sent to your email");
     setOtpModalOpen(true);
     return response;
@@ -124,8 +145,16 @@ const Registration = () => {
       resetOtpFlow();
       navigate("/auth/login");
     } catch (err) {
-      setError(err.response?.data?.error || err.response?.data?.message || "Registration failed");
-      setOtpError(err.response?.data?.error || err.response?.data?.message || "Registration failed");
+      setError(
+        err.response?.data?.error ||
+          err.response?.data?.message ||
+          "Registration failed",
+      );
+      setOtpError(
+        err.response?.data?.error ||
+          err.response?.data?.message ||
+          "Registration failed",
+      );
       throw err;
     } finally {
       setLoading(false);
@@ -155,7 +184,11 @@ const Registration = () => {
       setOtpError("");
       await requestRegistrationOtp();
     } catch (err) {
-      setError(err.response?.data?.error || err.response?.data?.message || "Failed to send OTP");
+      setError(
+        err.response?.data?.error ||
+          err.response?.data?.message ||
+          "Failed to send OTP",
+      );
     } finally {
       setLoading(false);
     }
@@ -184,7 +217,12 @@ const Registration = () => {
       setRegistrationVerificationToken(verificationToken);
       await completeRegistration(verificationToken);
     } catch (err) {
-      setOtpError(err.response?.data?.error || err.response?.data?.message || err.message || "OTP verification failed");
+      setOtpError(
+        err.response?.data?.error ||
+          err.response?.data?.message ||
+          err.message ||
+          "OTP verification failed",
+      );
     } finally {
       setOtpLoading(false);
     }
@@ -197,7 +235,11 @@ const Registration = () => {
       setOtpInfo("");
       await requestRegistrationOtp();
     } catch (err) {
-      setOtpError(err.response?.data?.error || err.response?.data?.message || "Failed to resend OTP");
+      setOtpError(
+        err.response?.data?.error ||
+          err.response?.data?.message ||
+          "Failed to resend OTP",
+      );
     } finally {
       setOtpLoading(false);
     }
@@ -210,6 +252,9 @@ const Registration = () => {
     setFormData({
       name: "",
       phone: "",
+      gender: "",
+      city: "",
+      state: "",
       email: "",
       certNo: "",
       password: "",
@@ -223,16 +268,26 @@ const Registration = () => {
       <header className="w-full shadow-sm px-4 sm:px-10 py-2 flex justify-between items-center">
         <div className="flex items-center gap-2">
           <FaGavel />
-          <span className="text-xl font-bold text-black ">
+          <Link to="/" className="text-xl font-bold text-black ">
             Justif<span className="text-blue-500">Ai</span>
-          </span>
+          </Link>
         </div>
-        <Link to="/auth/login" className="flex items-center gap-2">
-          <p className="text-blue-600 font-barlow lg:text-lg text-[10px]">Already have account?</p>
-          <button className="text-white bg-linear-to-r from-blue-600 to-indigo-600 rounded-lg text-sm font-medium hover:underline border px-4 py-2  ">
-            Login
-          </button>
-        </Link>
+        <div className="flex gap-3">
+          <Link
+            to="/"
+            className="border p-2 bg-linear-to-r from-blue-600 to-indigo-600  flex justify-center items-center gap-2 rounded-lg text-sm text-white hover:scale-110 transition"
+          >
+            <FaHome className="text-lg" />
+          </Link>
+          <Link to="/auth/login" className="flex items-center gap-2">
+            <p className="text-blue-600 font-barlow lg:text-lg text-[10px]">
+              Already have account?
+            </p>
+            <button className="text-white bg-linear-to-r from-blue-600 to-indigo-600 rounded-lg text-sm font-medium hover:underline border px-4 py-2  ">
+              Login
+            </button>
+          </Link>
+        </div>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 w-full max-w-6xl mx-auto flex-1 lg:overflow-hidden">
@@ -244,7 +299,7 @@ const Registration = () => {
         )}
         <div className="flex flex-col justify-center items-center px-2 sm:px-12 lg:px-20 lg:py-10 py-3">
           <div className="bg-[url('./assets/images/professional-peoples.png')] lg:w-full lg:h-60 h-50 w-full drop-shadow-lg drop-shadow-black/80 mask-b-from-65% mask-b-to-100% p-5 flex justify-end items-end  bg-cover bg-no-repeat aspect-auto  rounded-lg"></div>
-          <h1 className="text-3xl sm:text-4xl font-bold mb-4"> 
+          <h1 className="text-3xl sm:text-4xl font-bold mb-4">
             Connect with top <br /> legal professionals
           </h1>
 
@@ -279,8 +334,8 @@ const Registration = () => {
           </ul>
         </div>
 
-        <div className=" flex items-center justify-center px-4 py-5">
-          <div className="w-full bg-blue-600/80 rounded-xl shadow-lg pt-4 p-8 ">
+        <div className=" flex items-center h-screen justify-center mt-2 px-4 py-5 overflow-scroll">
+          <div className="w-full bg-blue-600/80 rounded-xl shadow-lg pt-4 mt-20 mb-12 p-8 ">
             <h2 className="text-3xl text-white font-semibold mb-1">
               Create your account
             </h2>
@@ -460,6 +515,26 @@ const ClientRegform = ({
           />
         </div>
 
+        <div>
+          <label className="text-sm font-medium text-white">Gender</label>
+          <div className="h-10 flex items-center bg-gray-100 rounded-lg px-3 transition focus-within:ring-2 focus-within:ring-blue-600">
+            <span className="text-gray-500 mr-2 pointer-events-none">
+              <FaVenusMars />
+            </span>
+            <select
+              name="gender"
+              value={formData.gender}
+              onChange={handleChange}
+              className="w-full outline-none bg-transparent text-slate-700"
+            >
+              <option value="">Select gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+
         {/* Email (Full Width) */}
         <div className="md:col-span-2">
           <label className="text-sm font-medium text-white">
@@ -471,6 +546,28 @@ const ClientRegform = ({
             placeholder="name@example.com"
             onChange={handleChange}
             value={formData.email}
+          />
+        </div>
+
+        <div>
+          <label className="text-sm font-medium text-white">City</label>
+          <Input
+            icon={<FaUser />}
+            name="city"
+            placeholder="e.g. Surat"
+            onChange={handleChange}
+            value={formData.city}
+          />
+        </div>
+
+        <div>
+          <label className="text-sm font-medium text-white">State</label>
+          <Input
+            icon={<FaUser />}
+            name="state"
+            placeholder="e.g. Gujarat"
+            onChange={handleChange}
+            value={formData.state}
           />
         </div>
 
@@ -584,6 +681,26 @@ const LawyerRegform = ({
             inputMode="numeric"
             maxLength={10}
           />
+        </div>
+
+        <div>
+          <label className="text-sm font-medium text-white">Gender</label>
+          <div className="h-10 flex items-center bg-gray-100 rounded-lg px-3 transition focus-within:ring-2 focus-within:ring-blue-600">
+            <span className="text-gray-500 mr-2 pointer-events-none">
+              <FaVenusMars />
+            </span>
+            <select
+              name="gender"
+              value={formData.gender}
+              onChange={handleChange}
+              className="w-full outline-none bg-transparent text-slate-700"
+            >
+              <option value="">Select gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
         </div>
 
         {/* Email */}
@@ -704,9 +821,15 @@ const EmailOtpModal = ({
       <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h3 className="text-2xl font-semibold text-slate-900">Verify your email</h3>
+            <h3 className="text-2xl font-semibold text-slate-900">
+              Verify your email
+            </h3>
             <p className="mt-1 text-sm text-slate-600">
-              Enter the OTP sent to <span className="font-medium text-slate-900">{email || "your email"}</span>.
+              Enter the OTP sent to{" "}
+              <span className="font-medium text-slate-900">
+                {email || "your email"}
+              </span>
+              .
             </p>
           </div>
           <button
@@ -723,7 +846,9 @@ const EmailOtpModal = ({
         </div>
 
         <div className="mt-5">
-          <label className="mb-2 block text-sm font-medium text-slate-700">OTP</label>
+          <label className="mb-2 block text-sm font-medium text-slate-700">
+            OTP
+          </label>
           <input
             type="text"
             inputMode="numeric"

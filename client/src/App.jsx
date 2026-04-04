@@ -22,6 +22,7 @@ const AdminLoginPage = lazy(() => import("./pages/admin/AdminLoginPage"));
 const LawyerDashboard = lazy(() => import("./pages/lawyer/LawyerDashboard"));
 const LawyerEarningsPage = lazy(() => import("./pages/lawyer/LawyerEarningsPage"));
 const ManageAvailabilityAndFees = lazy(() => import("./pages/lawyer/ManageAvailabilityAndFees"));
+const EditLawyerProfile = lazy(() => import("./pages/lawyer/EditLawyerProfile"));
 const LawyersList = lazy(() => import("./pages/client/LawyersList"));
 const MyAppointments = lazy(() => import("./pages/client/MyAppointments"));
 const Home = lazy(() => import("./pages/Home"));
@@ -78,6 +79,10 @@ const App = () => {
           <Route
             path="/lawyer/manage-availability"
             element={<ManageAvailabilityAndFees />}
+          />
+          <Route
+            path="/lawyer/edit-profile"
+            element={<EditLawyerProfile />}
           />
           <Route path="/lawyer/lawyer-profile/:id" element={<LawyerProfile />} />
           <Route path="/messages" element={<MessagesPage />} />

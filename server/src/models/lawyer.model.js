@@ -28,6 +28,12 @@ const lawyerSchema = new mongoose.Schema(
       required: true,
     },
 
+    gender: {
+      type: String,
+      enum: ["Male", "Female", "Other"],
+      required: true,
+    },
+
     password: {
       type: String,
       required: true,

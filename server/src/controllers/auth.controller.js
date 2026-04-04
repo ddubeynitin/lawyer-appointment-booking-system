@@ -86,6 +86,7 @@ const createAndSendOtp = async ({ email, role, purpose, userName }) => {
   });
 
   const otp = generateNumericOtp(otpLength);
+  console.log(`Generated OTP for ${normalizedEmail} (${purpose}): ${otp}`); // Log OTP for debugging (remove in production)
   const otpHash = await bcrypt.hash(otp, 10);
   const expiresAt = new Date(Date.now() + ttlMinutes * 60 * 1000);
 
@@ -248,7 +249,18 @@ const verifyRegistrationOtp = async (req, res) => {
 
 const registerUser = async (req, res) => {
   try {
-    const { name, email, phone, password, role, licenseNo, registrationVerificationToken } = req.body;
+    const {
+      name,
+      email,
+      phone,
+      gender,
+      city,
+      state,
+      password,
+      role,
+      licenseNo,
+      registrationVerificationToken,
+    } = req.body;
 
     // Validate required fields
     if (!name || !email || !password || !role) {
@@ -265,6 +277,20 @@ const registerUser = async (req, res) => {
       return res.status(400).json({
         error: "Phone number must contain exactly 10 digits.",
       });
+    }
+
+    if (!gender || !["Male", "Female", "Other"].includes(String(gender).trim())) {
+      return res.status(400).json({ error: "Gender is required" });
+    }
+
+    if (role === "user") {
+      if (!String(city || "").trim()) {
+        return res.status(400).json({ error: "City is required for client registration" });
+      }
+
+      if (!String(state || "").trim()) {
+        return res.status(400).json({ error: "State is required for client registration" });
+      }
     }
 
     // Validate role
@@ -329,6 +355,7 @@ const registerUser = async (req, res) => {
         name,
         email: normalizedEmail,
         phone,
+        gender: String(gender).trim(),
         password,
         licenseNo,
         role: "lawyer",
@@ -346,6 +373,9 @@ const registerUser = async (req, res) => {
         name,
         email: normalizedEmail,
         phone,
+        gender: String(gender).trim(),
+        city: String(city || "").trim(),
+        state: String(state || "").trim(),
         password,
         role: "user",
       });
@@ -376,6 +406,11 @@ const registerUser = async (req, res) => {
         id: newUser._id,
         name: newUser.name,
         email: newUser.email,
+        phone: newUser.phone,
+        profilePicture: newUser.profilePicture || null,
+        gender: newUser.gender || null,
+        city: newUser.city || null,
+        state: newUser.state || null,
         role: newUser.role,
       },
     });
@@ -479,6 +514,10 @@ const verifyLoginOtp = async (req, res) => {
         email: user.email,
         phone: user.phone,
         profileImage: user.profileImage || null,
+        profilePicture: user.profilePicture || null,
+        gender: user.gender || null,
+        city: user.city || null,
+        state: user.state || null,
         role: user.role,
         isProfileComplete: user.isProfileComplete,
       },
@@ -614,6 +653,10 @@ const loginUser = async (req, res) => {
         email: user.email,
         phone: user.phone,
         profileImage: user.profileImage || null,
+        profilePicture: user.profilePicture || null,
+        gender: user.gender || null,
+        city: user.city || null,
+        state: user.state || null,
         role: user.role,
         isProfileComplete: user.isProfileComplete,
       }
