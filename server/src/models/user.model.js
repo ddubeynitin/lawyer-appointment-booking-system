@@ -22,6 +22,27 @@ const userSchema = new mongoose.Schema(
       required: true,
     },
 
+    gender: {
+      type: String,
+      enum: ["Male", "Female", "Other"],
+      required: true,
+    },
+
+    city: {
+      type: String,
+      trim: true,
+    },
+
+    state: {
+      type: String,
+      trim: true,
+    },
+
+    profilePicture: {
+      type: String,
+      default: null,
+    },
+
     password: {
       type: String,
       required: true,

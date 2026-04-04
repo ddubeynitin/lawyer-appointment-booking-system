@@ -1,4 +1,4 @@
-import { FaGavel, FaSearch, FaVideo, FaTimes } from "react-icons/fa";
+import { FaGavel, FaSearch, FaVideo, FaTimes, FaPen, FaCamera } from "react-icons/fa";
 import { LuBellRing } from "react-icons/lu";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect, useMemo } from "react";
@@ -21,7 +21,12 @@ const ClientDashboard = () => {
     name: "",
     email: "",
     phone: "",
+    gender: "",
+    city: "",
+    state: "",
   });
+  const [profileImageFile, setProfileImageFile] = useState(null);
+  const [profileImagePreview, setProfileImagePreview] = useState("");
   const [profileUpdateError, setProfileUpdateError] = useState("");
   const [profileUpdateSuccess, setProfileUpdateSuccess] = useState("");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
@@ -166,7 +171,14 @@ const ClientDashboard = () => {
       name: user?.name || "",
       email: user?.email || "",
       phone: user?.phone || "",
+      gender: user?.gender || "",
+      city: user?.city || "",
+      state: user?.state || "",
     });
+    setProfileImagePreview(
+      user?.profilePicture || user?.profileImage?.url || userImg,
+    );
+    setProfileImageFile(null);
     setIsEditingProfile(false);
     setProfileUpdateError("");
     setProfileUpdateSuccess("");
@@ -199,9 +211,18 @@ const ClientDashboard = () => {
     const trimmedName = profileForm.name.trim();
     const trimmedEmail = profileForm.email.trim().toLowerCase();
     const trimmedPhone = profileForm.phone.trim();
+    const trimmedGender = profileForm.gender.trim();
+    const trimmedCity = profileForm.city.trim();
+    const trimmedState = profileForm.state.trim();
 
-    if (!trimmedName || !trimmedEmail || !trimmedPhone) {
-      setProfileUpdateError("Name, email, and phone are required.");
+    if (!trimmedName || !trimmedEmail || !trimmedPhone || !trimmedGender) {
+      setProfileUpdateError("Name, email, phone, and gender are required.");
+      setProfileUpdateSuccess("");
+      return;
+    }
+
+    if (!trimmedCity || !trimmedState) {
+      setProfileUpdateError("City and state are required.");
       setProfileUpdateSuccess("");
       return;
     }
@@ -211,10 +232,24 @@ const ClientDashboard = () => {
     setProfileUpdateSuccess("");
 
     try {
-      const response = await axios.put(`${API_URL}/users/${user.id}`, {
-        name: trimmedName,
-        email: trimmedEmail,
-        phone: trimmedPhone,
+      const payload = new FormData();
+      payload.append("name", trimmedName);
+      payload.append("email", trimmedEmail);
+      payload.append("phone", trimmedPhone);
+      payload.append("gender", trimmedGender);
+      payload.append("city", trimmedCity);
+      payload.append("state", trimmedState);
+
+      if (profileImageFile) {
+        payload.append("profilePicture", profileImageFile);
+      }
+
+      const response = await axios.put(`${API_URL}/users/${user.id}`, payload, {
+        headers: token
+          ? {
+              Authorization: `Bearer ${token}`,
+            }
+          : undefined,
       });
 
       const updatedUser = response.data;
@@ -227,6 +262,10 @@ const ClientDashboard = () => {
           name: updatedUser.name,
           email: updatedUser.email,
           phone: updatedUser.phone,
+          gender: updatedUser.gender || "",
+          city: updatedUser.city || "",
+          state: updatedUser.state || "",
+          profilePicture: updatedUser.profilePicture || null,
         },
       });
 
@@ -234,7 +273,14 @@ const ClientDashboard = () => {
         name: updatedUser.name || "",
         email: updatedUser.email || "",
         phone: updatedUser.phone || "",
+        gender: updatedUser.gender || "",
+        city: updatedUser.city || "",
+        state: updatedUser.state || "",
       });
+      setProfileImagePreview(
+        updatedUser.profilePicture || userImg,
+      );
+      setProfileImageFile(null);
       setIsEditingProfile(false);
       setProfileUpdateSuccess("Profile updated successfully.");
     } catch (error) {
@@ -341,9 +387,17 @@ const ClientDashboard = () => {
             <div className="relative" ref={profileRef}>
               <div
                 onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-100 font-semibold uppercase text-blue-600 ring-2 ring-blue-500"
+                className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-blue-100 font-semibold uppercase text-blue-600 ring-2 ring-blue-500"
               >
-                {user.name?.charAt(0) || "U"}
+                {user?.profilePicture ? (
+                  <img
+                    src={user.profilePicture}
+                    alt="profile"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span>{user.name?.charAt(0) || "U"}</span>
+                )}
               </div>
 
               <div
@@ -353,9 +407,17 @@ const ClientDashboard = () => {
                     : "-translate-y-2 scale-95 opacity-0 pointer-events-none"
                 }`}
               >
-                <div className="mb-4 flex items-center gap-4">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-100 font-semibold uppercase text-blue-600 ring-2 ring-blue-500">
-                    {user.name?.charAt(0) || "U"}
+              <div className="mb-4 flex items-center gap-4">
+                  <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-blue-100 font-semibold uppercase text-blue-600 ring-2 ring-blue-500">
+                    {user?.profilePicture ? (
+                      <img
+                        src={user.profilePicture}
+                        alt="profile"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span>{user.name?.charAt(0) || "U"}</span>
+                    )}
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-800">{user.name}</h4>
@@ -399,7 +461,7 @@ const ClientDashboard = () => {
           onClick={() => setShowProfileModal(false)}
         >
           <div
-            className="relative w-80 rounded-2xl bg-white p-6 shadow-xl"
+            className="relative w-[min(92vw,48rem)] max-h-[90vh] overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -409,119 +471,186 @@ const ClientDashboard = () => {
               <FaTimes />
             </button>
 
-            <div className="mt-4 flex flex-col items-center text-center">
-              <img
-                src={user.profilePicture || "/assets/images/user.png"}
-                className="mb-4 h-20 w-20 rounded-full"
-                alt="user"
-              />
-              <h3 className="text-xl font-semibold uppercase">{user.name}</h3>
-              <p className="text-sm text-gray-500">
-                {user.role === "user" ? "Client" : user.role}
-              </p>
-              <div className="mt-4 w-full space-y-1 text-left">
-                <p>
-                  <span className="font-medium">Email:</span> {user.email}
+            <div className="grid gap-6 md:grid-cols-[1fr_1.1fr]">
+              <div className="rounded-3xl bg-slate-50 p-6">
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                  Client Profile
                 </p>
-                <p>
-                  <span className="font-medium">Phone:</span> {user.phone}
+                <h3 className="mt-2 text-2xl font-bold text-slate-900">
+                  {isEditingProfile ? "Edit your details" : "Profile overview"}
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  Keep your contact information current and optionally add a profile image so lawyers can recognize you faster.
                 </p>
+
+                <div className="mt-6 flex items-center gap-4">
+                  <div className="relative">
+                    <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-blue-100 text-3xl font-semibold uppercase text-blue-700 ring-4 ring-white">
+                      {profileImagePreview ? (
+                        <img
+                          src={profileImagePreview}
+                          alt="client profile"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <span>{profileForm.name?.charAt(0) || "U"}</span>
+                      )}
+                    </div>
+                    {isEditingProfile ? (
+                      <label className="absolute -bottom-1 -right-1 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-blue-600 text-white shadow-lg transition hover:bg-blue-700">
+                        <FaPen className="text-[11px]" />
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(event) => {
+                            const file = event.target.files?.[0];
+                            if (!file) return;
+                            setProfileImageFile(file);
+                            setProfileImagePreview(URL.createObjectURL(file));
+                          }}
+                          className="hidden"
+                        />
+                      </label>
+                    ) : null}
+                  </div>
+
+                  <div>
+                    <h4 className="text-lg font-semibold text-slate-900">
+                      {profileForm.name || user?.name}
+                    </h4>
+                    <p className="text-sm text-slate-500">
+                      {user?.role === "user" ? "Client" : user?.role}
+                    </p>
+                    <p className="mt-2 text-sm text-slate-500">
+                      {isEditingProfile
+                        ? "Tap the pen to add or update your photo."
+                        : "Open edit mode to update your profile."}
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div className="mt-4 w-full space-y-3 text-left">
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-600">
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
+
+              <div className="rounded-3xl border border-slate-200 bg-white p-6">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                      Account Details
+                    </p>
+                    <h4 className="mt-2 text-xl font-bold text-slate-900">
+                      {isEditingProfile ? "Update information" : "Saved information"}
+                    </h4>
+                  </div>
+                  {!isEditingProfile ? (
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingProfile(true)}
+                      className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"
+                    >
+                      <FaPen className="text-xs" />
+                      Edit
+                    </button>
+                  ) : null}
+                </div>
+
+                <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                  <Field
+                    label="Full Name"
                     name="name"
                     value={profileForm.name}
                     onChange={handleProfileInputChange}
                     disabled={!isEditingProfile || isSavingProfile}
-                    className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none transition focus:border-blue-400 disabled:bg-gray-50 disabled:text-gray-500"
                   />
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-600">
-                    Email
-                  </label>
-                  <input
-                    type="email"
+                  <Field
+                    label="Email"
                     name="email"
+                    type="email"
                     value={profileForm.email}
                     onChange={handleProfileInputChange}
                     disabled={!isEditingProfile || isSavingProfile}
-                    className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none transition focus:border-blue-400 disabled:bg-gray-50 disabled:text-gray-500"
                   />
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-600">
-                    Phone
-                  </label>
-                  <input
-                    type="text"
+                  <Field
+                    label="Phone"
                     name="phone"
                     value={profileForm.phone}
                     onChange={handleProfileInputChange}
                     disabled={!isEditingProfile || isSavingProfile}
-                    className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none transition focus:border-blue-400 disabled:bg-gray-50 disabled:text-gray-500"
+                  />
+                  <SelectField
+                    label="Gender"
+                    name="gender"
+                    value={profileForm.gender}
+                    onChange={handleProfileInputChange}
+                    disabled={!isEditingProfile || isSavingProfile}
+                    options={["Male", "Female", "Other"]}
+                  />
+                  <Field
+                    label="City"
+                    name="city"
+                    value={profileForm.city}
+                    onChange={handleProfileInputChange}
+                    disabled={!isEditingProfile || isSavingProfile}
+                  />
+                  <Field
+                    label="State"
+                    name="state"
+                    value={profileForm.state}
+                    onChange={handleProfileInputChange}
+                    disabled={!isEditingProfile || isSavingProfile}
                   />
                 </div>
+
+                {profileUpdateError ? (
+                  <p className="mt-4 text-sm text-red-600">{profileUpdateError}</p>
+                ) : null}
+
+                {profileUpdateSuccess ? (
+                  <p className="mt-4 text-sm text-green-600">{profileUpdateSuccess}</p>
+                ) : null}
+
+                {isEditingProfile ? (
+                  <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                    <button
+                      type="button"
+                      onClick={handleProfileSave}
+                      disabled={isSavingProfile}
+                      className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-blue-600 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {isSavingProfile ? (
+                        <span className="inline-flex items-center gap-2">
+                          <FaCamera className="animate-pulse" />
+                          Saving...
+                        </span>
+                      ) : (
+                        "Save Changes"
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsEditingProfile(false);
+                        setProfileForm({
+                          name: user?.name || "",
+                          email: user?.email || "",
+                          phone: user?.phone || "",
+                          gender: user?.gender || "",
+                          city: user?.city || "",
+                          state: user?.state || "",
+                        });
+                        setProfileImageFile(null);
+                        setProfileImagePreview(
+                          user?.profilePicture || user?.profileImage?.url || userImg,
+                        );
+                        setProfileUpdateError("");
+                        setProfileUpdateSuccess("");
+                      }}
+                      disabled={isSavingProfile}
+                      className="inline-flex flex-1 items-center justify-center rounded-2xl border border-slate-300 py-3 font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : null}
               </div>
-
-              {profileUpdateError ? (
-                <p className="mt-4 w-full text-left text-sm text-red-600">
-                  {profileUpdateError}
-                </p>
-              ) : null}
-
-              {profileUpdateSuccess ? (
-                <p className="mt-4 w-full text-left text-sm text-green-600">
-                  {profileUpdateSuccess}
-                </p>
-              ) : null}
-
-              {isEditingProfile ? (
-                <div className="mt-6 flex w-full gap-3">
-                  <button
-                    type="button"
-                    onClick={handleProfileSave}
-                    disabled={isSavingProfile}
-                    className="w-full rounded-xl bg-blue-600 py-2 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-400"
-                  >
-                    {isSavingProfile ? "Saving..." : "Save Changes"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsEditingProfile(false);
-                      setProfileForm({
-                        name: user?.name || "",
-                        email: user?.email || "",
-                        phone: user?.phone || "",
-                      });
-                      setProfileUpdateError("");
-                      setProfileUpdateSuccess("");
-                    }}
-                    disabled={isSavingProfile}
-                    className="w-full rounded-xl border border-gray-300 py-2 font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsEditingProfile(true);
-                    setProfileUpdateError("");
-                    setProfileUpdateSuccess("");
-                  }}
-                  className="mt-6 w-full rounded-xl bg-blue-600 py-2 font-medium text-white hover:bg-blue-700"
-                >
-                  Edit Profile
-                </button>
-              )}
             </div>
           </div>
         </div>
@@ -824,5 +953,34 @@ const ClientDashboard = () => {
     </div>
   );
 };
+
+const Field = ({ label, disabled, className = "", ...props }) => (
+  <label className={`block ${className}`}>
+    <span className="mb-1 block text-sm font-medium text-slate-600">{label}</span>
+    <input
+      {...props}
+      disabled={disabled}
+      className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-500"
+    />
+  </label>
+);
+
+const SelectField = ({ label, options, disabled, className = "", ...props }) => (
+  <label className={`block ${className}`}>
+    <span className="mb-1 block text-sm font-medium text-slate-600">{label}</span>
+    <select
+      {...props}
+      disabled={disabled}
+      className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-500"
+    >
+      <option value="">Select</option>
+      {options.map((option) => (
+        <option key={option} value={option}>
+          {option}
+        </option>
+      ))}
+    </select>
+  </label>
+);
 
 export default ClientDashboard;

@@ -224,7 +224,7 @@ const LawyerHeader = () => {
 
             <div className="relative" ref={profileRef}>
               <img
-                src={user.profileImage.url}
+                src={user?.profileImage?.url || "/assets/images/profile.png"}
                 alt="profile"
                 onClick={() => setShowProfile(!showProfile)}
                 className="h-9 w-9 cursor-pointer rounded-full ring-2 ring-blue-500"
@@ -239,7 +239,7 @@ const LawyerHeader = () => {
               >
                 <div className="mb-4 flex items-center gap-4">
                   <img
-                    src={user.profileImage.url}
+                    src={user?.profileImage?.url || "/assets/images/profile.png"}
                     alt="lawyer"
                     className="h-14 w-14 rounded-full"
                   />
@@ -253,16 +253,23 @@ const LawyerHeader = () => {
 
                 <div className="space-y-2 text-sm">
                   <button
-                    onClick={() =>
-                      navigate(`/lawyer/lawyer-profile/${user.id}`)
-                    }
+                    onClick={() => {
+                      setShowProfile(false);
+                      navigate(`/lawyer/lawyer-profile/${user.id}`);
+                    }}
                     className="w-full rounded-lg px-3 py-2 text-left transition hover:bg-gray-100"
                   >
                     View Profile
                   </button>
-                  {/* <button className="w-full rounded-lg px-3 py-2 text-left transition hover:bg-gray-100">
-                    Account Settings
-                  </button> */}
+                  <button
+                    onClick={() => {
+                      setShowProfile(false);
+                      navigate("/lawyer/edit-profile");
+                    }}
+                    className="w-full rounded-lg px-3 py-2 text-left transition hover:bg-gray-100"
+                  >
+                    Edit Profile
+                  </button>
                   <button
                     onClick={handleLogout}
                     className="w-full rounded-lg px-3 py-2 text-left text-red-600 transition hover:bg-red-50"
