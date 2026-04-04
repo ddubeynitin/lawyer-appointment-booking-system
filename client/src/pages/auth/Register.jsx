@@ -15,12 +15,22 @@ import {
 import { MdVerified } from "react-icons/md";
 import { IoAlertOutline } from "react-icons/io5";
 import { API_URL } from "../../utils/api";
+import { isDisposableEmail } from "../../utils/emailValidation";
 import LoadingFallback from "../../components/LoadingFallback";
+
+const isValidAlphabeticName = (value) => /^[A-Za-z\s]+$/.test(String(value || "").trim());
+const isValidTenDigitPhone = (value) => /^[0-9]{10}$/.test(String(value || "").trim());
 
 const Registration = () => {
   const navigate = useNavigate();
   const [role, setRole] = useState("client");
   const [loading, setLoading] = useState(false);
+  const [otpModalOpen, setOtpModalOpen] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpError, setOtpError] = useState("");
+  const [otpInfo, setOtpInfo] = useState("");
+  const [registrationVerificationToken, setRegistrationVerificationToken] = useState("");
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
@@ -40,45 +50,163 @@ const Registration = () => {
       ...formData,
       [name]: type === "checkbox" ? checked : value,
     });
+
+    if (name === "email") {
+      setRegistrationVerificationToken("");
+      setOtp("");
+      setOtpError("");
+      setOtpInfo("");
+    }
+  };
+
+  const normalizeRole = () => (role === "client" ? "user" : role);
+
+  const getRegistrationPayload = () => ({
+    name: formData.name.trim(),
+    phone: formData.phone.trim(),
+    email: formData.email.trim(),
+    licenseNo: formData.certNo.trim(),
+    password: formData.password,
+    role: normalizeRole(),
+  });
+
+  const validateForm = () => {
+    if (!formData.name.trim()) return "Full name is required";
+    if (!isValidAlphabeticName(formData.name)) {
+      return "Name can contain only alphabets and spaces.";
+    }
+    if (!formData.phone.trim()) return "Phone number is required";
+    if (!isValidTenDigitPhone(formData.phone)) {
+      return "Phone number must contain exactly 10 digits.";
+    }
+    if (!formData.email.trim()) return "Email address is required";
+    if (isDisposableEmail(formData.email)) {
+      return "Temporary or disposable email addresses are not allowed. Please use a permanent email address.";
+    }
+    if (!formData.password || formData.password.length < 8) {
+      return "Password must be at least 8 characters";
+    }
+    if (formData.password !== formData.confirmPassword) {
+      return "Passwords do not match";
+    }
+    if (role === "lawyer" && !formData.certNo.trim()) {
+      return "License number is required for lawyer registration";
+    }
+    if (!formData.agree) {
+      return "Please accept Terms & Privacy Policy";
+    }
+    return "";
+  };
+
+  const resetOtpFlow = () => {
+    setOtpModalOpen(false);
+    setOtp("");
+    setOtpError("");
+    setOtpInfo("");
+    setRegistrationVerificationToken("");
+  };
+
+  const requestRegistrationOtp = async () => {
+    const payload = getRegistrationPayload();
+    const response = await axios.post(`${API_URL}/auth/register/request-otp`, payload);
+    setOtpInfo(response.data?.message || "OTP sent to your email");
+    setOtpModalOpen(true);
+    return response;
+  };
+
+  const completeRegistration = async (verificationToken) => {
+    try {
+      setLoading(true);
+      await axios.post(`${API_URL}/auth/register`, {
+        ...getRegistrationPayload(),
+        registrationVerificationToken: verificationToken,
+      });
+      resetOtpFlow();
+      navigate("/auth/login");
+    } catch (err) {
+      setError(err.response?.data?.error || err.response?.data?.message || "Registration failed");
+      setOtpError(err.response?.data?.error || err.response?.data?.message || "Registration failed");
+      throw err;
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
-    if (formData.password.length < 8) {
-      return setError("Password must be at least 8 characters");
+    const validationError = validateForm();
+    if (validationError) {
+      return setError(validationError);
     }
 
-    if (formData.password !== formData.confirmPassword) {
-      return setError("Passwords do not match");
-    }
-
-    if (!formData.agree) {
-      return setError("Please accept Terms & Privacy Policy");
+    if (registrationVerificationToken) {
+      try {
+        await completeRegistration(registrationVerificationToken);
+      } catch {
+        // Error state is already set inside completeRegistration.
+      }
+      return;
     }
 
     try {
       setLoading(true);
-      await axios.post(`${API_URL}/auth/register`, {
-        name: formData.name,
-        phone: formData.phone,
-        email: formData.email,
-        licenseNo: formData.certNo, // For lawyers, this will be filled; for clients, it can be ignored
-        password: formData.password,
-        role: role === "client" ? "user" : role,
-      });
-      navigate("/auth/login");
+      setOtpError("");
+      await requestRegistrationOtp();
     } catch (err) {
-      setError(err.response?.data?.message || "Registration failed");
+      setError(err.response?.data?.error || err.response?.data?.message || "Failed to send OTP");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    setError("");
+    setOtpError("");
+
+    if (!otp.trim()) {
+      setOtpError("Please enter the OTP");
+      return;
+    }
+
+    try {
+      setOtpLoading(true);
+      const response = await axios.post(`${API_URL}/auth/register/verify-otp`, {
+        ...getRegistrationPayload(),
+        otp: otp.trim(),
+      });
+      const verificationToken = response.data?.verificationToken;
+      if (!verificationToken) {
+        throw new Error("Verification token missing");
+      }
+
+      setRegistrationVerificationToken(verificationToken);
+      await completeRegistration(verificationToken);
+    } catch (err) {
+      setOtpError(err.response?.data?.error || err.response?.data?.message || err.message || "OTP verification failed");
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    try {
+      setOtpLoading(true);
+      setOtpError("");
+      setOtpInfo("");
+      await requestRegistrationOtp();
+    } catch (err) {
+      setOtpError(err.response?.data?.error || err.response?.data?.message || "Failed to resend OTP");
+    } finally {
+      setOtpLoading(false);
     }
   };
 
   const handleSelectRole = (r) => {
     setRole(r);
     setError("");
+    resetOtpFlow();
     setFormData({
       name: "",
       phone: "",
@@ -241,6 +369,20 @@ const Registration = () => {
           </div>
         </div>
       </div>
+
+      {otpModalOpen && (
+        <EmailOtpModal
+          email={formData.email}
+          otp={otp}
+          setOtp={setOtp}
+          otpInfo={otpInfo}
+          otpError={otpError}
+          otpLoading={otpLoading}
+          onVerify={handleVerifyOtp}
+          onResend={handleResendOtp}
+          onClose={resetOtpFlow}
+        />
+      )}
     </div>
   );
 };
@@ -312,6 +454,9 @@ const ClientRegform = ({
             placeholder="+91 98765 43210"
             onChange={handleChange}
             value={formData.phone}
+            type="tel"
+            inputMode="numeric"
+            maxLength={10}
           />
         </div>
 
@@ -435,6 +580,9 @@ const LawyerRegform = ({
             placeholder="+1 900 822 030"
             onChange={handleChange}
             value={formData.phone}
+            type="tel"
+            inputMode="numeric"
+            maxLength={10}
           />
         </div>
 
@@ -537,6 +685,79 @@ const LawyerRegform = ({
         <FaArrowRight />
       </button>
     </form>
+  );
+};
+
+const EmailOtpModal = ({
+  email,
+  otp,
+  setOtp,
+  otpInfo,
+  otpError,
+  otpLoading,
+  onVerify,
+  onResend,
+  onClose,
+}) => {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4">
+      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-2xl font-semibold text-slate-900">Verify your email</h3>
+            <p className="mt-1 text-sm text-slate-600">
+              Enter the OTP sent to <span className="font-medium text-slate-900">{email || "your email"}</span>.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full px-2 py-1 text-sm font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+          >
+            Close
+          </button>
+        </div>
+
+        <div className="mt-5 rounded-xl bg-blue-50 p-4 text-sm text-blue-900">
+          {otpInfo || "We sent a 6-digit verification code to your inbox."}
+        </div>
+
+        <div className="mt-5">
+          <label className="mb-2 block text-sm font-medium text-slate-700">OTP</label>
+          <input
+            type="text"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            maxLength={6}
+            value={otp}
+            onChange={(e) => setOtp(e.target.value)}
+            placeholder="Enter 6-digit OTP"
+            className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+          />
+        </div>
+
+        {otpError && <p className="mt-3 text-sm text-red-600">{otpError}</p>}
+
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+          <button
+            type="button"
+            onClick={onVerify}
+            disabled={otpLoading}
+            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {otpLoading ? "Verifying..." : "Verify & Create Account"}
+          </button>
+          <button
+            type="button"
+            onClick={onResend}
+            disabled={otpLoading}
+            className="inline-flex flex-1 items-center justify-center rounded-xl border border-slate-300 px-4 py-3 font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            Resend OTP
+          </button>
+        </div>
+      </div>
+    </div>
   );
 };
 
