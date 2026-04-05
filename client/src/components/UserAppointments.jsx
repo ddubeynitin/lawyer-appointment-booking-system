@@ -2,7 +2,47 @@ import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { CalendarDays, Search, RefreshCw, CheckCircle, XCircle, Clock, AlertCircle } from "lucide-react";
 
-const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+// API URL with fallback mechanism
+const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
+
+const normalizeBaseUrl = (url = "") => url.trim().replace(/\/+$/, "");
+
+const API_BASE_CANDIDATES = Array.from(
+  new Set(
+    [
+      normalizeBaseUrl(VITE_API_BASE_URL),
+      normalizeBaseUrl(window.location.origin),
+      "http://localhost:3000",
+      "http://127.0.0.1:3000",
+      "http://localhost:5000",
+      "http://127.0.0.1:5000",
+    ].filter(Boolean),
+  ),
+);
+
+const requestWithFallback = async (method, path, payload = null, timeout = 10000) => {
+  let lastError;
+
+  for (const baseUrl of API_BASE_CANDIDATES) {
+    try {
+      const response = await axios({
+        method,
+        url: `${baseUrl}${path}`,
+        data: payload,
+        timeout,
+      });
+      return response;
+    } catch (error) {
+      lastError = error;
+      const isNetworkError = !error?.response;
+      if (!isNetworkError) {
+        throw error;
+      }
+    }
+  }
+
+  throw lastError;
+};
 
 export default function UserAppointments() {
   const [appointments, setAppointments] = useState([]);
@@ -22,6 +62,7 @@ export default function UserAppointments() {
       const response = await axios.get(`${API_URL}/appointments`, { timeout: 10000 });
       setAppointments(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
+      console.error("Failed to fetch appointments:", err);
       if (err.code === 'ECONNABORTED') {
         setError("Request timed out. Please check if the server is running.");
       } else {
