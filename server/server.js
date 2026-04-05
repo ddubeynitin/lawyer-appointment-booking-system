@@ -1,4 +1,5 @@
 const express = require("express");
+const http = require("http");
 const connectDB = require("./src/config/db");
 const env = require("./src/config/env");
 
@@ -12,6 +13,8 @@ const reviewRoutes = require("./src/routes/review.routes");
 const testRoutes = require("./src/routes/test.routes");
 const statRoutes = require("./src/routes/stats.routes");
 const aiRoutes = require("./src/routes/ai.routes");
+const messageRoutes = require("./src/routes/message.routes");
+const { createMessageRealtimeServer } = require("./src/services/message.realtime");
 
 const app = express();
 app.use(express.json());
@@ -29,10 +32,8 @@ app.use(cors(corsOptions));
 
 
 const PORT = env.PORT || 3000;
+const server = http.createServer(app);
 
-
-// Connect to MongoDB
-connectDB();
 
 // Routes
 app.use("/api/auth", authRoutes);
@@ -44,6 +45,12 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/test", testRoutes);
 app.use("/api/stats", statRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/messages", messageRoutes);
 
+const startServer = async () => {
+  await connectDB();
+  createMessageRealtimeServer(server);
+  server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+};
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+startServer();

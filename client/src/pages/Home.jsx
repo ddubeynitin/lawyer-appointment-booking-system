@@ -158,7 +158,7 @@ const Home = () => {
     logout();
   };
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-50 via-white to-slate-100 text-slate-800 font-barlow">
+    <div className="min-h-screen bg-[url('./assets/images/bg-white.jpg')] bg-center bg-cover  from-slate-50 via-white to-slate-100 text-slate-800 font-barlow">
       {/* ================= HEADER ================= */}
       <header className="sticky top-0 z-50 backdrop-blur-md bg-white/80 border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -560,7 +560,7 @@ const Home = () => {
       </section>
 
       {/* ================= FOOTER ================= */}
-      <footer className="bg-black/90 text-slate-400 py-16 mt-20 overflow-hidden">
+      <footer className="bg-black/90 text-slate-400 py-16  overflow-hidden">
         <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-10 justify-center items-center ">
           <div className=" flex flex-col justify-center items-center ">
             <h3 className="text-white lg:text-6xl text-3xl font-semibold mb-4 font-barlow">

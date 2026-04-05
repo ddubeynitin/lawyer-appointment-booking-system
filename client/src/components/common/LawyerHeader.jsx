@@ -3,10 +3,11 @@ import { LuBellRing } from "react-icons/lu";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { TfiMenuAlt } from "react-icons/tfi";
 import { FaGavel } from "react-icons/fa";
+import { MessageCircle } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
 const LawyerHeader = () => {
-  const [showNotifications, setShowNotifications] = useState(false);
+  // const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [isMenuVisible, setIsMenuVisible] = useState(false);
 
@@ -36,7 +37,7 @@ const LawyerHeader = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/70 backdrop-blur-lg">
+      <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/70 backdrop-blur-lg font-barlow">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div onClick={showMenu} className="sm:hidden">
             <TfiMenuAlt />
@@ -69,6 +70,32 @@ const LawyerHeader = () => {
                       </span>
                     )}
                   </NavLink>
+                  <NavLink to="/lawyer/manage-availability">
+                    {({ isActive }) => (
+                      <span
+                        className={
+                          isActive
+                            ? "font-semibold text-blue-600"
+                            : "cursor-pointer hover:text-blue-600"
+                        }
+                      >
+                        Manage Availability
+                      </span>
+                    )}
+                  </NavLink>
+                  <NavLink to="/lawyer/earnings">
+                    {({ isActive }) => (
+                      <span
+                        className={
+                          isActive
+                            ? "font-semibold text-blue-600"
+                            : "cursor-pointer hover:text-blue-600"
+                        }
+                      >
+                        Earnings
+                      </span>
+                    )}
+                  </NavLink>
                   <NavLink to="/lawyer/appointment-requests">
                     {({ isActive }) => (
                       <span
@@ -82,7 +109,7 @@ const LawyerHeader = () => {
                       </span>
                     )}
                   </NavLink>
-                  <Link>
+                  {/* <Link>
                     <span className="cursor-pointer hover:text-blue-600">
                       Clients
                     </span>
@@ -91,7 +118,7 @@ const LawyerHeader = () => {
                     <span className="cursor-pointer hover:text-blue-600">
                       Case Files
                     </span>
-                  </Link>
+                  </Link> */}
                 </nav>
               </div>
             )}
@@ -133,6 +160,32 @@ const LawyerHeader = () => {
                 </span>
               )}
             </NavLink>
+            <NavLink to="/lawyer/manage-availability">
+              {({ isActive }) => (
+                <span
+                  className={
+                    isActive
+                      ? "font-semibold text-blue-600"
+                      : "cursor-pointer hover:text-blue-600"
+                  }
+                >
+                  Management
+                </span>
+              )}
+            </NavLink>
+            <NavLink to="/lawyer/earnings">
+              {({ isActive }) => (
+                <span
+                  className={
+                    isActive
+                      ? "font-semibold text-blue-600"
+                      : "cursor-pointer hover:text-blue-600"
+                  }
+                >
+                  Earnings
+                </span>
+              )}
+            </NavLink>
             <NavLink to="/lawyer/appointment-requests">
               {({ isActive }) => (
                 <span
@@ -153,7 +206,16 @@ const LawyerHeader = () => {
           </nav>
 
           <div className="relative flex items-center gap-6">
-            <div
+            <button
+              type="button"
+              onClick={() => navigate("/messages")}
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-blue-600 shadow-sm transition hover:border-blue-300 hover:bg-blue-50"
+              aria-label="Open messages"
+            >
+              <MessageCircle size={18} />
+            </button>
+
+            {/* <div
               className="relative cursor-pointer"
               onClick={() => setShowNotifications(!showNotifications)}
             >
@@ -170,7 +232,7 @@ const LawyerHeader = () => {
                   <li>Payment received</li>
                 </ul>
               </div>
-            )}
+            )} */}
 
             <div className="relative" ref={profileRef}>
               <img
@@ -210,9 +272,9 @@ const LawyerHeader = () => {
                   >
                     View Profile
                   </button>
-                  <button className="w-full rounded-lg px-3 py-2 text-left transition hover:bg-gray-100">
+                  {/* <button className="w-full rounded-lg px-3 py-2 text-left transition hover:bg-gray-100">
                     Account Settings
-                  </button>
+                  </button> */}
                   <button
                     onClick={handleLogout}
                     className="w-full rounded-lg px-3 py-2 text-left text-red-600 transition hover:bg-red-50"

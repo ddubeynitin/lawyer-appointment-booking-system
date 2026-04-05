@@ -20,6 +20,8 @@ const AdminDashBoard = lazy(() => import("./pages/admin/AdminDashBoard"));
 const LoginPage = lazy(() => import("./pages/auth/LoginPage"));
 const AdminLoginPage = lazy(() => import("./pages/admin/AdminLoginPage"));
 const LawyerDashboard = lazy(() => import("./pages/lawyer/LawyerDashboard"));
+const LawyerEarningsPage = lazy(() => import("./pages/lawyer/LawyerEarningsPage"));
+const ManageAvailabilityAndFees = lazy(() => import("./pages/lawyer/ManageAvailabilityAndFees"));
 const LawyersList = lazy(() => import("./pages/client/LawyersList"));
 const MyAppointments = lazy(() => import("./pages/client/MyAppointments"));
 const Home = lazy(() => import("./pages/Home"));
@@ -27,6 +29,7 @@ const CompleteLawyerProfile = lazy(
   () => import("./pages/auth/CompleteLawyerProfile"),
 );
 const LawyerProfile = lazy(() => import("./pages/lawyer/LawyerProfile"));
+const MessagesPage = lazy(() => import("./pages/messages/MessagesPage"));
 
 const App = () => {
   return (
@@ -61,6 +64,10 @@ const App = () => {
             element={<LawyerDashboard />}
           />
           <Route
+            path="/lawyer/earnings"
+            element={<LawyerEarningsPage />}
+          />
+          <Route
             path="/lawyer/appointment-requests"
             element={<AppointmentRequestsPage/>}
           />
@@ -68,7 +75,12 @@ const App = () => {
             path="/lawyer/calendar"
             element={<LawyerCalendarPage />}
           />
+          <Route
+            path="/lawyer/manage-availability"
+            element={<ManageAvailabilityAndFees />}
+          />
           <Route path="/lawyer/lawyer-profile/:id" element={<LawyerProfile />} />
+          <Route path="/messages" element={<MessagesPage />} />
 
           <Route path="/admin/admin-login" element={<AdminLoginPage />} />
           <Route path="/admin/admin-dashboard" element={<AdminDashBoard />} />

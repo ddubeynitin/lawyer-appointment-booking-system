@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
+import axios from "axios";
 import {
   CheckCircle,
+  Loader2,
   MapPin,
   Globe,
   Award,
@@ -18,6 +20,144 @@ import LoadingFallback from "../../components/LoadingFallback";
 import { FaBalanceScale, FaSearch } from "react-icons/fa";
 import { useAuth } from "../../context/AuthContext";
 
+const formatTimeLabel = (timeString) => {
+  if (!timeString) return "";
+
+  const match = timeString.match(/^(\d{1,2}):(\d{2})\s?(AM|PM)$/i);
+  if (!match) return timeString;
+
+  let hours = Number(match[1]);
+  const minutes = match[2];
+  const meridiem = match[3].toUpperCase();
+
+  if (meridiem === "PM" && hours !== 12) {
+    hours += 12;
+  }
+  if (meridiem === "AM" && hours === 12) {
+    hours = 0;
+  }
+
+  const date = new Date();
+  date.setHours(hours, Number(minutes), 0, 0);
+
+  return date.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+};
+
+const parseAvailabilityDateTime = (dateValue, timeString) => {
+  if (!dateValue || !timeString) return null;
+
+  const rawDate =
+    typeof dateValue === "string"
+      ? dateValue
+      : dateValue instanceof Date
+        ? `${dateValue.getFullYear()}-${String(dateValue.getMonth() + 1).padStart(2, "0")}-${String(dateValue.getDate()).padStart(2, "0")}`
+        : "";
+  const datePart = rawDate.split("T")[0];
+  const match = timeString.match(/^(\d{1,2}):(\d{2})\s?(AM|PM)$/i);
+
+  if (!datePart || !match) return null;
+
+  let hours = Number(match[1]) % 12;
+  const minutes = Number(match[2]);
+  const meridiem = match[3].toUpperCase();
+
+  if (meridiem === "PM") {
+    hours += 12;
+  }
+
+  const [year, month, day] = datePart.split("-").map(Number);
+
+  if ([year, month, day].some((part) => Number.isNaN(part))) {
+    return null;
+  }
+
+  return new Date(year, month - 1, day, hours, minutes, 0, 0);
+};
+
+const formatNextConsultationLabel = (dateValue, timeString) => {
+  const consultationDateTime = parseAvailabilityDateTime(dateValue, timeString);
+
+  if (!consultationDateTime) {
+    return null;
+  }
+
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const targetDay = new Date(
+    consultationDateTime.getFullYear(),
+    consultationDateTime.getMonth(),
+    consultationDateTime.getDate(),
+  );
+  const diffDays = Math.round(
+    (targetDay.getTime() - startOfToday.getTime()) / (1000 * 60 * 60 * 24),
+  );
+
+  const timeLabel = formatTimeLabel(timeString);
+
+  if (diffDays === 0) {
+    return `Today at ${timeLabel}`;
+  }
+
+  if (diffDays === 1) {
+    return `Tomorrow at ${timeLabel}`;
+  }
+
+  return `${consultationDateTime.toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  })} at ${timeLabel}`;
+};
+
+const getNextAvailableConsultation = (availabilities = []) => {
+  const now = new Date();
+
+  const orderedAvailabilities = [...availabilities]
+    .map((availability) => ({
+      ...availability,
+      dateTime: parseAvailabilityDateTime(availability?.date, "12:00 AM"),
+    }))
+    .filter((availability) => availability.dateTime)
+    .sort((a, b) => a.dateTime - b.dateTime);
+
+  for (const availability of orderedAvailabilities) {
+    const availableSlots = (availability.slots || [])
+      .map((slot) => {
+        const time = typeof slot === "string" ? slot : slot?.time || slot?.startTime;
+        return {
+          time,
+          isBooked:
+            slot?.isBooked === true ||
+            slot?.booked === true ||
+            slot?.isAvailable === false,
+          dateTime: parseAvailabilityDateTime(availability.date, time),
+        };
+      })
+      .filter(
+        (slot) =>
+          slot.time &&
+          !slot.isBooked &&
+          slot.dateTime &&
+          slot.dateTime.getTime() >= now.getTime(),
+      )
+      .sort((a, b) => a.dateTime - b.dateTime);
+
+    if (availableSlots.length > 0) {
+      const nextSlot = availableSlots[0];
+      return {
+        date: availability.date,
+        time: nextSlot.time,
+        label: formatNextConsultationLabel(availability.date, nextSlot.time),
+      };
+    }
+  }
+
+  return null;
+};
+
 const LawyerProfile = () => {
   const { id } = useParams();
   const { data, loading, error } = useFetch(`${API_URL}/lawyers/${id}`);
@@ -27,7 +167,10 @@ const LawyerProfile = () => {
     error: reviewsError,
   } = useFetch(`${API_URL}/reviews/lawyer/${id}`);
   const [lawyerProfileData, setLawyerProfileData] = useState(null);
+  const [availabilityData, setAvailabilityData] = useState([]);
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [shareStatus, setShareStatus] = useState("");
+  const [creatingConversation, setCreatingConversation] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
   const canShowBookingCard = !user || user.role !== "lawyer";
@@ -38,12 +181,62 @@ const LawyerProfile = () => {
     lawyerProfileData?.feesByCategory && lawyerProfileData.feesByCategory.length > 0
       ? lawyerProfileData.feesByCategory[0].fee
       : null;
+  const nextAvailableConsultation = getNextAvailableConsultation(availabilityData);
 
   useEffect(() => {
     if (data) {
       setLawyerProfileData(data);
     }
   }, [data]);
+
+  useEffect(() => {
+    if (!lawyerProfileData?._id || !canShowBookingCard) {
+      return;
+    }
+
+    let isMounted = true;
+
+    const fetchAvailability = async () => {
+      setAvailabilityLoading(true);
+
+      try {
+        const token = localStorage.getItem("token");
+        const response = await axios.get(
+          `${API_URL}/availability/lawyer/${lawyerProfileData._id}`,
+          {
+            headers: token
+              ? {
+                  Authorization: `Bearer ${token}`,
+                }
+              : undefined,
+          },
+        );
+
+        const responseData = Array.isArray(response.data)
+          ? response.data
+          : response.data?.data || response.data?.availabilities || [];
+
+        if (isMounted) {
+          setAvailabilityData(responseData);
+        }
+      } catch (availabilityError) {
+        console.error("Failed to load lawyer availability:", availabilityError);
+        if (isMounted) {
+          setAvailabilityData([]);
+        }
+      } finally {
+        if (isMounted) {
+          setAvailabilityLoading(false);
+        }
+      }
+    };
+
+    fetchAvailability();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [lawyerProfileData?._id, canShowBookingCard]);
 
   useEffect(() => {
     if (!shareStatus) {
@@ -80,6 +273,41 @@ const LawyerProfile = () => {
       }
 
       setShareStatus("Unable to share right now.");
+    }
+  };
+
+  const handleMessageClick = async () => {
+    const viewedLawyerId = id;
+
+    if (!viewedLawyerId) {
+      return;
+    }
+
+    const clientId = user?.id || user?._id;
+
+    if (!clientId) {
+      navigate(`/messages?lawyerId=${encodeURIComponent(viewedLawyerId)}`);
+      return;
+    }
+
+    try {
+      setCreatingConversation(true);
+      const response = await axios.post(`${API_URL}/messages/conversations/ensure`, {
+        clientId,
+        lawyerId: viewedLawyerId,
+      });
+
+      const conversationId = response.data?.conversationId;
+      navigate(
+        conversationId
+          ? `/messages?conversationId=${encodeURIComponent(conversationId)}`
+          : `/messages?lawyerId=${encodeURIComponent(viewedLawyerId)}`,
+      );
+    } catch (error) {
+      console.error("Failed to create conversation before opening messages:", error);
+      navigate(`/messages?lawyerId=${encodeURIComponent(viewedLawyerId)}`);
+    } finally {
+      setCreatingConversation(false);
     }
   };
 
@@ -251,9 +479,21 @@ const LawyerProfile = () => {
                   </div>
 
                   <div className="flex gap-4 mt-6">
-                    { user && user.role == "lawyer" ? " ": <button className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg transition">
-                      <MessageCircle size={18} /> Message
-                    </button>}
+                    {user && user.role == "lawyer" ? null : (
+                      <button
+                        type="button"
+                        onClick={handleMessageClick}
+                        disabled={creatingConversation}
+                        className="flex items-center gap-2 rounded-lg bg-slate-100 px-4 py-2 text-slate-700 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {creatingConversation ? (
+                          <Loader2 size={18} className="animate-spin" />
+                        ) : (
+                          <MessageCircle size={18} />
+                        )}
+                        {creatingConversation ? "Opening..." : "Message"}
+                      </button>
+                    )}
 
                     <button
                       type="button"
@@ -399,10 +639,15 @@ const LawyerProfile = () => {
                       Next available consultation
                     </p>
                     <p className="mt-3 text-lg font-semibold text-slate-800">
-                      Tomorrow at 10:00 AM
+                      {availabilityLoading
+                        ? "Checking availability..."
+                        : nextAvailableConsultation?.label ||
+                          "No upcoming consultation slots"}
                     </p>
                     <p className="mt-1 text-sm text-slate-500">
-                      Video or office meeting, based on your preference
+                      {nextAvailableConsultation
+                        ? "Video or office meeting, based on your preference"
+                        : "Please check back soon or book a custom consultation time"}
                     </p>
                   </div>
 
@@ -410,7 +655,7 @@ const LawyerProfile = () => {
                     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                       <p className="text-slate-500">Session format</p>
                       <p className="mt-2 font-semibold text-slate-800">
-                        Video / Office
+                        Office
                       </p>
                     </div>
                     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">

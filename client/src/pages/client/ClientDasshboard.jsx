@@ -2,6 +2,7 @@ import { FaGavel, FaSearch, FaVideo, FaTimes } from "react-icons/fa";
 import { LuBellRing } from "react-icons/lu";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect, useMemo } from "react";
+import { MessageCircle } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import userImg from "../../assets/gifs/icons8-user.gif";
 import axios from "axios";
@@ -91,11 +92,11 @@ const ClientDashboard = () => {
       return firstDate - secondDate;
     })[0];
 
-  useEffect(() => {
-    if (user) {
-      setUserId(user.id || user._id);
-    }
-  }, [user]);
+  // useEffect(() => {
+  //   if (user) {
+  //     setUserId(user.id || user._id);
+  //   }
+  // }, [user]);
 
   const handleLogout = () => {
     logout();
@@ -225,7 +226,7 @@ const ClientDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-gray-100 to-gray-200">
+    <div className="min-h-screen bg-linear-to-br from-gray-100 to-gray-200 font-barlow">
       <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/70 backdrop-blur-lg">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div onClick={showMenu} className="sm:hidden">
@@ -251,7 +252,7 @@ const ClientDashboard = () => {
                       Your Dashboard
                     </Link>
                   ) : null}
-                  <Link className="font-semibold text-blue-600">Dashboard</Link>
+                  {/* <Link className="font-semibold text-blue-600">Dashboard</Link> */}
                   <Link
                     to="/client/appointment-history"
                     className="hover:text-blue-600"
@@ -286,7 +287,16 @@ const ClientDashboard = () => {
           </nav>
 
           <div className="relative flex items-center gap-6">
-            <div
+            <button
+              type="button"
+              onClick={() => navigate("/messages")}
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-blue-600 shadow-sm transition hover:border-blue-300 hover:bg-blue-50"
+              aria-label="Open messages"
+            >
+              <MessageCircle size={18} />
+            </button>
+
+            {/* <div
               className="relative cursor-pointer"
               onClick={() => setShowNotifications(!showNotifications)}
             >
@@ -303,7 +313,7 @@ const ClientDashboard = () => {
                   <li>Payment successful</li>
                 </ul>
               </div>
-            )}
+            )} */}
 
             <div className="relative" ref={profileRef}>
               <div
@@ -344,9 +354,9 @@ const ClientDashboard = () => {
                   >
                     View Profile
                   </button>
-                  <button className="w-full rounded-lg px-3 py-2 text-left transition hover:bg-gray-100">
+                  {/* <button className="w-full rounded-lg px-3 py-2 text-left transition hover:bg-gray-100">
                     Settings
-                  </button>
+                  </button> */}
                   <button
                     onClick={handleLogout}
                     className="w-full rounded-lg px-3 py-2 text-left text-red-600 transition hover:bg-red-50"
@@ -378,7 +388,7 @@ const ClientDashboard = () => {
 
             <div className="mt-4 flex flex-col items-center text-center">
               <img
-                src={user.profilePicture || userImg}
+                src={user.profilePicture || "/assets/images/user.png"}
                 className="mb-4 h-20 w-20 rounded-full"
                 alt="user"
               />

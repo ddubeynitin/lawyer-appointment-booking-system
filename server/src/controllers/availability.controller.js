@@ -45,18 +45,14 @@ const getAvailabilityByLawyer = async (req, res) => {
 // Update booked slot
 const updateBookedSlot = async (req, res) => {
   try {
-    const { lawyerId, date, slotIndex } = req.body;
+    const { lawyerId, date, slotIndex, isBooked = true } = req.body;
     const availability = await Availability.findOne({ lawyerId, date });
     
     if (!availability || slotIndex >= availability.slots.length || slotIndex < 0) {
       return res.status(404).json({ message: "Slot not available" });
     }
 
-    if (availability.slots[slotIndex].booked) {
-      return res.status(400).json({ message: "Slot already booked" });
-    }
-
-    availability.slots[slotIndex].booked = true;
+    availability.slots[slotIndex].isBooked = Boolean(isBooked);
     
     await availability.save();
     
