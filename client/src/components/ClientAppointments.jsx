@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import axios from "axios";
 import { CalendarDays, Search, RefreshCw, CheckCircle, XCircle, Clock, AlertCircle, Star, ChevronDown, User, Briefcase } from "lucide-react";
 import ReviewRating from "./ReviewRating";
@@ -43,6 +43,18 @@ const requestWithFallback = async (method, path, payload) => {
   throw lastError;
 };
 
+const formatLawyerLocation = (lawyer) => {
+  const parts = [
+    lawyer?.location?.address,
+    lawyer?.location?.city,
+    lawyer?.location?.state,
+  ]
+    .map((part) => String(part || "").trim())
+    .filter(Boolean);
+
+  return parts.length > 0 ? parts.join(", ") : "Office location not available";
+};
+
 export default function ClientAppointments({ userId, userRole = "user" }) {
   const [viewType, setViewType] = useState(userRole === "lawyer" ? "lawyer" : "client");
   const [appointments, setAppointments] = useState([]);
@@ -52,9 +64,8 @@ export default function ClientAppointments({ userId, userRole = "user" }) {
   const [statusFilter, setStatusFilter] = useState("all");
   const [refreshing, setRefreshing] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(null);
-  const [reviewData, setReviewData] = useState({ rating: 5, comment: "" });
 
-  const fetchAppointments = async (isRefresh = false) => {
+  const fetchAppointments = useCallback(async (isRefresh = false) => {
     if (isRefresh) {
       setRefreshing(true);
     } else {
@@ -87,11 +98,11 @@ export default function ClientAppointments({ userId, userRole = "user" }) {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [viewType, userId]);
 
   useEffect(() => {
     fetchAppointments();
-  }, [viewType, userId]);
+  }, [fetchAppointments]);
 
   // Cancel appointment
   const handleCancelAppointment = async (appointmentId) => {
@@ -106,24 +117,6 @@ export default function ClientAppointments({ userId, userRole = "user" }) {
     } catch (err) {
       console.error("Failed to cancel appointment:", err);
       alert(err?.response?.data?.message || "Failed to cancel appointment");
-    }
-  };
-
-  // Submit review
-  const handleSubmitReview = async (appointmentId) => {
-    try {
-      await requestWithFallback("post", "/reviews", {
-        lawyerId: appointments.find(a => a._id === appointmentId)?.lawyerId,
-        appointmentId,
-        rating: reviewData.rating,
-        comment: reviewData.comment
-      });
-      setShowReviewModal(null);
-      setReviewData({ rating: 5, comment: "" });
-      alert("Review submitted successfully!");
-    } catch (err) {
-      console.error("Failed to submit review:", err);
-      alert(err?.response?.data?.message || "Failed to submit review");
     }
   };
 
@@ -156,21 +149,6 @@ export default function ClientAppointments({ userId, userRole = "user" }) {
   const clearFilters = () => {
     setSearchQuery("");
     setStatusFilter("all");
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return "-";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-  };
-
-  const formatFee = (fee) => {
-    if (fee === undefined || fee === null) return "-";
-    return `$${Number(fee).toLocaleString()}`;
   };
 
   // Get upcoming appointments (future dates)
@@ -370,10 +348,7 @@ export default function ClientAppointments({ userId, userRole = "user" }) {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <ReviewRating 
             appointment={showReviewModal}
-            onClose={() => {
-              setShowReviewModal(null);
-              setReviewData({ rating: 5, comment: "" });
-            }}
+            onClose={() => setShowReviewModal(null)}
             onSubmitSuccess={() => {
               fetchAppointments();
             }}
@@ -399,6 +374,8 @@ function AppointmentCard({ appointment, viewType, isPast, onCancel, onReview }) 
   const userName = appointment?.userId?.name || appointment?.userName || "Client";
   const lawyerName = appointment?.lawyerName || "-";
   const userEmail = appointment?.userId?.email || appointment?.userEmail || "-";
+  const appointmentMode = appointment?.appointmentMode || "Online";
+  const lawyerLocation = formatLawyerLocation(appointment?.lawyerId);
 
   const formatDate = (dateString) => {
     if (!dateString) return "-";
@@ -425,6 +402,14 @@ function AppointmentCard({ appointment, viewType, isPast, onCancel, onReview }) 
             </p>
             <p className="text-sm text-gray-500">
               {appointment?.caseCategory || "-"}
+            </p>
+            <p className="mt-1 text-xs font-medium text-blue-600">
+              {appointmentMode}
+            </p>
+            <p className="text-xs text-gray-500">
+              {appointmentMode === "Office"
+                ? lawyerLocation
+                : "Online meeting link will be emailed before the session"}
             </p>
           </div>
         </div>

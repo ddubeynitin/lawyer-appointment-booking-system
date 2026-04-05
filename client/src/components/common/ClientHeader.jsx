@@ -1,10 +1,19 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
-import { FaGavel, FaSearch, FaVideo, FaTimes, FaPen, FaCamera } from "react-icons/fa";
+import {
+  FaGavel,
+  FaSearch,
+  FaVideo,
+  FaTimes,
+  FaPen,
+  FaCamera,
+  FaHome,
+  FaCalendarAlt,
+} from "react-icons/fa";
 import { MessageCircle } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { TfiMenuAlt } from "react-icons/tfi";
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import BookingNotifications from "../BookingNotifications";
 import { API_URL } from "../../utils/api";
 
@@ -40,6 +49,12 @@ const ClientHeader = () => {
   const showMenu = () => {
     setIsMenuVisible((current) => !current);
   };
+
+  const navLinkClassName = ({ isActive }) =>
+    isActive ? "font-semibold text-blue-600" : "transition hover:text-blue-600";
+
+  const navIconClassName = (isActive) =>
+    isActive ? "text-blue-600" : "text-slate-400 transition group-hover:text-blue-600";
 
   const openProfileModal = (editMode = true) => {
     setShowProfileDropdown(false);
@@ -171,31 +186,47 @@ const ClientHeader = () => {
             {isMenuVisible && (
               <div className="absolute top-19 left-0 w-50 rounded-br-2xl rounded-tr-2xl border border-dashed border-gray-300 bg-white pt-5 pb-5">
                 <nav className="flex flex-col items-center gap-8 text-sm font-medium text-slate-600 md:hidden">
-                  <Link
+                  <NavLink
                     to="/client/lawyer-list"
-                    className="flex items-center gap-2 transition hover:text-blue-600"
+                    className={({ isActive }) =>
+                      `group flex items-center gap-2 ${isActive ? "font-semibold text-blue-600" : "transition hover:text-blue-600"}`
+                    }
                   >
-                    <FaSearch /> Find Lawyer
-                  </Link>
-                  {user ? (
-                    <Link
-                      to={
-                        user.role === "lawyer"
-                          ? "/lawyer/lawyer-dashboard"
-                          : "/client/client-dashboard"
-                      }
-                      className="transition hover:text-blue-600"
-                    >
-                      Your Dashboard
-                    </Link>
-                  ) : null}
-                  <Link className="font-semibold text-blue-600">Dashboard</Link>
-                  <Link
+                    {({ isActive }) => (
+                      <>
+                        <FaSearch className={navIconClassName(isActive)} />
+                        <span>Find Lawyer</span>
+                      </>
+                    )}
+                  </NavLink>
+
+                  <NavLink
+                    to="/client/client-dashboard"
+                    className={({ isActive }) =>
+                      `group flex items-center gap-2 ${isActive ? "font-semibold text-blue-600" : "transition hover:text-blue-600"}`
+                    }
+                    end
+                  >
+                    {({ isActive }) => (
+                      <>
+                        <FaHome className={navIconClassName(isActive)} />
+                        <span>Dashboard</span>
+                      </>
+                    )}
+                  </NavLink>
+                  <NavLink
                     to="/client/appointment-history"
-                    className="hover:text-blue-600"
+                    className={({ isActive }) =>
+                      `group flex items-center gap-2 ${isActive ? "font-semibold text-blue-600" : "transition hover:text-blue-600"}`
+                    }
                   >
-                    Appointments
-                  </Link>
+                    {({ isActive }) => (
+                      <>
+                        <FaCalendarAlt className={navIconClassName(isActive)} />
+                        <span>Appointments</span>
+                      </>
+                    )}
+                  </NavLink>
                 </nav>
               </div>
             )}
@@ -211,16 +242,30 @@ const ClientHeader = () => {
           </div>
 
           <nav className="hidden items-center gap-8 font-medium text-gray-600 md:flex">
-            <Link to="/client/client-dashboard" className="font-semibold text-blue-600">Dashboard</Link>
-            <Link to="/client/lawyer-list" className="hover:text-blue-600">
-              Search Lawyers
-            </Link>
-            <Link
-              to="/client/appointment-history"
-              className="hover:text-blue-600"
-            >
-              Appointments
-            </Link>
+            <NavLink to="/client/client-dashboard" className="group flex items-center gap-2" end>
+              {({ isActive }) => (
+                <>
+                  <FaHome className={navIconClassName(isActive)} />
+                  <span className={navLinkClassName({ isActive })}>Dashboard</span>
+                </>
+              )}
+            </NavLink>
+            <NavLink to="/client/lawyer-list" className="group flex items-center gap-2">
+              {({ isActive }) => (
+                <>
+                  <FaSearch className={navIconClassName(isActive)} />
+                  <span className={navLinkClassName({ isActive })}>Search Lawyers</span>
+                </>
+              )}
+            </NavLink>
+            <NavLink to="/client/appointment-history" className="group flex items-center gap-2">
+              {({ isActive }) => (
+                <>
+                  <FaCalendarAlt className={navIconClassName(isActive)} />
+                  <span className={navLinkClassName({ isActive })}>Appointments</span>
+                </>
+              )}
+            </NavLink>
           </nav>
 
           <div className="relative flex items-center gap-6">

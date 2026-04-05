@@ -120,9 +120,101 @@ const sendWelcomeLawyerEmail = async ({ email, name, licenseNo }) => {
   });
 };
 
+const formatAppointmentDate = (dateValue) => {
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) {
+    return "-";
+  }
+
+  return date.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+};
+
+const formatLawyerLocation = (location = {}) => {
+  const parts = [location.address, location.city, location.state]
+    .map((part) => String(part || "").trim())
+    .filter(Boolean);
+
+  return parts.length > 0 ? parts.join(", ") : "Office location not available";
+};
+
+const sendAppointmentProofEmail = async ({
+  email,
+  name,
+  lawyerName,
+  lawyerSpecialization,
+  appointmentMode,
+  date,
+  timeSlot,
+  caseCategory,
+  feeCharged,
+  lawyerLocation,
+}) => {
+  const formattedDate = formatAppointmentDate(date);
+  const officeLocation = formatLawyerLocation(lawyerLocation);
+  const isOffice = appointmentMode === "Office";
+
+  const subject = `Appointment confirmation with ${lawyerName || "your lawyer"}`;
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#0f172a">
+      <h2 style="margin:0 0 12px">Appointment Booking Confirmation</h2>
+      <p style="margin:0 0 16px">Hi ${name || "there"},</p>
+      <p style="margin:0 0 16px">
+        Your appointment has been booked successfully. Please keep this email as proof of booking.
+      </p>
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:16px">
+        <p style="margin:0 0 8px"><strong>Lawyer:</strong> ${lawyerName || "-"}</p>
+        <p style="margin:0 0 8px"><strong>Specialization:</strong> ${lawyerSpecialization || "-"}</p>
+        <p style="margin:0 0 8px"><strong>Date:</strong> ${formattedDate}</p>
+        <p style="margin:0 0 8px"><strong>Time:</strong> ${timeSlot || "-"}</p>
+        <p style="margin:0 0 8px"><strong>Mode:</strong> ${appointmentMode || "-"}</p>
+        <p style="margin:0 0 8px"><strong>Category:</strong> ${caseCategory || "-"}</p>
+        <p style="margin:0"><strong>Fee:</strong> Rs ${feeCharged ?? "-"}</p>
+      </div>
+      ${
+        isOffice
+          ? `<p style="margin:16px 0 0"><strong>Lawyer Office:</strong> ${officeLocation}</p>`
+          : `<p style="margin:16px 0 0">The online meeting link will be provided to your registered email a few minutes before the appointment time.</p>`
+      }
+      <p style="margin:16px 0 0;color:#64748b">
+        If you did not request this appointment, please contact support immediately.
+      </p>
+    </div>
+  `;
+
+  const text = [
+    "Appointment Booking Confirmation",
+    "",
+    `Hi ${name || "there"},`,
+    "Your appointment has been booked successfully. Please keep this email as proof of booking.",
+    "",
+    `Lawyer: ${lawyerName || "-"}`,
+    `Specialization: ${lawyerSpecialization || "-"}`,
+    `Date: ${formattedDate}`,
+    `Time: ${timeSlot || "-"}`,
+    `Mode: ${appointmentMode || "-"}`,
+    `Category: ${caseCategory || "-"}`,
+    `Fee: Rs ${feeCharged ?? "-"}`,
+    isOffice
+      ? `Lawyer Office: ${officeLocation}`
+      : "The online meeting link will be provided to your registered email a few minutes before the appointment time.",
+  ].join("\n");
+
+  return sendBrevoEmail({
+    to: { email, name: name || email },
+    subject,
+    html,
+    text,
+  });
+};
+
 module.exports = {
   hasBrevoConfig,
   sendBrevoEmail,
   sendOtpEmail,
   sendWelcomeLawyerEmail,
+  sendAppointmentProofEmail,
 };

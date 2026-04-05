@@ -85,7 +85,11 @@ const formatNextConsultationLabel = (dateValue, timeString) => {
   }
 
   const now = new Date();
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfToday = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+  );
   const targetDay = new Date(
     consultationDateTime.getFullYear(),
     consultationDateTime.getMonth(),
@@ -126,7 +130,8 @@ const getNextAvailableConsultation = (availabilities = []) => {
   for (const availability of orderedAvailabilities) {
     const availableSlots = (availability.slots || [])
       .map((slot) => {
-        const time = typeof slot === "string" ? slot : slot?.time || slot?.startTime;
+        const time =
+          typeof slot === "string" ? slot : slot?.time || slot?.startTime;
         return {
           time,
           isBooked:
@@ -178,10 +183,12 @@ const LawyerProfile = () => {
     ? "lg:grid-cols-3"
     : "lg:grid-cols-2";
   const primaryConsultationFee =
-    lawyerProfileData?.feesByCategory && lawyerProfileData.feesByCategory.length > 0
+    lawyerProfileData?.feesByCategory &&
+    lawyerProfileData.feesByCategory.length > 0
       ? lawyerProfileData.feesByCategory[0].fee
       : null;
-  const nextAvailableConsultation = getNextAvailableConsultation(availabilityData);
+  const nextAvailableConsultation =
+    getNextAvailableConsultation(availabilityData);
 
   useEffect(() => {
     if (data) {
@@ -292,10 +299,13 @@ const LawyerProfile = () => {
 
     try {
       setCreatingConversation(true);
-      const response = await axios.post(`${API_URL}/messages/conversations/ensure`, {
-        clientId,
-        lawyerId: viewedLawyerId,
-      });
+      const response = await axios.post(
+        `${API_URL}/messages/conversations/ensure`,
+        {
+          clientId,
+          lawyerId: viewedLawyerId,
+        },
+      );
 
       const conversationId = response.data?.conversationId;
       navigate(
@@ -304,7 +314,10 @@ const LawyerProfile = () => {
           : `/messages?lawyerId=${encodeURIComponent(viewedLawyerId)}`,
       );
     } catch (error) {
-      console.error("Failed to create conversation before opening messages:", error);
+      console.error(
+        "Failed to create conversation before opening messages:",
+        error,
+      );
       navigate(`/messages?lawyerId=${encodeURIComponent(viewedLawyerId)}`);
     } finally {
       setCreatingConversation(false);
@@ -348,20 +361,30 @@ const LawyerProfile = () => {
           </div>
           {/* Navigation */}
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
-            { user && user.role != "lawyer" ? <Link
-              to="/client/lawyer-list"
-              className="hover:text-blue-600 transition flex items-center gap-2"
-            >
-              <FaSearch /> Find Lawyer
-            </Link>: ""}
-            {user ?
-            <Link
-            to={user.role == 'lawyer' ? '/lawyer/lawyer-dashboard':'/client/client-dashboard'}
-            className="hover:text-blue-600 transition"
-            >
-              Your Dashboard
-            </Link>
-            : "" }
+            {user && user.role != "lawyer" ? (
+              <Link
+                to="/client/lawyer-list"
+                className="hover:text-blue-600 transition flex items-center gap-2"
+              >
+                <FaSearch /> Find Lawyer
+              </Link>
+            ) : (
+              ""
+            )}
+            {user ? (
+              <Link
+                to={
+                  user.role == "lawyer"
+                    ? "/lawyer/lawyer-dashboard"
+                    : "/client/client-dashboard"
+                }
+                className="hover:text-blue-600 transition"
+              >
+                Your Dashboard
+              </Link>
+            ) : (
+              ""
+            )}
             {/* <Link
               to="/auth/register"
               className="hover:text-blue-600 transition"
@@ -482,7 +505,13 @@ const LawyerProfile = () => {
                     {user && user.role == "lawyer" ? null : (
                       <button
                         type="button"
-                        onClick={handleMessageClick}
+                        onClick={() => {
+                          if (!user) {
+                            navigate("/auth/login");
+                          } else {
+                            handleMessageClick();
+                          }
+                        }}
                         disabled={creatingConversation}
                         className="flex items-center gap-2 rounded-lg bg-slate-100 px-4 py-2 text-slate-700 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
                       >
@@ -625,7 +654,9 @@ const LawyerProfile = () => {
                         Starting at
                       </p>
                       <p className="mt-1 text-2xl font-bold text-white">
-                        {primaryConsultationFee ? `Rs.${primaryConsultationFee}` : "N/A"}
+                        {primaryConsultationFee
+                          ? `Rs.${primaryConsultationFee}`
+                          : "N/A"}
                       </p>
                       <p className="text-xs text-slate-300">per 30 min</p>
                     </div>
@@ -638,11 +669,14 @@ const LawyerProfile = () => {
                       <Calendar size={18} />
                       Next available consultation
                     </p>
-                    <p className="mt-3 text-lg font-semibold text-slate-800">
+                    <p className="mt-3 text-2xl font-bold text-slate-800">
                       {availabilityLoading
                         ? "Checking availability..."
-                        : nextAvailableConsultation?.label ||
+                        : nextAvailableConsultation?.time ||
                           "No upcoming consultation slots"}
+                    </p>
+                    <p className="mt-1 text-sm font-medium text-blue-700">
+                      {nextAvailableConsultation?.label || ""}
                     </p>
                     <p className="mt-1 text-sm text-slate-500">
                       {nextAvailableConsultation
@@ -655,7 +689,7 @@ const LawyerProfile = () => {
                     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                       <p className="text-slate-500">Session format</p>
                       <p className="mt-2 font-semibold text-slate-800">
-                        Office
+                        Online/Office
                       </p>
                     </div>
                     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">

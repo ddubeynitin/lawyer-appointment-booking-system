@@ -1,8 +1,14 @@
 const Appointment = require("../models/appointment.model");
 const Availability = require("../models/availability.model");
+const User = require("../models/user.model");
+const Lawyer = require("../models/lawyer.model");
+const cloudinary = require("../config/cloudinary");
 const {
   createAppointmentNotifications,
 } = require("../services/notification.service");
+const {
+  sendAppointmentProofEmail,
+} = require("../services/email.service");
 
 const TIME_SLOT_REGEX = /^(\d{1,2}):(\d{2})\s?(AM|PM)$/i;
 const RESCHEDULE_CUTOFF_HOURS = 3;
@@ -212,6 +218,10 @@ const buildLawyerAppointmentQuery = (lawyerId, queryParams = {}) => {
 
 const createAppointment = async (req, res) => {
   try {
+    const appointmentMode =
+      ["Online", "Office"].includes(String(req.body.appointmentMode))
+        ? String(req.body.appointmentMode)
+        : "Online";
     const appointmentDate = toAppointmentDate(req.body.date);
     const timeSlot = normalizeTimeSlot(req.body.timeSlot);
 
@@ -225,8 +235,10 @@ const createAppointment = async (req, res) => {
 
     const appointmentPayload = {
       ...req.body,
+      userId: req.user?.id || req.body.userId,
       date: appointmentDate,
       timeSlot,
+      appointmentMode,
       rescheduleStatus: null,
       rescheduleRequestedBy: null,
       rescheduleRequestedAt: null,
@@ -235,7 +247,25 @@ const createAppointment = async (req, res) => {
       rescheduleReason: null,
     };
 
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "appointments",
+      });
+
+      appointmentPayload.caseEvidence = {
+        url: result.secure_url,
+        public_id: req.file.filename,
+        originalName: req.file.originalname,
+      };
+    }
+
     const appointment = await Appointment.create(appointmentPayload);
+    const [bookedUser, bookedLawyer] = await Promise.all([
+      req.user?.id
+        ? User.findById(req.user.id).select("name email").lean()
+        : Promise.resolve(null),
+      Lawyer.findById(appointment.lawyerId).select("name location").lean(),
+    ]);
 
     try {
       await syncAvailabilitySlotStatus({
@@ -255,6 +285,25 @@ const createAppointment = async (req, res) => {
         lawyerDescription: `${appointment.caseCategory} consultation from ${appointment.userId?.name || "a client"}.`,
         lawyerMessage: `New appointment request from ${appointment.userId?.name || "a client"} for ${appointment.timeSlot} on ${new Date(appointment.date).toLocaleDateString()}.`,
       });
+
+      if (bookedUser?.email) {
+        try {
+          await sendAppointmentProofEmail({
+            email: bookedUser.email,
+            name: bookedUser.name,
+            lawyerName: appointment.lawyerName,
+            lawyerSpecialization: appointment.lawyerSpecialization,
+            appointmentMode: appointment.appointmentMode,
+            date: appointment.date,
+            timeSlot: appointment.timeSlot,
+            caseCategory: appointment.caseCategory,
+            feeCharged: appointment.feeCharged,
+            lawyerLocation: bookedLawyer?.location,
+          });
+        } catch (emailError) {
+          console.error("Failed to send appointment proof email:", emailError);
+        }
+      }
     } catch (syncError) {
       await Appointment.findByIdAndDelete(appointment._id);
       throw syncError;
@@ -269,7 +318,9 @@ const createAppointment = async (req, res) => {
 const getAllAppointments = async (req, res) => {
   try {
     await syncCompletedAppointments();
-    const appointments = await Appointment.find();
+    const appointments = await Appointment.find()
+      .populate("userId", "name email phone")
+      .populate("lawyerId", "name email phone location");
     res.json(appointments);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -286,6 +337,7 @@ const getAppointmentById = async (req, res) => {
     const [appointments, totalAppointments, pendingAppointments] = await Promise.all([
       Appointment.find(query)
         .populate("userId", "name email phone")
+        .populate("lawyerId", "name email phone location")
         .sort({ createdAt: -1 }),
       Appointment.countDocuments(baseQuery),
       Appointment.countDocuments({ ...baseQuery, status: "Pending" }),
@@ -319,6 +371,16 @@ const updateAppointment = async (req, res) => {
   try {
     const existingAppointment = await Appointment.findById(req.params.id);
     if (!existingAppointment) return res.status(404).json({ error: "Appointment not found" });
+
+    if (
+      req.body?.status === "Rejected" &&
+      req.user?.role === "user" &&
+      existingAppointment.status !== "Pending"
+    ) {
+      return res.status(400).json({
+        error: "You can cancel an appointment only while it is pending",
+      });
+    }
 
     const previousStatus = existingAppointment.status;
     const appointment = await Appointment.findByIdAndUpdate(req.params.id, req.body, {
@@ -618,6 +680,7 @@ const getAllLawyerAppointments = async (req, res) => {
     const [appointments, totalAppointments, pendingAppointments] = await Promise.all([
       Appointment.find(query)
         .populate("userId", "name email phone")
+        .populate("lawyerId", "name email phone location")
         .sort({ createdAt: -1 }),
       Appointment.countDocuments(baseQuery),
       Appointment.countDocuments({ ...baseQuery, status: "Pending" }),
@@ -638,7 +701,9 @@ const getAllLawyerAppointments = async (req, res) => {
 const getAllUserAppointments = async (req, res) => {
   try {
     await syncCompletedAppointments({ userId: req.params.id });
-    const appointments = await Appointment.find({ userId: req.params.id });
+    const appointments = await Appointment.find({ userId: req.params.id })
+      .populate("userId", "name email phone")
+      .populate("lawyerId", "name email phone location");
     
     res.json({ message: "Appointments retrieved successfully", appointments });
   } catch (err) {
