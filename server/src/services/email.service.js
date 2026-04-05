@@ -211,10 +211,65 @@ const sendAppointmentProofEmail = async ({
   });
 };
 
+const sendAppointmentRejectionEmail = async ({
+  email,
+  name,
+  lawyerName,
+  date,
+  timeSlot,
+  caseCategory,
+  rejectionReason,
+}) => {
+  const formattedDate = formatAppointmentDate(date);
+  const reasonText = String(rejectionReason || "").trim() || "No reason provided";
+  const subject = `Appointment update from ${lawyerName || "your lawyer"}`;
+
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#0f172a">
+      <h2 style="margin:0 0 12px">Appointment Request Rejected</h2>
+      <p style="margin:0 0 16px">Hi ${name || "there"},</p>
+      <p style="margin:0 0 16px">
+        Your appointment request with ${lawyerName || "your lawyer"} was not approved at this time.
+      </p>
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:16px">
+        <p style="margin:0 0 8px"><strong>Date:</strong> ${formattedDate}</p>
+        <p style="margin:0 0 8px"><strong>Time:</strong> ${timeSlot || "-"}</p>
+        <p style="margin:0 0 8px"><strong>Category:</strong> ${caseCategory || "-"}</p>
+        <p style="margin:0"><strong>Reason:</strong> ${reasonText}</p>
+      </div>
+      <p style="margin:16px 0 0">
+        You can review the reason above and submit a new request if needed.
+      </p>
+    </div>
+  `;
+
+  const text = [
+    "Appointment Request Rejected",
+    "",
+    `Hi ${name || "there"},`,
+    `Your appointment request with ${lawyerName || "your lawyer"} was not approved at this time.`,
+    "",
+    `Date: ${formattedDate}`,
+    `Time: ${timeSlot || "-"}`,
+    `Category: ${caseCategory || "-"}`,
+    `Reason: ${reasonText}`,
+    "",
+    "You can review the reason above and submit a new request if needed.",
+  ].join("\n");
+
+  return sendBrevoEmail({
+    to: { email, name: name || email },
+    subject,
+    html,
+    text,
+  });
+};
+
 module.exports = {
   hasBrevoConfig,
   sendBrevoEmail,
   sendOtpEmail,
   sendWelcomeLawyerEmail,
   sendAppointmentProofEmail,
+  sendAppointmentRejectionEmail,
 };

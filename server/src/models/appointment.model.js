@@ -57,6 +57,12 @@ const appointmentSchema = new mongoose.Schema(
       },
     },
 
+    rejectionReason: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+
     date: {
       type: Date,
       required: true
