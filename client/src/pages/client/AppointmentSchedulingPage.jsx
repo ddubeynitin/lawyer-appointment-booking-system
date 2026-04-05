@@ -1,8 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
 import axios from "axios";
-import { CalendarDays, Clock3, FileText, Scale, UserRound } from "lucide-react";
+import {
+  CalendarDays,
+  Clock3,
+  FileText,
+  Paperclip,
+  Scale,
+  UserRound,
+  UploadCloud,
+} from "lucide-react";
 import ClientHeader from "../../components/common/ClientHeader";
+import AppointmentBooked from "../../components/appointment/AppointmentBooked";
 import { useAuth } from "../../context/AuthContext";
 import { API_URL } from "../../utils/api";
 import useFetch from "../../hooks/useFetch";
@@ -21,6 +30,7 @@ const TIME_SLOTS = [
 const TIME_SLOT_REGEX = /^(\d{1,2}):(\d{2})\s?(AM|PM)$/i;
 
 const CASE_CATEGORIES = ["Criminal", "Civil", "Corporate", "Family", "Property"];
+const APPOINTMENT_MODES = ["Online", "Office"];
 
 const getTodayDateInputValue = () => {
   const today = new Date();
@@ -81,24 +91,38 @@ const normalizeAvailabilitySlots = (slots = []) =>
     .filter((slot) => slot.time);
 
 const AppointmentSchedulingPage = () => {
-  const navigate = useNavigate();
   const { id } = useParams();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const { data: lawyersData, loading: lawyersLoading } = useFetch(`${API_URL}/lawyers`);
+  const bookingAnimationTimeoutRef = useRef(null);
 
   const [selectedLawyerId, setSelectedLawyerId] = useState("");
   const [selectedDate, setSelectedDate] = useState(getTodayDateInputValue);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
   const [caseCategory, setCaseCategory] = useState(CASE_CATEGORIES[0]);
+  const [appointmentMode, setAppointmentMode] = useState(APPOINTMENT_MODES[0]);
   const [caseDescription, setCaseDescription] = useState("");
+  const [caseEvidence, setCaseEvidence] = useState(null);
   const [bookedSlots, setBookedSlots] = useState([]);
   const [availabilitySlots, setAvailabilitySlots] = useState([]);
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [bookingDetails, setBookingDetails] = useState(null);
+  const [bookingAnimationActive, setBookingAnimationActive] = useState(false);
   const [error, setError] = useState("");
 
-  const lawyers = Array.isArray(lawyersData) ? lawyersData : [];
+  const lawyers = useMemo(
+    () => (Array.isArray(lawyersData) ? lawyersData : []),
+    [lawyersData],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (bookingAnimationTimeoutRef.current) {
+        window.clearTimeout(bookingAnimationTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (lawyers.length === 0) return;
@@ -128,13 +152,54 @@ const AppointmentSchedulingPage = () => {
     return feeMatch?.fee || 0;
   }, [selectedLawyer, caseCategory]);
 
-  const timeSlotsToDisplay = availabilitySlots.length > 0
-    ? availabilitySlots
-    : TIME_SLOTS.map((slot) => ({
-        time: slot,
-        isBooked: false,
-      }));
+  const timeSlotsToDisplay =
+    availabilitySlots.length > 0
+      ? availabilitySlots
+      : TIME_SLOTS.map((slot) => ({
+          time: slot,
+          isBooked: false,
+        }));
   const isUsingDynamicAvailability = availabilitySlots.length > 0;
+  const morningSlots = useMemo(
+    () => timeSlotsToDisplay.filter((slot) => /AM$/i.test(slot.time || slot)),
+    [timeSlotsToDisplay],
+  );
+  const afternoonSlots = useMemo(
+    () => timeSlotsToDisplay.filter((slot) => /PM$/i.test(slot.time || slot)),
+    [timeSlotsToDisplay],
+  );
+
+  const renderSlotButton = (slot) => {
+    const slotTime = slot.time || slot;
+    const isBooked = isUsingDynamicAvailability
+      ? slot.isBooked || bookedSlots.includes(slotTime)
+      : bookedSlots.includes(slotTime);
+    const isPastSlot = (() => {
+      const slotDateTime = getDateTimeFromDateAndSlot(selectedDate, slotTime);
+
+      return slotDateTime ? slotDateTime < new Date() : false;
+    })();
+    const isSelected = selectedTimeSlot === slotTime;
+    const isDisabled = isBooked || isPastSlot;
+
+    return (
+      <button
+        key={slotTime}
+        type="button"
+        disabled={isDisabled}
+        onClick={() => setSelectedTimeSlot(slotTime)}
+        className={`rounded-2xl border px-4 py-3 text-sm font-medium transition ${
+          isDisabled
+            ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
+            : isSelected
+              ? "border-blue-600 bg-blue-600 text-white"
+              : "border-slate-200 bg-white text-slate-700 hover:border-blue-500"
+        }`}
+      >
+        {slotTime}
+      </button>
+    );
+  };
 
   useEffect(() => {
     const fetchScheduleData = async () => {
@@ -227,7 +292,13 @@ const AppointmentSchedulingPage = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setBookingDetails(null);
+    setBookingAnimationActive(false);
     setError("");
+
+    if (bookingAnimationTimeoutRef.current) {
+      window.clearTimeout(bookingAnimationTimeoutRef.current);
+      bookingAnimationTimeoutRef.current = null;
+    }
 
     if (!user?.id) {
       setError("Please log in to book an appointment.");
@@ -241,30 +312,58 @@ const AppointmentSchedulingPage = () => {
 
     setSubmitting(true);
     try {
-      await axios.post(`${API_URL}/appointments`, {
-        userId: user.id,
-        lawyerId: selectedLawyer._id,
-        lawyerName: selectedLawyer.name,
-        lawyerSpecialization:
-          selectedLawyer.specializations?.[0] || "General Practice",
-        caseCategory,
-        caseDescription: caseDescription.trim(),
-        date: selectedDate,
-        timeSlot: selectedTimeSlot,
-        feeCharged: selectedFee,
+      const payload = new FormData();
+      payload.append("userId", user.id);
+      payload.append("lawyerId", selectedLawyer._id);
+      payload.append("lawyerName", selectedLawyer.name);
+      payload.append(
+        "lawyerSpecialization",
+        selectedLawyer.specializations?.[0] || "General Practice",
+      );
+      payload.append("caseCategory", caseCategory);
+      payload.append("appointmentMode", appointmentMode);
+      payload.append("caseDescription", caseDescription.trim());
+      payload.append("date", selectedDate);
+      payload.append("timeSlot", selectedTimeSlot);
+      payload.append("feeCharged", String(selectedFee));
+
+      if (caseEvidence) {
+        payload.append("caseEvidence", caseEvidence);
+      }
+
+      await axios.post(`${API_URL}/appointments`, payload, {
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
       });
 
       setBookingDetails({
         lawyerName: selectedLawyer.name,
         lawyerSpecialization:
           selectedLawyer.specializations?.[0] || "General Practice",
+        lawyerLocation:
+          [
+            selectedLawyer.location?.address,
+            selectedLawyer.location?.city,
+            selectedLawyer.location?.state,
+          ]
+            .map((part) => String(part || "").trim())
+            .filter(Boolean)
+            .join(", ") || "Office location not available",
         date: selectedDate,
         timeSlot: selectedTimeSlot,
         caseCategory,
+        appointmentMode,
         feeCharged: selectedFee,
       });
       setSelectedTimeSlot("");
       setCaseDescription("");
+      setCaseEvidence(null);
+      setBookingAnimationActive(true);
+      bookingAnimationTimeoutRef.current = window.setTimeout(() => {
+        setBookingAnimationActive(false);
+        bookingAnimationTimeoutRef.current = null;
+      }, 1800);
     } catch (submitError) {
       setError(
         submitError.response?.data?.error ||
@@ -279,73 +378,35 @@ const AppointmentSchedulingPage = () => {
     return <LoadingFallback />;
   }
 
-  if (bookingDetails) {
+  if (bookingAnimationActive && bookingDetails) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-gray-100 to-gray-200">
-        <ClientHeader />
+      <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-slate-100">
         <main className="flex min-h-[calc(100vh-88px)] items-center justify-center px-6 py-10">
-          <div className="w-full max-w-xl rounded-3xl border border-green-100 bg-white p-8 text-center shadow-2xl">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-2xl text-green-600">
-              ✓
-            </div>
-            <h1 className="text-2xl font-bold text-slate-800">
-              Appointment Booked Successfully
-            </h1>
-            <p className="mt-2 text-slate-500">
-              Your consultation has been confirmed and saved to your dashboard.
-            </p>
-
-            <div className="mt-6 rounded-2xl bg-slate-50 p-5 text-left">
-              <div className="space-y-3 text-sm text-slate-600">
-                <div className="flex justify-between gap-4">
-                  <span>Lawyer</span>
-                  <span className="font-medium text-slate-800">
-                    {bookingDetails.lawyerName}
-                  </span>
-                </div>
-                <div className="flex justify-between gap-4">
-                  <span>Specialization</span>
-                  <span className="font-medium text-slate-800">
-                    {bookingDetails.lawyerSpecialization}
-                  </span>
-                </div>
-                <div className="flex justify-between gap-4">
-                  <span>Date</span>
-                  <span className="font-medium text-slate-800">
-                    {bookingDetails.date}
-                  </span>
-                </div>
-                <div className="flex justify-between gap-4">
-                  <span>Time Slot</span>
-                  <span className="font-medium text-slate-800">
-                    {bookingDetails.timeSlot}
-                  </span>
-                </div>
-                <div className="flex justify-between gap-4">
-                  <span>Category</span>
-                  <span className="font-medium text-slate-800">
-                    {bookingDetails.caseCategory}
-                  </span>
-                </div>
-                <div className="flex justify-between gap-4">
-                  <span>Fee</span>
-                  <span className="font-medium text-slate-800">
-                    Rs {bookingDetails.feeCharged}
-                  </span>
-                </div>
+          <div className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-blue-100 bg-white p-8 text-center shadow-2xl">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.12),transparent_42%)]" />
+            <div className="relative">
+              <div className="mx-auto mb-5 flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border border-blue-100 bg-blue-50 shadow-sm">
+                <img
+                  src="/assets/gifs/checklist.gif"
+                  alt="Booking in progress"
+                  className="h-full w-full object-cover"
+                />
               </div>
+              <h1 className="text-2xl font-bold text-slate-800">
+                Finalizing your appointment
+              </h1>
+              <p className="mt-2 text-slate-500">
+                We&apos;re securing your booking and preparing the confirmation card.
+              </p>
             </div>
-
-            <button
-              onClick={() => navigate("/client/client-dashboard")}
-              className="mt-6 rounded-2xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
-            >
-              Go To Dashboard
-            </button>
           </div>
         </main>
       </div>
     );
+  }
+
+  if (bookingDetails) {
+    return <AppointmentBooked bookingDetails={bookingDetails} />;
   }
 
   return (
@@ -435,6 +496,44 @@ const AppointmentSchedulingPage = () => {
 
             <section className="space-y-4 rounded-2xl border border-slate-200 p-4">
               <div className="flex items-center gap-3 text-slate-800">
+                <UserRound size={18} className="text-blue-600" />
+                <div>
+                  <h3 className="font-semibold">Appointment Mode</h3>
+                  <p className="text-sm text-slate-500">
+                    Choose whether you want the consultation online or at the office.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                {APPOINTMENT_MODES.map((mode) => {
+                  const isSelected = appointmentMode === mode;
+
+                  return (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => setAppointmentMode(mode)}
+                      className={`rounded-2xl border px-4 py-4 text-left text-sm font-semibold transition ${
+                        isSelected
+                          ? "border-blue-600 bg-blue-50 text-blue-700"
+                          : "border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50"
+                      }`}
+                    >
+                      <p>{mode}</p>
+                      <p className="mt-1 text-xs font-normal text-slate-500">
+                        {mode === "Online"
+                          ? "Meet virtually without visiting the office."
+                          : "Visit the lawyer's office for the consultation."}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+
+            <section className="space-y-4 rounded-2xl border border-slate-200 p-4">
+              <div className="flex items-center gap-3 text-slate-800">
                 <Clock3 size={18} className="text-blue-600" />
                 <div>
                   <h3 className="font-semibold">Available Time Slots</h3>
@@ -449,7 +548,7 @@ const AppointmentSchedulingPage = () => {
               {slotsLoading ? (
                 <p className="text-sm text-slate-500">Loading available slots...</p>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {isUsingDynamicAvailability && (
                     <p className="text-sm text-emerald-700">
                       {availabilitySlots.length} time slot
@@ -457,41 +556,48 @@ const AppointmentSchedulingPage = () => {
                     </p>
                   )}
 
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                    {timeSlotsToDisplay.map((slot) => {
-                      const slotTime = slot.time || slot;
-                      const isBooked = isUsingDynamicAvailability
-                        ? slot.isBooked || bookedSlots.includes(slotTime)
-                        : bookedSlots.includes(slotTime);
-                      const isPastSlot = (() => {
-                        const slotDateTime = getDateTimeFromDateAndSlot(
-                          selectedDate,
-                          slotTime,
-                        );
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    <div className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 p-4 shadow-sm">
+                      <div className="mb-4 flex items-center justify-between">
+                        <h4 className="text-sm font-semibold uppercase tracking-[0.14em] text-amber-900">
+                          Morning Slots
+                        </h4>
+                        <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800">
+                          {morningSlots.length}
+                        </span>
+                      </div>
 
-                        return slotDateTime ? slotDateTime < new Date() : false;
-                      })();
-                      const isSelected = selectedTimeSlot === slotTime;
-                      const isDisabled = isBooked || isPastSlot;
+                      {morningSlots.length > 0 ? (
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                          {morningSlots.map((slot) => renderSlotButton(slot))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-amber-800/70">
+                          No morning slots available.
+                        </p>
+                      )}
+                    </div>
 
-                      return (
-                        <button
-                          key={slotTime}
-                          type="button"
-                          disabled={isDisabled}
-                          onClick={() => setSelectedTimeSlot(slotTime)}
-                          className={`rounded-2xl border px-4 py-3 text-sm font-medium transition ${
-                            isDisabled
-                              ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
-                              : isSelected
-                                ? "border-blue-600 bg-blue-600 text-white"
-                                : "border-slate-200 bg-white text-slate-700 hover:border-blue-500"
-                          }`}
-                        >
-                          {slotTime}
-                        </button>
-                      );
-                    })}
+                    <div className="rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 to-cyan-50 p-4 shadow-sm">
+                      <div className="mb-4 flex items-center justify-between">
+                        <h4 className="text-sm font-semibold uppercase tracking-[0.14em] text-blue-900">
+                          Afternoon Slots
+                        </h4>
+                        <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800">
+                          {afternoonSlots.length}
+                        </span>
+                      </div>
+
+                      {afternoonSlots.length > 0 ? (
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                          {afternoonSlots.map((slot) => renderSlotButton(slot))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-blue-800/70">
+                          No afternoon slots available.
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
@@ -515,6 +621,49 @@ const AppointmentSchedulingPage = () => {
                 placeholder="Describe your legal issue, what kind of help you need, and any important background."
                 className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-blue-500"
               />
+
+              <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-2xl bg-blue-100 p-3 text-blue-600">
+                    <Paperclip size={18} />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-slate-800">Case Evidence</h4>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Optional. Upload any file or image that helps explain your case.
+                    </p>
+
+                    <label className="mt-4 flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-6 text-center transition hover:border-blue-300 hover:bg-blue-50">
+                      <UploadCloud size={22} className="text-blue-600" />
+                      <span className="mt-2 text-sm font-semibold text-slate-800">
+                        {caseEvidence ? caseEvidence.name : "Click to upload evidence"}
+                      </span>
+                      <span className="mt-1 text-xs text-slate-500">
+                        PDF, image, or document
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*,.pdf,.doc,.docx,.txt"
+                        onChange={(event) => {
+                          const file = event.target.files?.[0] || null;
+                          setCaseEvidence(file);
+                        }}
+                        className="hidden"
+                      />
+                    </label>
+
+                    {caseEvidence ? (
+                      <button
+                        type="button"
+                        onClick={() => setCaseEvidence(null)}
+                        className="mt-3 text-sm font-medium text-red-600 hover:text-red-700"
+                      >
+                        Remove file
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
             </section>
 
             {error && (
@@ -570,12 +719,27 @@ const AppointmentSchedulingPage = () => {
                   <span className="font-medium text-slate-800">{caseCategory}</span>
                 </div>
                 <div className="flex justify-between gap-4">
+                  <span>Mode</span>
+                  <span className="font-medium text-slate-800">{appointmentMode}</span>
+                </div>
+                <div className="flex justify-between gap-4">
                   <span>Consultation Fee</span>
-                  <span className="font-medium text-slate-800">
-                    Rs {selectedFee}
-                  </span>
+                  <span className="font-medium text-slate-800">Rs {selectedFee}</span>
                 </div>
               </div>
+            </div>
+
+            <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4">
+              <p className="text-sm font-semibold text-amber-900">
+                Terms & Rescheduling Rules
+              </p>
+              <ul className="mt-3 space-y-2 text-sm leading-6 text-amber-900/90">
+                <li>Rescheduling is allowed only for approved appointments.</li>
+                <li>You can request a reschedule up to 3 hours before the session.</li>
+                <li>Choose a future time slot that is not already booked.</li>
+                <li>Upload case evidence only if it helps explain your matter.</li>
+                <li>All appointment details should be accurate before confirming.</li>
+              </ul>
             </div>
 
             <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-slate-600">
@@ -583,6 +747,7 @@ const AppointmentSchedulingPage = () => {
               <ul className="mt-3 space-y-2">
                 <li>Choose a slot that is not marked as booked.</li>
                 <li>Your appointment will be created with the selected lawyer and case type.</li>
+                <li>Choose Online for a virtual consultation or Office to visit in person.</li>
                 <li>Fees are calculated automatically from the lawyer profile.</li>
               </ul>
             </div>

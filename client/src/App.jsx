@@ -1,9 +1,9 @@
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes, useLocation } from "react-router-dom";
 import React, { Suspense, lazy } from "react";
 import "./App.css";
 import LoadingFallback from "./components/LoadingFallback";
-import LawyerCardSkeleton from "./components/layout/LawyerCardSkeleton";
 import AiChatWidget from "./components/ai/AiChatWidget";
+import AppointmentBooked from "./components/appointment/AppointmentBooked";
 
 // Lazy load components
 
@@ -32,70 +32,81 @@ const CompleteLawyerProfile = lazy(
 const LawyerProfile = lazy(() => import("./pages/lawyer/LawyerProfile"));
 const MessagesPage = lazy(() => import("./pages/messages/MessagesPage"));
 
+const AppShell = () => {
+  const location = useLocation();
+  const hideAiChat = location.pathname.startsWith("/auth") || location.pathname.startsWith("/admin") || location.pathname.startsWith("/messages") || location.pathname.startsWith("/complete-profile");
+
+  return (
+    <>
+      <Routes>
+        <Route path="*" element={<PageNotFound />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/about" element={<AboutUs/>} />
+        <Route path="/contact" element={<ContactUs/>} />
+
+        <Route path="/complete-profile" element={<CompleteLawyerProfile />} />
+        <Route path="/auth/login" element={<LoginPage />} />
+        <Route path="/auth/register" element={<Registration />} />
+
+        <Route
+          path="/client/client-dashboard"
+          element={<ClientDashboard />}
+        />
+        <Route
+          path="/client/appointment-scheduling/:id"
+          element={<AppointmentSchedulingPage/>}
+        />
+        <Route
+          path="/client/appointment-history"
+          element={<MyAppointments />}
+        />
+        <Route path="/client/lawyer-list" element={<LawyersList />} />
+
+        <Route
+          path="/lawyer/lawyer-dashboard"
+          element={<LawyerDashboard />}
+        />
+        <Route
+          path="/lawyer/earnings"
+          element={<LawyerEarningsPage />}
+        />
+        <Route
+          path="/lawyer/appointment-requests"
+          element={<AppointmentRequestsPage/>}
+        />
+        <Route
+          path="/lawyer/calendar"
+          element={<LawyerCalendarPage />}
+        />
+        <Route
+          path="/lawyer/manage-availability"
+          element={<ManageAvailabilityAndFees />}
+        />
+        <Route
+          path="/lawyer/edit-profile"
+          element={<EditLawyerProfile />}
+        />
+        <Route path="/lawyer/lawyer-profile/:id" element={<LawyerProfile />} />
+        <Route path="/messages" element={<MessagesPage />} />
+
+        <Route path="/admin/admin-login" element={<AdminLoginPage />} />
+        <Route path="/admin/admin-dashboard" element={<AdminDashBoard />} />
+        <Route path="/admin/manage-users" element={<div>Manage Users</div>} />
+        <Route
+          path="/admin/manage-lawyers"
+          element={<AppointmentBooked/>}
+        />
+      </Routes>
+      {!hideAiChat ? <AiChatWidget /> : null}
+    </>
+  );
+};
+
 const App = () => {
   return (
     <Suspense fallback={<LoadingFallback />}>
       <Router>
-        <Routes>
-          <Route path="*" element={<PageNotFound />} />
-          <Route path="/" element={<Home />} />
-          <Route path="/about" element={<AboutUs/>} />
-          <Route path="/contact" element={<ContactUs/>} />
-
-          <Route path="/complete-profile" element={<CompleteLawyerProfile />} />
-          <Route path="/auth/login" element={<LoginPage />} />
-          <Route path="/auth/register" element={<Registration />} />
-
-          <Route
-            path="/client/client-dashboard"
-            element={<ClientDashboard />}
-          />
-          <Route
-            path="/client/appointment-scheduling/:id"
-            element={<AppointmentSchedulingPage/>}
-          />
-          <Route
-            path="/client/appointment-history"
-            element={<MyAppointments />}
-          />
-          <Route path="/client/lawyer-list" element={<LawyersList />} />
-
-          <Route
-            path="/lawyer/lawyer-dashboard"
-            element={<LawyerDashboard />}
-          />
-          <Route
-            path="/lawyer/earnings"
-            element={<LawyerEarningsPage />}
-          />
-          <Route
-            path="/lawyer/appointment-requests"
-            element={<AppointmentRequestsPage/>}
-          />
-          <Route
-            path="/lawyer/calendar"
-            element={<LawyerCalendarPage />}
-          />
-          <Route
-            path="/lawyer/manage-availability"
-            element={<ManageAvailabilityAndFees />}
-          />
-          <Route
-            path="/lawyer/edit-profile"
-            element={<EditLawyerProfile />}
-          />
-          <Route path="/lawyer/lawyer-profile/:id" element={<LawyerProfile />} />
-          <Route path="/messages" element={<MessagesPage />} />
-
-          <Route path="/admin/admin-login" element={<AdminLoginPage />} />
-          <Route path="/admin/admin-dashboard" element={<AdminDashBoard />} />
-          <Route path="/admin/manage-users" element={<div>Manage Users</div>} />
-          <Route
-            path="/admin/manage-lawyers"
-            element={<LawyerCardSkeleton /> || <div>Manage Lawyers</div>}
-          />
-        </Routes>
-        <AiChatWidget />
+        <AppShell />
       </Router>
     </Suspense>
   );

@@ -1,5 +1,7 @@
 const express = require("express");
 const router = express.Router();
+const upload = require("../middlewares/upload");
+const { authMiddleware } = require("../middlewares/auth.middleware");
 const {
   createAppointment,
   getAllAppointments,
@@ -13,7 +15,7 @@ const {
 } = require("../controllers/appointment.controller");
 
 // appointment.routes.js
-router.post("/", createAppointment);
+router.post("/", authMiddleware, upload.single("caseEvidence"), createAppointment);
 router.get("/", getAllAppointments);
 router.get("/lawyer/:id", getAllLawyerAppointments);
 router.get("/lawyer/:id/reschedule-requests", getAllLawyerAppointments);

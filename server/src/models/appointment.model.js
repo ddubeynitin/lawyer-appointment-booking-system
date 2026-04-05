@@ -35,6 +35,28 @@ const appointmentSchema = new mongoose.Schema(
       required: true
     },
 
+    appointmentMode: {
+      type: String,
+      enum: ["Online", "Office"],
+      required: true,
+      default: "Online"
+    },
+
+    caseEvidence: {
+      url: {
+        type: String,
+        default: null,
+      },
+      public_id: {
+        type: String,
+        default: null,
+      },
+      originalName: {
+        type: String,
+        default: null,
+      },
+    },
+
     date: {
       type: Date,
       required: true

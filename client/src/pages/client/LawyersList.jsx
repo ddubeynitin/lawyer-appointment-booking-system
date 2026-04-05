@@ -14,6 +14,7 @@ function LawyerList() {
   const [lawyers, setLawyers] = React.useState([]);
   const [searchTerm, setSearchTerm] = React.useState("");
   const [practiceFilters, setPracticeFilters] = React.useState([]); // e.g. ['Family Law']
+  const [genderFilter, setGenderFilter] = React.useState("");
   const [availabilityFilters, setAvailabilityFilters] = React.useState([]); // e.g. ['today','next3']
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 6;
@@ -86,6 +87,12 @@ function LawyerList() {
         if (!match) return false;
       }
 
+      // gender filter
+      if (genderFilter) {
+        const lawyerGender = `${lawyer.gender || ""}`.toLowerCase();
+        if (lawyerGender !== genderFilter.toLowerCase()) return false;
+      }
+
       // availability filters - for now both options require availability:true
       if (availabilityFilters.length) {
         if (!lawyer.availability) return false;
@@ -93,7 +100,7 @@ function LawyerList() {
 
       return true;
     });
-  }, [lawyers, searchTerm, practiceFilters, availabilityFilters]);
+  }, [lawyers, searchTerm, practiceFilters, genderFilter, availabilityFilters]);
 
   // Calculate pagination
   const totalPages = Math.ceil(filteredLawyers.length / itemsPerPage);
@@ -104,7 +111,7 @@ function LawyerList() {
   // Reset to page 1 when filters change
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, practiceFilters, availabilityFilters]);
+  }, [searchTerm, practiceFilters, genderFilter, availabilityFilters]);
 
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-50 via-white to-slate-100 font-barlow">
@@ -181,6 +188,7 @@ function LawyerList() {
               onClick={() => {
                 setSearchTerm("");
                 setPracticeFilters([]);
+                setGenderFilter("");
                 setAvailabilityFilters([]);
               }}
             >
@@ -217,7 +225,21 @@ function LawyerList() {
             )}
           </div>
 
-          <div>
+          <div className="mb-8">
+            <p className="font-medium mb-3 text-slate-700">Gender</p>
+            <select
+              value={genderFilter}
+              onChange={(e) => setGenderFilter(e.target.value)}
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-500"
+            >
+              <option value="">All genders</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          {/* <div>
             <p className="font-medium mb-3 text-slate-700">Availability</p>
 
             <label className="flex items-center gap-3 mb-3 text-slate-600">
@@ -255,7 +277,7 @@ function LawyerList() {
               />
               Next 3 Days
             </label>
-          </div>
+          </div> */}
         </aside>
 
         {/* LAWYERS */}
