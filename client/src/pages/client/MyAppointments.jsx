@@ -285,6 +285,12 @@ export default function MyAppointments() {
     );
   }, [reviews]);
 
+  const rescheduleLawyerId =
+    selectedAppointmentForReschedule?.lawyerId?._id ||
+    selectedAppointmentForReschedule?.lawyerId?.id ||
+    selectedAppointmentForReschedule?.lawyerId ||
+    "";
+
   const handleReviewSubmitted = (createdReview) => {
     setReviews((currentReviews) => [createdReview, ...currentReviews]);
     setSelectedAppointmentForReview(null);
@@ -643,7 +649,7 @@ export default function MyAppointments() {
 
               <div className="grid gap-6 px-6 py-6 lg:grid-cols-[1.2fr_0.8fr] overflow-y-auto max-h-[80vh]">
                 <DateTimeSlotPicker
-                  lawyerId={selectedAppointmentForReschedule.lawyerId}
+                  lawyerId={rescheduleLawyerId}
                   selectedDate={rescheduleDate}
                   selectedTime={rescheduleTime}
                   onDateChange={setRescheduleDate}

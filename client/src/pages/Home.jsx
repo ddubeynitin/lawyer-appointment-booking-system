@@ -7,14 +7,33 @@ import {
   FaBalanceScale,
   FaGavel,
   FaHome,
+  FaInfoCircle,
+  FaEnvelope,
+  FaUserTie,
   FaPowerOff,
 } from "react-icons/fa";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import useFetch from "../hooks/useFetch";
 import { API_URL } from "../utils/api";
 import CountUp from "react-countup";
 import { TfiMenuAlt } from "react-icons/tfi";
 import { useAuth } from "../context/AuthContext";
+import { motion } from "framer-motion";
+
+// ScrollReveal component using framer-motion
+const ScrollReveal = ({ children, delay = 0, className = "" }) => {
+  return (
+    <motion.div
+      className={className}
+      initial={{ opacity: 0, y: 50 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.3 }}
+      transition={{ duration: 0.6, delay: delay / 1000 }}
+    >
+      {children}
+    </motion.div>
+  );
+};
 
 /* ================= FULL LANDING PAGE ================= */
 const Home = () => {
@@ -157,6 +176,9 @@ const Home = () => {
   const handleLogout = () => {
     logout();
   };
+
+  const navLinkClass = "group inline-flex items-center gap-2 transition hover:text-blue-600";
+  const navIconClass = "text-slate-400 transition group-hover:text-blue-600";
   return (
     <div className="min-h-screen bg-[url('./assets/images/bg-white.jpg')] bg-center bg-cover  from-slate-50 via-white to-slate-100 text-slate-800 font-barlow">
       {/* ================= HEADER ================= */}
@@ -173,9 +195,9 @@ const Home = () => {
                   ) : (
                     <Link
                       to="/client/lawyer-list"
-                      className="hover:text-blue-600 transition flex items-center gap-2"
+                      className={navLinkClass}
                     >
-                      <FaSearch /> Find Lawyer
+                      <FaSearch className={navIconClass} /> Find Lawyer
                     </Link>
                   )}
                   {user ? (
@@ -185,21 +207,18 @@ const Home = () => {
                           ? "/lawyer/lawyer-dashboard"
                           : "/client/client-dashboard"
                       }
-                      className="hover:text-blue-600 transition"
+                      className={navLinkClass}
                     >
-                      Your Dashboard
+                      <FaHome className={navIconClass} /> Your Dashboard
                     </Link>
                   ) : (
                     ""
                   )}
-                  <Link to="/about" className="hover:text-blue-600 transition">
-                    About
+                  <Link to="/about" className={navLinkClass}>
+                    <FaInfoCircle className={navIconClass} /> About
                   </Link>
-                  <Link
-                    to="/contact"
-                    className="hover:text-blue-600 transition"
-                  >
-                    Contact Us
+                  <Link to="/contact" className={navLinkClass}>
+                    <FaEnvelope className={navIconClass} /> Contact Us
                   </Link>
                 </nav>
               </div>
@@ -219,9 +238,9 @@ const Home = () => {
             ) : (
               <Link
                 to="/client/lawyer-list"
-                className="hover:text-blue-600 transition flex items-center gap-2"
+                className={navLinkClass}
               >
-                <FaSearch /> Find Lawyer
+                <FaSearch className={navIconClass} /> Find Lawyer
               </Link>
             )}
             {user ? (
@@ -231,9 +250,9 @@ const Home = () => {
                     ? "/lawyer/lawyer-dashboard"
                     : "/client/client-dashboard"
                 }
-                className="hover:text-blue-600 transition"
+                className={navLinkClass}
               >
-                Your Dashboard
+                <FaHome className={navIconClass} /> Your Dashboard
               </Link>
             ) : (
               ""
@@ -243,16 +262,16 @@ const Home = () => {
             ) : (
               <Link
                 to="/auth/register"
-                className="hover:text-blue-600 transition"
+                className={navLinkClass}
               >
-                Join as Lawyer
+                <FaUserTie className={navIconClass} /> Join as Lawyer
               </Link>
             )}
-            <Link to="/about" className="hover:text-blue-600 transition">
-              About
+            <Link to="/about" className={navLinkClass}>
+              <FaInfoCircle className={navIconClass} /> About
             </Link>
-            <Link to="/contact" className="hover:text-blue-600 transition">
-              Contact Us
+            <Link to="/contact" className={navLinkClass}>
+              <FaEnvelope className={navIconClass} /> Contact Us
             </Link>
           </nav>
 
@@ -314,7 +333,7 @@ const Home = () => {
 
       {/* ================= HERO ================= */}
       <section className="py-14 text-center">
-        <div className="max-w-5xl mx-auto px-6">
+        <ScrollReveal className="max-w-5xl mx-auto px-6">
           <span className="inline-block mb-2 px-4 py-1 text-xs font-medium bg-blue-100 text-blue-600 rounded-full text-uppercase tracking-wide">
             Trusted by 100% Genuine Clients
           </span>
@@ -379,33 +398,41 @@ const Home = () => {
               Search Now
             </button>
           </div>
-        </div>
+        </ScrollReveal>
       </section>
 
       {/* ================= HOW IT WORKS ================= */}
       <section className="py-24">
         <div className="max-w-7xl mx-auto px-6">
-          <h2 className="text-3xl font-bold text-center mb-4">How It Works</h2>
-          <p className="text-center text-slate-500 mb-16">
-            Simple. Secure. Professional.
-          </p>
+          <ScrollReveal>
+            <h2 className="text-3xl font-bold text-center mb-4">How It Works</h2>
+            <p className="text-center text-slate-500 mb-16">
+              Simple. Secure. Professional.
+            </p>
+          </ScrollReveal>
 
           <div className="grid md:grid-cols-3 gap-8">
-            <PremiumCard
-              icon={<FaSearch />}
-              title="Search Experts"
-              desc="Find top lawyers by specialization and location."
-            />
-            <PremiumCard
-              icon={<FaBriefcase />}
-              title="Book Instantly"
-              desc="Choose a time that works for you."
-            />
-            <PremiumCard
-              icon={<FaGavel />}
-              title="Secure Consultation"
-              desc="Video or in-person consultations."
-            />
+            <ScrollReveal delay={0}>
+              <PremiumCard
+                icon={<FaSearch />}
+                title="Search Experts"
+                desc="Find top lawyers by specialization and location."
+              />
+            </ScrollReveal>
+            <ScrollReveal delay={120}>
+              <PremiumCard
+                icon={<FaBriefcase />}
+                title="Book Instantly"
+                desc="Choose a time that works for you."
+              />
+            </ScrollReveal>
+            <ScrollReveal delay={240}>
+              <PremiumCard
+                icon={<FaGavel />}
+                title="Secure Consultation"
+                desc="Video or in-person consultations."
+              />
+            </ScrollReveal>
           </div>
         </div>
       </section>
@@ -413,15 +440,20 @@ const Home = () => {
       {/* ================= TOP SPECIALIZATIONS ================= */}
       <section className="py-24 bg-slate-50">
         <div className="max-w-7xl mx-auto px-6">
-          <h2 className="text-3xl font-bold text-center mb-16">
-            Top Specializations
-          </h2>
+          <ScrollReveal>
+            <h2 className="text-3xl font-bold text-center mb-16">
+              Top Specializations
+            </h2>
+          </ScrollReveal>
 
           <div className="grid md:grid-cols-4 gap-8">
-            <SpecCard title="Family Law" />
-            <SpecCard title="Corporate Law" />
-            <SpecCard title="Criminal Defense" />
-            <SpecCard title="Real Estate" />
+            {["Family Law", "Corporate Law", "Criminal Defense", "Real Estate"].map(
+              (title, index) => (
+                <ScrollReveal key={title} delay={index * 120}>
+                  <SpecCard title={title} />
+                </ScrollReveal>
+              ),
+            )}
           </div>
         </div>
       </section>
@@ -429,19 +461,22 @@ const Home = () => {
       {/* ================= FEATURED LAWYERS ================= */}
       <section className="py-24">
         <div className="max-w-7xl mx-auto px-6">
-          <h2 className="text-3xl font-bold text-center mb-16">
-            Featured Lawyers
-          </h2>
+          <ScrollReveal>
+            <h2 className="text-3xl font-bold text-center mb-16">
+              Featured Lawyers
+            </h2>
+          </ScrollReveal>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {featuredLawyers.map((lawyer) => (
-              <LawyerCard
-                key={lawyer.name}
-                name={lawyer.name}
-                specialization={lawyer.specialization}
-                rating={lawyer.averageRating || 5}
-                photo={lawyer.profileImage}
-              />
+            {featuredLawyers.map((lawyer, index) => (
+              <ScrollReveal key={lawyer.name} delay={index * 140}>
+                <LawyerCard
+                  name={lawyer.name}
+                  specialization={lawyer.specialization}
+                  rating={lawyer.averageRating || 5}
+                  photo={lawyer.profileImage}
+                />
+              </ScrollReveal>
             ))}
           </div>
         </div>
@@ -450,29 +485,39 @@ const Home = () => {
       {/* ================= WHY CHOOSE JUSTIFAI ================= */}
       <section className="py-24 bg-slate-50">
         <div className="max-w-7xl mx-auto px-6 text-center">
-          <h2 className="text-3xl font-bold mb-12">Why Choose JustifAi</h2>
+          <ScrollReveal>
+            <h2 className="text-3xl font-bold mb-12">Why Choose JustifAi</h2>
+          </ScrollReveal>
 
           <div className="grid md:grid-cols-4 gap-8">
-            <FeatureCard
-              title="Verified Lawyers"
-              desc="All lawyers are verified for credibility."
-              icon={<FaBalanceScale />}
-            />
-            <FeatureCard
-              title="Easy Booking"
-              desc="Book consultations with just a few clicks."
-              icon={<FaBriefcase />}
-            />
-            <FeatureCard
-              title="Secure Payments"
-              desc="Safe and secure payment methods."
-              icon={<FaGavel />}
-            />
-            <FeatureCard
-              title="24/7 Support"
-              desc="Our team is here to help anytime."
-              icon={<FaHome />}
-            />
+            <ScrollReveal delay={0}>
+              <FeatureCard
+                title="Verified Lawyers"
+                desc="All lawyers are verified for credibility."
+                icon={<FaBalanceScale />}
+              />
+            </ScrollReveal>
+            <ScrollReveal delay={120}>
+              <FeatureCard
+                title="Easy Booking"
+                desc="Book consultations with just a few clicks."
+                icon={<FaBriefcase />}
+              />
+            </ScrollReveal>
+            <ScrollReveal delay={240}>
+              <FeatureCard
+                title="Secure Payments"
+                desc="Safe and secure payment methods."
+                icon={<FaGavel />}
+              />
+            </ScrollReveal>
+            <ScrollReveal delay={360}>
+              <FeatureCard
+                title="24/7 Support"
+                desc="Our team is here to help anytime."
+                icon={<FaHome />}
+              />
+            </ScrollReveal>
           </div>
         </div>
       </section>
@@ -480,20 +525,28 @@ const Home = () => {
       {/* ================= PLATFORM STATISTICS ================= */}
       <section className="py-24">
         <div className="max-w-7xl mx-auto px-6 text-center">
-          <h2 className="text-3xl font-bold mb-12">Platform Statistics</h2>
+          <ScrollReveal>
+            <h2 className="text-3xl font-bold mb-12">Platform Statistics</h2>
+          </ScrollReveal>
           <div className="grid md:grid-cols-3 gap-8 text-slate-700">
-            <StatCard
-              value={stats.totalClients || "10,000+"}
-              label="Clients Served"
-            />
-            <StatCard
-              value={stats.activeLawyers || "500+"}
-              label="Lawyers Available"
-            />
-            <StatCard
-              value={stats.satisfactionRate + "%" || "95%"}
-              label="Satisfaction Rate"
-            />
+            <ScrollReveal delay={0}>
+              <StatCard
+                value={stats.totalClients || "10,000+"}
+                label="Clients Served"
+              />
+            </ScrollReveal>
+            <ScrollReveal delay={120}>
+              <StatCard
+                value={stats.activeLawyers || "500+"}
+                label="Lawyers Available"
+              />
+            </ScrollReveal>
+            <ScrollReveal delay={240}>
+              <StatCard
+                value={stats.satisfactionRate + "%" || "95%"}
+                label="Satisfaction Rate"
+              />
+            </ScrollReveal>
           </div>
         </div>
       </section>
@@ -501,14 +554,18 @@ const Home = () => {
       {/* ================= TESTIMONIALS ================= */}
       <section className="py-24 bg-slate-50">
         <div className="max-w-6xl mx-auto px-6">
-          <h2 className="text-3xl font-bold text-center mb-16">
-            Trusted by Thousands
-          </h2>
+          <ScrollReveal>
+            <h2 className="text-3xl font-bold text-center mb-16">
+              Trusted by Thousands
+            </h2>
+          </ScrollReveal>
 
           <div className="grid md:grid-cols-3 gap-8">
-            <Testimonial name="Aditya Singh" />
-            <Testimonial name="Vinit Sahu" />
-            <Testimonial name="Gaurav Malhotra" />
+            {["Aditya Singh", "Vinit Sahu", "Gaurav Malhotra"].map((name, index) => (
+              <ScrollReveal key={name} delay={index * 120}>
+                <Testimonial name={name} />
+              </ScrollReveal>
+            ))}
           </div>
         </div>
       </section>
@@ -516,47 +573,57 @@ const Home = () => {
       {/* ================= FAQ ================= */}
       <section className="py-24">
         <div className="max-w-5xl mx-auto px-6">
-          <h2 className="text-3xl font-bold text-center mb-16">
-            Frequently Asked Questions
-          </h2>
+          <ScrollReveal>
+            <h2 className="text-3xl font-bold text-center mb-16">
+              Frequently Asked Questions
+            </h2>
+          </ScrollReveal>
 
           <div className="space-y-4">
-            <FAQItem
-              question="How do I book a lawyer?"
-              answer="Search by specialization and location, then select a lawyer and schedule a consultation."
-            />
-            <FAQItem
-              question="What payment methods are accepted?"
-              answer="We accept credit cards, debit cards, and secure online payments."
-            />
-            <FAQItem
-              question="Can I cancel or reschedule appointments?"
-              answer="Yes, you can manage your appointments from your dashboard."
-            />
+            <ScrollReveal delay={0}>
+              <FAQItem
+                question="How do I book a lawyer?"
+                answer="Search by specialization and location, then select a lawyer and schedule a consultation."
+              />
+            </ScrollReveal>
+            <ScrollReveal delay={120}>
+              <FAQItem
+                question="What payment methods are accepted?"
+                answer="We accept credit cards, debit cards, and secure online payments."
+              />
+            </ScrollReveal>
+            <ScrollReveal delay={240}>
+              <FAQItem
+                question="Can I cancel or reschedule appointments?"
+                answer="Yes, you can manage your appointments from your dashboard."
+              />
+            </ScrollReveal>
           </div>
         </div>
       </section>
 
       {/* ================= CALL TO ACTION ================= */}
       <section className="py-24 bg-blue-600 text-white text-center">
-        <h2 className="text-3xl font-bold mb-6">Ready to Get Started?</h2>
-        <p className="mb-8">
-          Find your lawyer today or join LexLink as a professional.
-        </p>
-        <div className="flex justify-center gap-4">
-          <Link
-            to="/client/lawyer-list"
-            className="px-6 py-3 bg-white text-blue-600 font-semibold rounded-xl hover:scale-105 transition"
-          >
-            Find a Lawyer
-          </Link>
-          <Link
-            to="/auth/register"
-            className="px-6 py-3 border border-white font-semibold rounded-xl hover:scale-105 transition"
-          >
-            Join as Lawyer
-          </Link>
-        </div>
+        <ScrollReveal className="px-6">
+          <h2 className="text-3xl font-bold mb-6">Ready to Get Started?</h2>
+          <p className="mb-8">
+            Find your lawyer today or join LexLink as a professional.
+          </p>
+          <div className="flex justify-center gap-4">
+            <Link
+              to="/client/lawyer-list"
+              className="px-6 py-3 bg-white text-blue-600 font-semibold rounded-xl hover:scale-105 transition"
+            >
+              Find a Lawyer
+            </Link>
+            <Link
+              to="/auth/register"
+              className="px-6 py-3 border border-white font-semibold rounded-xl hover:scale-105 transition"
+            >
+              Join as Lawyer
+            </Link>
+          </div>
+        </ScrollReveal>
       </section>
 
       {/* ================= FOOTER ================= */}

@@ -8,6 +8,7 @@ const {
 } = require("../services/notification.service");
 const {
   sendAppointmentProofEmail,
+  sendAppointmentRejectionEmail,
 } = require("../services/email.service");
 
 const TIME_SLOT_REGEX = /^(\d{1,2}):(\d{2})\s?(AM|PM)$/i;
@@ -319,7 +320,7 @@ const getAllAppointments = async (req, res) => {
   try {
     await syncCompletedAppointments();
     const appointments = await Appointment.find()
-      .populate("userId", "name email phone")
+      .populate("userId", "name email phone gender city state profilePicture createdAt")
       .populate("lawyerId", "name email phone location");
     res.json(appointments);
   } catch (err) {
@@ -336,7 +337,7 @@ const getAppointmentById = async (req, res) => {
 
     const [appointments, totalAppointments, pendingAppointments] = await Promise.all([
       Appointment.find(query)
-        .populate("userId", "name email phone")
+        .populate("userId", "name email phone gender city state profilePicture createdAt")
         .populate("lawyerId", "name email phone location")
         .sort({ createdAt: -1 }),
       Appointment.countDocuments(baseQuery),
@@ -383,6 +384,18 @@ const updateAppointment = async (req, res) => {
     }
 
     const previousStatus = existingAppointment.status;
+    const previousRejectionReason = existingAppointment.rejectionReason || null;
+    const rejectionReason =
+      req.body?.status === "Rejected"
+        ? String(req.body?.rejectionReason || "").trim()
+        : null;
+
+    if (req.body?.status === "Rejected" && !rejectionReason) {
+      return res.status(400).json({
+        error: "A rejection reason is required",
+      });
+    }
+
     const appointment = await Appointment.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
     });
@@ -390,6 +403,9 @@ const updateAppointment = async (req, res) => {
 
     try {
       if (req.body?.status === "Rejected") {
+        appointment.rejectionReason = rejectionReason;
+        await appointment.save();
+
         await syncAvailabilitySlotStatus({
           lawyerId: existingAppointment.lawyerId,
           date: existingAppointment.date,
@@ -420,7 +436,7 @@ const updateAppointment = async (req, res) => {
           userMessage:
             req.body.status === "Approved"
               ? `Your appointment with ${appointment.lawyerName} for ${appointment.timeSlot} on ${new Date(appointment.date).toLocaleDateString()} has been approved.`
-              : `Your appointment with ${appointment.lawyerName} has been moved to ${req.body.status.toLowerCase()}.`,
+              : `Your appointment with ${appointment.lawyerName} was rejected. Reason: ${rejectionReason}`,
           lawyerTitle:
             req.body.status === "Approved"
               ? "Appointment approved"
@@ -432,11 +448,36 @@ const updateAppointment = async (req, res) => {
           lawyerMessage:
             req.body.status === "Approved"
               ? `You approved the appointment with ${appointment.userId?.name || "a client"} for ${appointment.timeSlot} on ${new Date(appointment.date).toLocaleDateString()}.`
-              : `Appointment with ${appointment.userId?.name || "a client"} has been updated.`,
+              : `You rejected the appointment with ${appointment.userId?.name || "a client"}.`,
         });
+
+        if (req.body.status === "Rejected") {
+          try {
+            const populatedAppointment = await Appointment.findById(req.params.id)
+              .populate("userId", "name email")
+              .populate("lawyerId", "name");
+
+            if (populatedAppointment?.userId?.email) {
+              await sendAppointmentRejectionEmail({
+                email: populatedAppointment.userId.email,
+                name: populatedAppointment.userId.name,
+                lawyerName: populatedAppointment.lawyerId?.name || appointment.lawyerName,
+                date: populatedAppointment.date,
+                timeSlot: populatedAppointment.timeSlot,
+                caseCategory: populatedAppointment.caseCategory,
+                rejectionReason,
+              });
+            }
+          } catch (emailError) {
+            console.error("Failed to send appointment rejection email:", emailError);
+          }
+        }
       }
     } catch (syncError) {
-      await Appointment.findByIdAndUpdate(req.params.id, { status: previousStatus });
+      await Appointment.findByIdAndUpdate(req.params.id, {
+        status: previousStatus,
+        rejectionReason: previousRejectionReason,
+      });
       throw syncError;
     }
 
@@ -702,7 +743,7 @@ const getAllUserAppointments = async (req, res) => {
   try {
     await syncCompletedAppointments({ userId: req.params.id });
     const appointments = await Appointment.find({ userId: req.params.id })
-      .populate("userId", "name email phone")
+      .populate("userId", "name email phone gender city state profilePicture createdAt")
       .populate("lawyerId", "name email phone location");
     
     res.json({ message: "Appointments retrieved successfully", appointments });

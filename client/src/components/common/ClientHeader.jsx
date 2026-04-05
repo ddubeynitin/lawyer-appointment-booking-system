@@ -288,7 +288,7 @@ const ClientHeader = () => {
             <div className="relative" ref={profileRef}>
               <div
                 onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-blue-100 font-semibold uppercase text-blue-600 ring-2 ring-blue-500"
+                className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-blue-100 font-semibold uppercase text-blue-600 hover:scale-110 transition-transform cursor-pointer"
               >
                 {user?.profilePicture ? (
                   <img
@@ -309,7 +309,7 @@ const ClientHeader = () => {
                 }`}
               >
                 <div className="mb-4 flex items-center gap-4">
-                  <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-blue-100 font-semibold uppercase text-blue-600 ring-2 ring-blue-500">
+                  <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-blue-100 font-semibold uppercase text-blue-600 ">
                     {user?.profilePicture ? (
                       <img
                         src={user.profilePicture}

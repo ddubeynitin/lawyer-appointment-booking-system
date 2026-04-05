@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { Bot, Sparkles, User, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { API_URL } from "../../utils/api";
 
 const READY_PROMPTS = [
@@ -131,27 +132,71 @@ const AiChatWidget = () => {
 
   return (
     <>
-      <div className="fixed bottom-5 right-5 z-50">
-        <button
+      <motion.div
+        className="fixed bottom-5 right-5 z-50"
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ type: "spring", stiffness: 260, damping: 20 }}
+      >
+        <motion.button
           type="button"
           onClick={() => setIsOpen((current) => !current)}
           aria-label="Open AI assistant"
-          className="flex lg:h-20 lg:w-20 h-16 w-16 items-center justify-center rounded-full bg-linear-to-br from-blue-600 via-cyan-500 to-teal-500 text-white shadow-2xl transition hover:scale-105 animate-bounce"
-        >
-          <Sparkles size={26} /> <span className="text-3xl font-barlow font-bold">Ai</span>
-        </button>
-      </div>
-
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-50 bg-black/45"
-          onClick={(event) => {
-            if (event.target === event.currentTarget) {
-              setIsOpen(false);
+          className="flex lg:h-20 lg:w-20 h-16 w-16 items-center justify-center rounded-full bg-linear-to-br from-blue-600 via-cyan-500 to-teal-500 text-white shadow-2xl"
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+          animate={{
+            boxShadow: [
+              "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+              "0 25px 50px -12px rgba(59, 130, 246, 0.3)",
+              "0 25px 50px -12px rgba(0, 0, 0, 0.25)"
+            ]
+          }}
+          transition={{
+            boxShadow: {
+              duration: 2,
+              repeat: Infinity,
+              repeatType: "reverse"
             }
           }}
         >
-          <div className="fixed bottom-0 right-0  flex h-[85vh] w-full flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl lg:bottom-5 lg:right-5 lg:h-167.5 lg:w-107.5 lg:rounded-3xl font-barlow">
+          <motion.div
+            animate={{ rotate: [0, 10, -10, 0] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <Sparkles size={26} />
+          </motion.div>
+          <span className="text-3xl font-barlow font-bold">Ai</span>
+        </motion.button>
+      </motion.div>
+
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            <motion.div
+              className="fixed inset-0 z-50 bg-black/45"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              onClick={(event) => {
+                if (event.target === event.currentTarget) {
+                  setIsOpen(false);
+                }
+              }}
+            />
+            <motion.div
+              className="fixed bottom-0 right-0 flex h-[85vh] w-full flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl lg:bottom-5 lg:right-5 lg:h-167.5 lg:w-107.5 lg:rounded-3xl font-barlow z-50"
+              initial={{ y: "100%", opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: "100%", opacity: 0 }}
+              transition={{
+                type: "spring",
+                stiffness: 300,
+                damping: 30,
+                opacity: { duration: 0.2 }
+              }}
+            >
             <div className="flex items-center justify-between bg-linear-to-r from-blue-800 via-blue-700 to-blue-600 px-5 py-4 text-white">
               <div className="flex items-center gap-3">
                 <div className="rounded-2xl bg-white/10 p-2">
@@ -307,9 +352,10 @@ const AiChatWidget = () => {
                 </button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </>
   );
 };

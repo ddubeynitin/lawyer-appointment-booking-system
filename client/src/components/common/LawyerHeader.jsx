@@ -2,9 +2,26 @@ import React, {useState, useEffect, useRef} from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { TfiMenuAlt } from "react-icons/tfi";
 import { FaGavel } from "react-icons/fa";
-import { MessageCircle } from "lucide-react";
+import {
+  Banknote,
+  CalendarDays,
+  CalendarCog,
+  ClipboardList,
+  LayoutDashboard,
+  LogOut,
+  MessageCircle,
+  PencilLine,
+  UserRound,
+} from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import BookingNotifications from "../BookingNotifications";
+
+const navLinkClass = ({ isActive }) =>
+  `inline-flex items-center gap-2 transition ${
+    isActive
+      ? "font-semibold text-blue-600"
+      : "text-gray-600 hover:text-blue-600"
+  }`;
 
 const LawyerHeader = () => {
   // const [showNotifications, setShowNotifications] = useState(false);
@@ -46,66 +63,41 @@ const LawyerHeader = () => {
                 <nav className="flex flex-col items-center gap-6 font-medium text-gray-600">
                   <NavLink to="/lawyer/lawyer-dashboard">
                     {({ isActive }) => (
-                      <span
-                        className={
-                          isActive
-                            ? "font-semibold text-blue-600"
-                            : "cursor-pointer hover:text-blue-600"
-                        }
-                      >
-                        Dashboard
+                      <span className={navLinkClass({ isActive })}>
+                        <LayoutDashboard size={16} />
+                        <span>Dashboard</span>
                       </span>
                     )}
                   </NavLink>
                   <NavLink to="/lawyer/calendar">
                     {({ isActive }) => (
-                      <span
-                        className={
-                          isActive
-                            ? "font-semibold text-blue-600"
-                            : "cursor-pointer hover:text-blue-600"
-                        }
-                      >
-                        Calendar
+                      <span className={navLinkClass({ isActive })}>
+                        <CalendarDays size={16} />
+                        <span>Calendar</span>
                       </span>
                     )}
                   </NavLink>
                   <NavLink to="/lawyer/manage-availability">
                     {({ isActive }) => (
-                      <span
-                        className={
-                          isActive
-                            ? "font-semibold text-blue-600"
-                            : "cursor-pointer hover:text-blue-600"
-                        }
-                      >
-                        Manage Availability
+                      <span className={navLinkClass({ isActive })}>
+                        <CalendarCog size={16} />
+                        <span>Management</span>
                       </span>
                     )}
                   </NavLink>
                   <NavLink to="/lawyer/earnings">
                     {({ isActive }) => (
-                      <span
-                        className={
-                          isActive
-                            ? "font-semibold text-blue-600"
-                            : "cursor-pointer hover:text-blue-600"
-                        }
-                      >
-                        Earnings
+                      <span className={navLinkClass({ isActive })}>
+                        <Banknote size={16} />
+                        <span>Earnings</span>
                       </span>
                     )}
                   </NavLink>
                   <NavLink to="/lawyer/appointment-requests">
                     {({ isActive }) => (
-                      <span
-                        className={
-                          isActive
-                            ? "font-semibold text-blue-600"
-                            : "cursor-pointer hover:text-blue-600"
-                        }
-                      >
-                        Requests
+                      <span className={navLinkClass({ isActive })}>
+                        <ClipboardList size={16} />
+                        <span>Requests</span>
                       </span>
                     )}
                   </NavLink>
@@ -136,66 +128,41 @@ const LawyerHeader = () => {
           <nav className="hidden items-center gap-6 font-medium text-gray-600 md:flex">
             <NavLink to="/lawyer/lawyer-dashboard">
               {({ isActive }) => (
-                <span
-                  className={
-                    isActive
-                      ? "font-semibold text-blue-600"
-                      : "cursor-pointer hover:text-blue-600"
-                  }
-                >
-                  Dashboard
+                <span className={navLinkClass({ isActive })}>
+                  <LayoutDashboard size={16} />
+                  <span>Dashboard</span>
                 </span>
               )}
             </NavLink>
             <NavLink to="/lawyer/calendar">
               {({ isActive }) => (
-                <span
-                  className={
-                    isActive
-                      ? "font-semibold text-blue-600"
-                      : "cursor-pointer hover:text-blue-600"
-                  }
-                >
-                  Calendar
+                <span className={navLinkClass({ isActive })}>
+                  <CalendarDays size={16} />
+                  <span>Calendar</span>
                 </span>
               )}
             </NavLink>
             <NavLink to="/lawyer/manage-availability">
               {({ isActive }) => (
-                <span
-                  className={
-                    isActive
-                      ? "font-semibold text-blue-600"
-                      : "cursor-pointer hover:text-blue-600"
-                  }
-                >
-                  Management
+                <span className={navLinkClass({ isActive })}>
+                  <CalendarCog size={16} />
+                  <span>Management</span>
                 </span>
               )}
             </NavLink>
             <NavLink to="/lawyer/earnings">
               {({ isActive }) => (
-                <span
-                  className={
-                    isActive
-                      ? "font-semibold text-blue-600"
-                      : "cursor-pointer hover:text-blue-600"
-                  }
-                >
-                  Earnings
+                <span className={navLinkClass({ isActive })}>
+                  <Banknote size={16} />
+                  <span>Earnings</span>
                 </span>
               )}
             </NavLink>
             <NavLink to="/lawyer/appointment-requests">
               {({ isActive }) => (
-                <span
-                  className={
-                    isActive
-                      ? "font-semibold text-blue-600"
-                      : "cursor-pointer hover:text-blue-600"
-                  }
-                >
-                  Requests
+                <span className={navLinkClass({ isActive })}>
+                  <ClipboardList size={16} />
+                  <span>Requests</span>
                 </span>
               )}
             </NavLink>
@@ -227,7 +194,7 @@ const LawyerHeader = () => {
                 src={user?.profileImage?.url || "/assets/images/profile.png"}
                 alt="profile"
                 onClick={() => setShowProfile(!showProfile)}
-                className="h-9 w-9 cursor-pointer rounded-full ring-2 ring-blue-500"
+                className="h-9 w-9 cursor-pointer rounded-full hover:ring-2 hover:ring-blue-500 hover:scale-110 transition"
               />
 
               <div
@@ -257,8 +224,9 @@ const LawyerHeader = () => {
                       setShowProfile(false);
                       navigate(`/lawyer/lawyer-profile/${user.id}`);
                     }}
-                    className="w-full rounded-lg px-3 py-2 text-left transition hover:bg-gray-100"
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition hover:bg-gray-100"
                   >
+                    <UserRound size={16} className="text-slate-600" />
                     View Profile
                   </button>
                   <button
@@ -266,14 +234,16 @@ const LawyerHeader = () => {
                       setShowProfile(false);
                       navigate("/lawyer/edit-profile");
                     }}
-                    className="w-full rounded-lg px-3 py-2 text-left transition hover:bg-gray-100"
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition hover:bg-gray-100"
                   >
+                    <PencilLine size={16} className="text-slate-600" />
                     Edit Profile
                   </button>
                   <button
                     onClick={handleLogout}
-                    className="w-full rounded-lg px-3 py-2 text-left text-red-600 transition hover:bg-red-50"
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-red-600 transition hover:bg-red-50"
                   >
+                    <LogOut size={16} />
                     Logout
                   </button>
                 </div>

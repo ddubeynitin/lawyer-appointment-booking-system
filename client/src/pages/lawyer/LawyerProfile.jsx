@@ -347,7 +347,7 @@ const LawyerProfile = () => {
   }
 
   return (
-    <div className="bg-linear-to-br from-slate-50 to-slate-100 min-h-screen pb-16">
+    <div className="bg-linear-to-br from-slate-50 to-slate-100 min-h-screen pb-16 font-barlow">
       <header className="sticky top-0 z-50 backdrop-blur-md bg-white/80 border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           {/* Logo */}
@@ -455,7 +455,7 @@ const LawyerProfile = () => {
 
                 <div className="flex flex-col justify-between items-start">
                   <h1 className=" text-3xl font-bold text-slate-800 uppercase">
-                    {lawyerProfileData.name}
+                    {lawyerProfileData.name} {lawyerProfileData.gender === "female" ? <span className="text-pink-500 text-lg font-medium">(She/Her)</span> : <span className="text-blue-500 text-lg font-medium">(He/Him)</span>}
                   </h1>
 
                   <div className="flex items-center gap-3 mt-2">

@@ -38,6 +38,13 @@ const normalizeAvailabilitySlots = (slots = []) =>
     }))
     .filter((slot) => slot.time);
 
+const getLawyerIdValue = (value) => {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "object") return value._id || value.id || "";
+  return String(value);
+};
+
 export default function DateTimeSlotPicker({ 
   lawyerId, 
   onSelect, 
@@ -69,7 +76,8 @@ export default function DateTimeSlotPicker({
 
   // Fetch available slots when date is selected
   useEffect(() => {
-    if (!selectedDate || !lawyerId) return;
+    const normalizedLawyerId = getLawyerIdValue(lawyerId);
+    if (!selectedDate || !normalizedLawyerId) return;
 
     const fetchSlots = async () => {
       setLoading(true);
@@ -78,7 +86,7 @@ export default function DateTimeSlotPicker({
       try {
         const token = localStorage.getItem("token");
         const response = await axios.get(
-          `${API_URL}/availability/${lawyerId}/${formatLocalDate(selectedDate)}`,
+          `${API_URL}/availability/${normalizedLawyerId}/${formatLocalDate(selectedDate)}`,
           {
             headers: {
               Authorization: `Bearer ${token}`
@@ -99,8 +107,6 @@ export default function DateTimeSlotPicker({
       } catch (err) {
         console.error("Failed to fetch slots:", err);
         setError("Failed to load available time slots");
-        // Fallback to mock slots
-        setSelectedDateSlots(getMockSlots());
       } finally {
         setLoading(false);
       }
@@ -287,12 +293,11 @@ export default function DateTimeSlotPicker({
 
           {error ? (
             <div className="text-center py-4">
-              <p className="text-sm text-red-500 mb-2">{error}</p>
+              {/* <p className="text-sm text-red-500 mb-2">{error}</p> */}
               <button 
-                onClick={() => setSelectedDateSlots(getMockSlots())}
                 className="text-sm text-blue-600 hover:underline"
               >
-                Show available times
+                Slots Not Available for this date.
               </button>
             </div>
           ) : selectedDateSlots.length === 0 ? (
@@ -343,20 +348,3 @@ export default function DateTimeSlotPicker({
   );
 }
 
-// Mock slots for demo
-function getMockSlots() {
-  return [
-    { time: "09:00 AM", isAvailable: true },
-    { time: "09:30 AM", isAvailable: true },
-    { time: "10:00 AM", isAvailable: true },
-    { time: "10:30 AM", isAvailable: true },
-    { time: "11:00 AM", isAvailable: false },
-    { time: "11:30 AM", isAvailable: true },
-    { time: "02:00 PM", isAvailable: true },
-    { time: "02:30 PM", isAvailable: true },
-    { time: "03:00 PM", isAvailable: true },
-    { time: "03:30 PM", isAvailable: false },
-    { time: "04:00 PM", isAvailable: true },
-    { time: "04:30 PM", isAvailable: true }
-  ];
-}

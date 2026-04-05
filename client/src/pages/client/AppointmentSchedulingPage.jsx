@@ -29,7 +29,6 @@ const TIME_SLOTS = [
 
 const TIME_SLOT_REGEX = /^(\d{1,2}):(\d{2})\s?(AM|PM)$/i;
 
-const CASE_CATEGORIES = ["Criminal", "Civil", "Corporate", "Family", "Property"];
 const APPOINTMENT_MODES = ["Online", "Office"];
 
 const getTodayDateInputValue = () => {
@@ -99,7 +98,7 @@ const AppointmentSchedulingPage = () => {
   const [selectedLawyerId, setSelectedLawyerId] = useState("");
   const [selectedDate, setSelectedDate] = useState(getTodayDateInputValue);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
-  const [caseCategory, setCaseCategory] = useState(CASE_CATEGORIES[0]);
+  const [caseCategory, setCaseCategory] = useState("");
   const [appointmentMode, setAppointmentMode] = useState(APPOINTMENT_MODES[0]);
   const [caseDescription, setCaseDescription] = useState("");
   const [caseEvidence, setCaseEvidence] = useState(null);
@@ -151,6 +150,27 @@ const AppointmentSchedulingPage = () => {
 
     return feeMatch?.fee || 0;
   }, [selectedLawyer, caseCategory]);
+
+  const availableCaseCategories = useMemo(() => {
+    const lawyerCategories = Array.isArray(selectedLawyer?.feesByCategory)
+      ? selectedLawyer.feesByCategory
+          .map((feeItem) => String(feeItem?.category || "").trim())
+          .filter(Boolean)
+      : [];
+
+    return [...new Set(lawyerCategories)];
+  }, [selectedLawyer]);
+
+  useEffect(() => {
+    if (availableCaseCategories.length === 0) {
+      setCaseCategory("");
+      return;
+    }
+
+    if (!availableCaseCategories.includes(caseCategory)) {
+      setCaseCategory(availableCaseCategories[0]);
+    }
+  }, [availableCaseCategories, caseCategory]);
 
   const timeSlotsToDisplay =
     availabilitySlots.length > 0
@@ -410,7 +430,7 @@ const AppointmentSchedulingPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-gray-100 to-gray-200">
+    <div className="min-h-screen bg-linear-to-br from-gray-100 to-gray-200 font-barlow">
       <ClientHeader />
 
       <main className="mx-auto max-w-7xl px-6 py-10">
@@ -480,17 +500,23 @@ const AppointmentSchedulingPage = () => {
                   <Scale size={18} className="text-blue-600" />
                   <h3 className="font-semibold">Case Category</h3>
                 </div>
-                <select
-                  value={caseCategory}
-                  onChange={(event) => setCaseCategory(event.target.value)}
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-blue-500"
-                >
-                  {CASE_CATEGORIES.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
+                {availableCaseCategories.length > 0 ? (
+                  <select
+                    value={caseCategory}
+                    onChange={(event) => setCaseCategory(event.target.value)}
+                    className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-blue-500"
+                  >
+                    {availableCaseCategories.map((category) => (
+                      <option key={category} value={category}>
+                        {category}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                    This lawyer has not published any billable case categories yet.
+                  </div>
+                )}
               </div>
             </section>
 
@@ -674,7 +700,7 @@ const AppointmentSchedulingPage = () => {
 
             <button
               type="submit"
-              disabled={submitting || !selectedLawyerId}
+              disabled={submitting || !selectedLawyerId || availableCaseCategories.length === 0}
               className="w-full rounded-2xl bg-linear-to-r from-blue-600 to-blue-700 px-6 py-4 text-sm font-semibold text-white shadow-lg transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {submitting ? "Booking Appointment..." : "Confirm Appointment"}
@@ -716,7 +742,9 @@ const AppointmentSchedulingPage = () => {
                 </div>
                 <div className="flex justify-between gap-4">
                   <span>Category</span>
-                  <span className="font-medium text-slate-800">{caseCategory}</span>
+                  <span className="font-medium text-slate-800">
+                    {caseCategory || "Not selected"}
+                  </span>
                 </div>
                 <div className="flex justify-between gap-4">
                   <span>Mode</span>
