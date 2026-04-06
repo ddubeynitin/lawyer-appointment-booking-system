@@ -358,9 +358,9 @@ const ClientDashboard = () => {
                 <p>{upcomingAppointment.caseCategory} consultation</p>
               </div>
               <div className="flex justify-center gap-4">
-                <button className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm text-white">
+                {/* <button className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm text-white">
                   <FaVideo /> Join Video Call
-                </button>
+                </button> */}
                 {canRescheduleAppointment(upcomingAppointment) ? (
                   <button
                     type="button"
