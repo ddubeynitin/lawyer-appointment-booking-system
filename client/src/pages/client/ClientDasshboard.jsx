@@ -6,6 +6,7 @@ import axios from "axios";
 import { API_URL } from "../../utils/api";
 import useFetch from "../../hooks/useFetch";
 import ClientHeader from "../../components/common/ClientHeader";
+import MeetingAccessCard from "../../components/meeting/MeetingAccessCard";
 
 const formatLawyerLocation = (lawyer) => {
   const parts = [
@@ -374,6 +375,10 @@ const ClientDashboard = () => {
                     Request Reschedule
                   </button>
                 ) : null}
+              </div>
+
+              <div className="mt-5">
+                <MeetingAccessCard appointment={upcomingAppointment} />
               </div>
             </>
           ) : (

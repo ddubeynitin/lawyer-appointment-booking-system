@@ -42,6 +42,29 @@ const appointmentSchema = new mongoose.Schema(
       default: "Online"
     },
 
+    meetingProvider: {
+      type: String,
+      enum: ["jitsi"],
+      default: null,
+    },
+
+    meetingRoomName: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+
+    meetingLink: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+
+    meetingGeneratedAt: {
+      type: Date,
+      default: null,
+    },
+
     caseEvidence: {
       url: {
         type: String,
