@@ -1,9 +1,10 @@
 const expess = require("express");
 const router = expess.Router();
-const { createAvailability, getAvailabilityByLawyerAndDate, getAvailabilityByLawyer, updateBookedSlot, deleteAvailability } = require("../controllers/availability.controller");
+const { createAvailability, createBulkAvailability, getAvailabilityByLawyerAndDate, getAvailabilityByLawyer, updateBookedSlot, deleteAvailability } = require("../controllers/availability.controller");
 
 // Create or update availability
 router.post("/", createAvailability);
+router.post("/bulk", createBulkAvailability);
 router.get("/lawyer/:lawyerId", getAvailabilityByLawyer);
 router.get("/:lawyerId/:date", getAvailabilityByLawyerAndDate);
 router.patch("/book-slot", updateBookedSlot);

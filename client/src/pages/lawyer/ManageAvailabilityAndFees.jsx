@@ -6,12 +6,15 @@ import {
   ArrowLeft,
   BadgeCheck,
   CalendarDays,
+  CalendarRange,
   Clock3,
   IndianRupee,
+  Layers3,
   Plus,
   RefreshCw,
   Save,
   Trash2,
+  Copy,
 } from "lucide-react";
 import { API_URL } from "../../utils/api";
 import { useAuth } from "../../context/AuthContext";
@@ -108,10 +111,15 @@ const ManageAvailabilityAndFees = () => {
   const [selectedOpenSlots, setSelectedOpenSlots] = useState([]);
   const [bookedSlots, setBookedSlots] = useState([]);
   const [customTime, setCustomTime] = useState("");
+  const [bulkStartDate, setBulkStartDate] = useState(getTodayDateInputValue());
+  const [bulkEndDate, setBulkEndDate] = useState(getTodayDateInputValue());
+  const [bulkOpenSlots, setBulkOpenSlots] = useState([]);
+  const [bulkCustomTime, setBulkCustomTime] = useState("");
   const [feeRows, setFeeRows] = useState([{ category: "", fee: "" }]);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [loadingAvailability, setLoadingAvailability] = useState(false);
   const [savingAvailability, setSavingAvailability] = useState(false);
+  const [savingBulkAvailability, setSavingBulkAvailability] = useState(false);
   const [savingFees, setSavingFees] = useState(false);
   const [pageError, setPageError] = useState("");
 
@@ -204,6 +212,14 @@ const ManageAvailabilityAndFees = () => {
     [bookedSlots, selectedOpenSlots],
   );
 
+  const bulkTimeChoices = useMemo(
+    () =>
+      [...new Set([...DEFAULT_TIME_SLOTS, ...bulkOpenSlots])].sort(
+        (a, b) => timeToMinutes(a) - timeToMinutes(b),
+      ),
+    [bulkOpenSlots],
+  );
+
   const handleToggleSlot = (time) => {
     if (bookedSlots.includes(time)) return;
     setSelectedOpenSlots((current) =>
@@ -227,6 +243,45 @@ const ManageAvailabilityAndFees = () => {
       [...current, normalized].sort((a, b) => timeToMinutes(a) - timeToMinutes(b)),
     );
     setCustomTime("");
+  };
+
+  const handleBulkToggleSlot = (time) => {
+    setBulkOpenSlots((current) =>
+      current.includes(time)
+        ? current.filter((item) => item !== time)
+        : [...current, time].sort((a, b) => timeToMinutes(a) - timeToMinutes(b)),
+    );
+  };
+
+  const handleAddBulkCustomTime = () => {
+    const normalized = normalizeTimeLabel(bulkCustomTime);
+    if (!normalized) {
+      toast.error("Use a time like 09:00 AM");
+      return;
+    }
+    if (bulkOpenSlots.includes(normalized)) {
+      toast.error("That time slot already exists in the bulk template");
+      return;
+    }
+    setBulkOpenSlots((current) =>
+      [...current, normalized].sort((a, b) => timeToMinutes(a) - timeToMinutes(b)),
+    );
+    setBulkCustomTime("");
+  };
+
+  const handleCopyCurrentDayToBulk = () => {
+    if (selectedOpenSlots.length === 0) {
+      toast.error("No open slots are available on the selected day to copy");
+      return;
+    }
+
+    setBulkOpenSlots([...selectedOpenSlots]);
+    toast.success("Copied current day slots to bulk template");
+  };
+
+  const handleClearBulkTemplate = () => {
+    setBulkOpenSlots([]);
+    setBulkCustomTime("");
   };
 
   const handleSaveAvailability = async () => {
@@ -271,6 +326,59 @@ const ManageAvailabilityAndFees = () => {
       toast.error(error?.response?.data?.message || "Unable to save availability");
     } finally {
       setSavingAvailability(false);
+    }
+  };
+
+  const handleSaveBulkAvailability = async () => {
+    if (!lawyerId) return;
+
+    const normalizedSlots = [...new Set(bulkOpenSlots)]
+      .filter(Boolean)
+      .sort((a, b) => timeToMinutes(a) - timeToMinutes(b));
+
+    if (!bulkStartDate || !bulkEndDate) {
+      toast.error("Choose a start and end date for the bulk schedule");
+      return;
+    }
+
+    if (new Date(bulkStartDate).getTime() > new Date(bulkEndDate).getTime()) {
+      toast.error("Start date must be before or equal to end date");
+      return;
+    }
+
+    if (normalizedSlots.length === 0) {
+      toast.error("Add at least one consultation time before saving");
+      return;
+    }
+
+    setSavingBulkAvailability(true);
+    try {
+      const response = await axios.post(
+        `${API_URL}/availability/bulk`,
+        {
+          lawyerId,
+          startDate: bulkStartDate,
+          endDate: bulkEndDate,
+          slots: normalizedSlots.map((time) => ({ time, isBooked: false })),
+        },
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        },
+      );
+
+      const savedItems = normalizeAvailabilityList(response.data?.availabilities || []);
+      setAvailabilityData((current) =>
+        normalizeAvailabilityList([
+          ...current.filter((entry) => !savedItems.some((item) => item.dateKey === entry.dateKey)),
+          ...savedItems,
+        ]),
+      );
+      toast.success(`Bulk schedule created for ${response.data?.createdCount || savedItems.length} day(s)`);
+    } catch (error) {
+      console.error("Failed to save bulk availability:", error);
+      toast.error(error?.response?.data?.error || "Unable to save bulk schedule");
+    } finally {
+      setSavingBulkAvailability(false);
     }
   };
 
@@ -367,7 +475,7 @@ const ManageAvailabilityAndFees = () => {
 
   if (pageError) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100">
+      <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 font-barlow">
         <LawyerHeader />
         <main className="mx-auto flex min-h-[70vh] max-w-3xl items-center px-6 py-12">
           <div className="w-full rounded-3xl border border-red-100 bg-white p-8 text-center shadow-xl">
@@ -395,7 +503,7 @@ const ManageAvailabilityAndFees = () => {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-50 via-white to-slate-100">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-white to-slate-100 font-barlow">
       <LawyerHeader />
       <Toaster position="top-right" />
       <main className="mx-auto max-w-7xl px-6 py-10">
@@ -448,6 +556,134 @@ const ManageAvailabilityAndFees = () => {
 
           <div className="grid gap-8 p-6 lg:grid-cols-[1.3fr_0.9fr] lg:p-8">
             <section className="space-y-6">
+              <div className="rounded-3xl border border-emerald-100 bg-emerald-50 p-5">
+                <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700">
+                      Bulk schedule
+                    </p>
+                    <h2 className="mt-2 text-2xl font-bold text-slate-900">
+                      Create the same slots for many days
+                    </h2>
+                    <p className="mt-2 text-sm text-slate-600">
+                      Use this when your consultation hours stay the same for a date range.
+                      Existing booked slots stay protected.
+                    </p>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2 md:min-w-[320px]">
+                    <div>
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                        Start date
+                      </label>
+                      <input
+                        type="date"
+                        value={bulkStartDate}
+                        onChange={(event) => setBulkStartDate(event.target.value)}
+                        className="w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                        End date
+                      </label>
+                      <input
+                        type="date"
+                        value={bulkEndDate}
+                        onChange={(event) => setBulkEndDate(event.target.value)}
+                        className="w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-5 flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={handleCopyCurrentDayToBulk}
+                    className="inline-flex items-center gap-2 rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50"
+                  >
+                    <Copy size={16} />
+                    Copy current day slots
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleClearBulkTemplate}
+                    className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                  >
+                    Clear template
+                  </button>
+                  <span className="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm text-slate-600">
+                    <Layers3 size={16} className="text-emerald-600" />
+                    {bulkOpenSlots.length} template slot(s)
+                  </span>
+                </div>
+
+                <div className="mt-5 rounded-2xl border border-emerald-100 bg-white p-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-semibold text-slate-800">
+                      Template time slots
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      These slots will be applied to every date in the range
+                    </p>
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
+                    {bulkTimeChoices.map((time) => {
+                      const isSelected = bulkOpenSlots.includes(time);
+                      return (
+                        <button
+                          key={time}
+                          type="button"
+                          onClick={() => handleBulkToggleSlot(time)}
+                          className={`rounded-2xl border px-3 py-3 text-sm font-semibold transition ${
+                            isSelected
+                              ? "border-emerald-500 bg-emerald-600 text-white shadow-md"
+                              : "border-slate-200 bg-white text-slate-700 hover:border-emerald-300 hover:bg-emerald-50"
+                          }`}
+                        >
+                          {time}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="mt-5 rounded-2xl bg-slate-50 p-4">
+                    <p className="text-sm font-semibold text-slate-800">Add custom time</p>
+                    <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+                      <input
+                        type="text"
+                        value={bulkCustomTime}
+                        onChange={(event) => setBulkCustomTime(event.target.value)}
+                        placeholder="09:00 AM"
+                        className="flex-1 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none focus:border-emerald-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddBulkCustomTime}
+                        className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
+                      >
+                        <Plus size={16} />
+                        Add slot
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                    <button
+                      type="button"
+                      onClick={handleSaveBulkAvailability}
+                      disabled={savingBulkAvailability}
+                      className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-emerald-600 to-teal-600 px-4 py-3 text-sm font-semibold text-white shadow-md transition hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <CalendarRange size={16} />
+                      {savingBulkAvailability ? "Creating bulk schedule..." : "Create bulk schedule"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               <div className="rounded-3xl border border-blue-100 bg-blue-50 p-5">
                 <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                   <div>
