@@ -6,6 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 import useFetch from "../../hooks/useFetch";
 import { API_URL } from "../../utils/api";
 import LawyerHeader from "../../components/common/LawyerHeader";
+import MeetingAccessCard from "../../components/meeting/MeetingAccessCard";
 import { Link, useNavigate } from "react-router-dom";
 
 const SCHEDULE_TIME_SLOTS = [
@@ -230,6 +231,7 @@ const LawyerDashboard = () => {
               {allAppointmentsLoading ? (
                 <p className="text-sm text-gray-500">Loading next appointment...</p>
               ) : upcomingAppointment ? (
+                <>
                 <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                   <div className="flex items-center gap-4">
                     <img
@@ -271,6 +273,8 @@ const LawyerDashboard = () => {
                     </button> */}
                   </div>
                 </div>
+                <MeetingAccessCard appointment={upcomingAppointment} className="mt-4" />
+                </>
               ) : (
                 <p className="text-sm text-gray-500">
                   No upcoming appointments scheduled.

@@ -13,6 +13,8 @@ const {
 
 const TIME_SLOT_REGEX = /^(\d{1,2}):(\d{2})\s?(AM|PM)$/i;
 const RESCHEDULE_CUTOFF_HOURS = 3;
+const JITSI_BASE_URL = "https://meet.jit.si";
+const MEETING_PROVIDER = "jitsi";
 
 const normalizeTimeSlot = (time) => {
   const match = String(time || "").trim().match(TIME_SLOT_REGEX);
@@ -107,6 +109,53 @@ const toAppointmentDate = (dateValue) => {
       : new Date(dateValue);
 
   return Number.isNaN(normalized.getTime()) ? null : normalized;
+};
+
+const buildJitsiRoomName = (appointment) => {
+  const appointmentId = String(appointment?._id || "").trim();
+  if (!appointmentId) {
+    return "";
+  }
+
+  return `justifai-${appointmentId}`;
+};
+
+const buildJitsiMeetingLink = (roomName) => {
+  if (!roomName) {
+    return "";
+  }
+
+  return `${JITSI_BASE_URL}/${encodeURIComponent(roomName)}`;
+};
+
+const ensureAppointmentMeetingDetails = async (appointment) => {
+  if (
+    !appointment ||
+    appointment.appointmentMode !== "Online" ||
+    appointment.status !== "Approved"
+  ) {
+    return appointment;
+  }
+
+  const meetingRoomName = appointment.meetingRoomName || buildJitsiRoomName(appointment);
+  if (!meetingRoomName) {
+    return appointment;
+  }
+
+  const meetingLink = appointment.meetingLink || buildJitsiMeetingLink(meetingRoomName);
+  appointment.meetingProvider = MEETING_PROVIDER;
+  appointment.meetingRoomName = meetingRoomName;
+  appointment.meetingLink = meetingLink;
+  appointment.meetingGeneratedAt = appointment.meetingGeneratedAt || new Date();
+
+  await appointment.save();
+  return appointment;
+};
+
+const ensureMeetingDetailsForAppointments = async (appointments = []) => {
+  return Promise.all(
+    appointments.map((appointment) => ensureAppointmentMeetingDetails(appointment)),
+  );
 };
 
 const isWithinRescheduleWindow = (appointmentDateTime, now = new Date()) => {
@@ -322,7 +371,8 @@ const getAllAppointments = async (req, res) => {
     const appointments = await Appointment.find()
       .populate("userId", "name email phone gender city state profilePicture createdAt")
       .populate("lawyerId", "name email phone location");
-    res.json(appointments);
+    const enrichedAppointments = await ensureMeetingDetailsForAppointments(appointments);
+    res.json(enrichedAppointments);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -344,7 +394,9 @@ const getAppointmentById = async (req, res) => {
       Appointment.countDocuments({ ...baseQuery, status: "Pending" }),
     ]);
 
-    if (appointments.length === 0) {
+    const enrichedAppointments = await ensureMeetingDetailsForAppointments(appointments);
+
+    if (enrichedAppointments.length === 0) {
       return res.json({
         message: status
           ? `No ${status.toLowerCase()} appointments found for this lawyer`
@@ -360,8 +412,8 @@ const getAppointmentById = async (req, res) => {
       message: "Appointments retrieved successfully",
       totalAppointments,
       pendingAppointments,
-      filteredAppointments: appointments.length,
-      appointments,
+      filteredAppointments: enrichedAppointments.length,
+      appointments: enrichedAppointments,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -396,7 +448,7 @@ const updateAppointment = async (req, res) => {
       });
     }
 
-    const appointment = await Appointment.findByIdAndUpdate(req.params.id, req.body, {
+    let appointment = await Appointment.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
     });
     if (!appointment) return res.status(404).json({ error: "Appointment not found" });
@@ -419,6 +471,10 @@ const updateAppointment = async (req, res) => {
           timeSlot: existingAppointment.timeSlot,
           isBooked: true,
         });
+      }
+
+      if (req.body?.status === "Approved") {
+        appointment = await ensureAppointmentMeetingDetails(appointment);
       }
 
       if (req.body?.status && req.body.status !== previousStatus) {
@@ -602,7 +658,7 @@ const respondToRescheduleRequest = async (req, res) => {
       });
     }
 
-    if (action === "Approved") {
+      if (action === "Approved") {
       const slotAvailable = await isSlotAvailableForLawyer({
         lawyerId: appointment.lawyerId,
         date: requestedDate,
@@ -642,6 +698,8 @@ const respondToRescheduleRequest = async (req, res) => {
         timeSlot: appointment.timeSlot,
         isBooked: true,
       });
+
+      appointment = await ensureAppointmentMeetingDetails(appointment);
 
       await createAppointmentNotifications({
         appointment,
@@ -727,12 +785,14 @@ const getAllLawyerAppointments = async (req, res) => {
       Appointment.countDocuments({ ...baseQuery, status: "Pending" }),
     ]);
 
+    const enrichedAppointments = await ensureMeetingDetailsForAppointments(appointments);
+
     res.json({
       message: "Appointments retrieved successfully",
       totalAppointments,
       pendingAppointments,
-      filteredAppointments: appointments.length,
-      appointments,
+      filteredAppointments: enrichedAppointments.length,
+      appointments: enrichedAppointments,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -745,8 +805,9 @@ const getAllUserAppointments = async (req, res) => {
     const appointments = await Appointment.find({ userId: req.params.id })
       .populate("userId", "name email phone gender city state profilePicture createdAt")
       .populate("lawyerId", "name email phone location");
+    const enrichedAppointments = await ensureMeetingDetailsForAppointments(appointments);
     
-    res.json({ message: "Appointments retrieved successfully", appointments });
+    res.json({ message: "Appointments retrieved successfully", appointments: enrichedAppointments });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -4,6 +4,7 @@ import { CalendarDays, Clock3, Filter, Search, Star, X } from "lucide-react";
 import ClientHeader from "../../components/common/ClientHeader";
 import ReviewRating from "../../components/ReviewRating";
 import DateTimeSlotPicker from "../../components/DateTimeSlotPicker";
+import MeetingAccessCard from "../../components/meeting/MeetingAccessCard";
 import { useAuth } from "../../context/AuthContext";
 import { useLocation } from "react-router-dom";
 import { API_URL } from "../../utils/api";
@@ -511,6 +512,8 @@ export default function MyAppointments() {
                             Not available
                           </span>
                         )}
+
+                        <MeetingAccessCard appointment={appointment} className="mt-3" />
                       </div>
                     </div>
 
@@ -601,6 +604,8 @@ export default function MyAppointments() {
                             Reschedule
                           </button>
                         ) : null}
+
+                        <MeetingAccessCard appointment={appointment} className="mt-3" />
                       </div>
                     </div>
                   </article>

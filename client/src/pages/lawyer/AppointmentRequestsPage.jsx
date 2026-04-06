@@ -114,7 +114,7 @@ const AppointmentRequestsPage = () => {
       });
       setFeedback("");
 
-      await axios.put(`${API_URL}/appointments/${appointmentId}`, {
+      const response = await axios.put(`${API_URL}/appointments/${appointmentId}`, {
         status,
         rejectionReason: reason,
       });
@@ -124,8 +124,16 @@ const AppointmentRequestsPage = () => {
           (appointment) => appointment._id !== appointmentId,
         ),
       );
+      const updatedAppointment = response.data || {};
+      const meetingNote =
+        status === "Approved" &&
+        updatedAppointment.appointmentMode === "Online" &&
+        updatedAppointment.meetingLink
+          ? " Meeting link generated."
+          : "";
+
       setFeedback(
-        `Appointment ${status === "Approved" ? "approved" : "rejected"} successfully.`,
+        `Appointment ${status === "Approved" ? "approved" : "rejected"} successfully.${meetingNote}`,
       );
     } catch (updateError) {
       console.error(`Failed to ${status.toLowerCase()} appointment:`, updateError);
