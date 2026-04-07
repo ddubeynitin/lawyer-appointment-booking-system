@@ -5,6 +5,7 @@ const env = require("./src/config/env");
 
 //routes
 const authRoutes = require("./src/routes/auth.routes");
+const adminRoutes = require("./src/routes/admin.routes");
 const userRoutes = require("./src/routes/user.routes");
 const lawyerRoutes = require("./src/routes/lawyer.routes");
 const appointmentRoutes = require("./src/routes/appointment.routes");
@@ -38,6 +39,7 @@ const server = http.createServer(app);
 
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/admin", adminRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/lawyers", lawyerRoutes);
 app.use("/api/appointments", appointmentRoutes);

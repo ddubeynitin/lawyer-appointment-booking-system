@@ -9,6 +9,7 @@ import axios from "axios";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { API_URL } from "../../utils/api";
 import LoadingFallback from "../../components/LoadingFallback";
+import AlertBox from "../../components/common/AlertBox";
 
 function LoginPage() {
   const [role, setRole] = useState("user");
@@ -32,6 +33,7 @@ function LoginPage() {
   const [forgotMessage, setForgotMessage] = useState("");
   const [forgotError, setForgotError] = useState("");
   const [forgotLoading, setForgotLoading] = useState(false);
+  const [loginAlert, setLoginAlert] = useState(null);
   const navigate = useNavigate();
   const { login } = useAuth();
 
@@ -73,6 +75,7 @@ function LoginPage() {
     setOtpRequested(false);
     setOtpError("");
     setOtpInfo("");
+    setLoginAlert(null);
   };
 
   const handlePasswordLogin = async () => {
@@ -122,10 +125,20 @@ function LoginPage() {
       });
       setOtpRequested(true);
       setOtpInfo(response.data?.message || "OTP sent to your email");
+      setLoginAlert({
+        variant: "success",
+        title: "OTP sent",
+        message: response.data?.message || "OTP sent to your email.",
+      });
     } catch (err) {
       setOtpRequested(false);
       setOtpInfo("");
       setOtpError(err.response?.data?.error || "Failed to send OTP");
+      setLoginAlert({
+        variant: "error",
+        title: "Unable to send OTP",
+        message: err.response?.data?.error || "Failed to send OTP",
+      });
     } finally {
       setLoading(false);
     }
@@ -151,6 +164,7 @@ function LoginPage() {
       localStorage.setItem("role", response.data.user.role);
       localStorage.setItem("user", JSON.stringify(response.data.user));
       login({ token: response.data.token, user: response.data.user });
+      setLoginAlert(null);
 
       const isProfileComplete =
         response.data.user.isProfileComplete ?? response.data.user.idProfileComplete;
@@ -165,6 +179,11 @@ function LoginPage() {
       }
     } catch (err) {
       setOtpError(err.response?.data?.error || "Invalid OTP");
+      setLoginAlert({
+        variant: "error",
+        title: "OTP verification failed",
+        message: err.response?.data?.error || "Invalid OTP",
+      });
     } finally {
       setLoading(false);
     }
@@ -188,7 +207,11 @@ function LoginPage() {
         err.response?.data?.message ||
         err.response?.data?.error ||
         "Invalid credentials";
-      alert(`Login failed: ${message}`);
+      setLoginAlert({
+        variant: "error",
+        title: "Login failed",
+        message,
+      });
     } finally {
       setLoading(false);
     }
@@ -283,6 +306,17 @@ function LoginPage() {
             <LoadingFallback />
           </div>
         )}
+        {loginAlert ? (
+              <div>
+                <AlertBox
+                  variant={loginAlert.variant}
+                  title={loginAlert.title}
+                  message={loginAlert.message}
+                  onClose={() => setLoginAlert(null)}
+                  floating
+                />
+              </div>
+            ) : null}
 
         <div className="hidden lg:flex lg:w-1/2 relative bg-linear-to-br from-blue-600 via-indigo-600 to-purple-600 items-center justify-center p-10">
           <div className="text-white max-w-sm">
@@ -302,8 +336,10 @@ function LoginPage() {
           </div>
         </div>
 
-        <div className="w-full lg:w-1/2 flex items-center justify-center px-6 py-10">
-          <div className="w-full max-w-md">
+        <div className="relative w-full lg:w-1/2 flex items-center justify-center px-6 py-10">
+          <div className="relative w-full max-w-md pt-16">
+            
+
             <div className="flex items-center justify-center mb-6 gap-2">
               <div className="w-8 h-8 rounded flex items-center justify-center text-black font-bold">
                 <FaGavel className="text-5xl" />

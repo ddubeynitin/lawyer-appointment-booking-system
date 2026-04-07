@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const bcrypt = require("bcrypt");
 
 const adminSchema = new mongoose.Schema(
   {
@@ -31,5 +32,27 @@ const adminSchema = new mongoose.Schema(
     timestamps: false
   }
 );
+
+adminSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+  } catch (err) {
+    throw err;
+  }
+});
+
+// Method to compare password for authentication
+adminSchema.methods.comparePassword = async function (candidatePassword) {
+  const storedPassword = String(this.password || "");
+  const looksHashed = /^\$2[aby]\$\d{2}\$/.test(storedPassword);
+
+  if (!looksHashed) {
+    return String(candidatePassword || "") === storedPassword;
+  }
+
+  return bcrypt.compare(candidatePassword, storedPassword);
+};
 
 module.exports = mongoose.model("Admin", adminSchema);
