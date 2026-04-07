@@ -1,5 +1,13 @@
-import { FaCalendarAlt, FaVideo } from "react-icons/fa";
-import { CalendarDays, Clock3, FileText, Mail, Phone, UserRound, X } from "lucide-react";
+import { FaCalendarAlt, FaClock, FaMoneyBill, FaVideo } from "react-icons/fa";
+import {
+  CalendarDays,
+  Clock3,
+  FileText,
+  Mail,
+  Phone,
+  UserRound,
+  X,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
@@ -43,7 +51,9 @@ const formatCurrency = (value = 0) =>
   }).format(Number(value || 0));
 
 const normalizeTimeSlot = (time) => {
-  const match = String(time || "").trim().match(/^(\d{1,2}):(\d{2})\s?(AM|PM)$/i);
+  const match = String(time || "")
+    .trim()
+    .match(/^(\d{1,2}):(\d{2})\s?(AM|PM)$/i);
   if (!match) return "";
 
   const hours = Number(match[1]);
@@ -56,10 +66,10 @@ const normalizeTimeSlot = (time) => {
 };
 
 const LawyerDashboard = () => {
-
   const [selectedDate, setSelectedDate] = useState(getTodayDateInputValue);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
-  const [selectedDateAvailability, setSelectedDateAvailability] = useState(null);
+  const [selectedDateAvailability, setSelectedDateAvailability] =
+    useState(null);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -67,21 +77,25 @@ const LawyerDashboard = () => {
   const { data, loading, error } = useFetch(
     `${API_URL}/appointments/lawyer/${user.id}?status=Pending`,
   );
-  const { data: allAppointmentsData, loading: allAppointmentsLoading } = useFetch(
-    `${API_URL}/appointments/lawyer/${user.id}`,
-  );
+  const { data: allAppointmentsData, loading: allAppointmentsLoading } =
+    useFetch(`${API_URL}/appointments/lawyer/${user.id}`);
   const appointments = data?.appointments || [];
   const allAppointments = allAppointmentsData?.appointments || [];
   const totalAppointments = data?.totalAppointments || 0;
   const pendingAppointments = data?.pendingAppointments || 0;
   const completedRevenue = allAppointments
     .filter((appointment) => appointment?.status === "Completed")
-    .reduce((sum, appointment) => sum + Number(appointment?.feeCharged || 0), 0);
+    .reduce(
+      (sum, appointment) => sum + Number(appointment?.feeCharged || 0),
+      0,
+    );
   const selectedDateLabel = formatScheduleDateLabel(selectedDate);
   const selectedDateSlots = Array.isArray(selectedDateAvailability?.slots)
     ? selectedDateAvailability.slots
         .map((slot) => ({
-          time: normalizeTimeSlot(typeof slot === "string" ? slot : slot?.time || slot?.startTime),
+          time: normalizeTimeSlot(
+            typeof slot === "string" ? slot : slot?.time || slot?.startTime,
+          ),
           isBooked:
             slot?.isBooked === true ||
             slot?.booked === true ||
@@ -157,7 +171,6 @@ const LawyerDashboard = () => {
     };
   }, [selectedDate, user?.id]);
 
-
   const hour = new Date().getHours();
   const greeting =
     hour < 12 ? "Good Morning" : hour < 18 ? "Good Afternoon" : "Good Evening";
@@ -182,7 +195,7 @@ const LawyerDashboard = () => {
 
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-100 to-gray-200 font-barlow">
-      <LawyerHeader/>
+      <LawyerHeader />
       <main className="mx-auto max-w-7xl space-y-10 px-6 py-10">
         <div>
           <h1 className="flex flex-col lg:flex-row text-3xl font-bold text-gray-800">
@@ -198,15 +211,31 @@ const LawyerDashboard = () => {
             title="Total Appointments"
             value={loading ? "..." : totalAppointments}
             icon={<FaCalendarAlt />}
+            onClick={() => navigate("/lawyer/appointments")}
+            sub={
+              <Link to="/lawyer/appointments" className="font-medium text-blue-600">
+                View Appointment details
+              </Link>
+            }
           />
           <StatCard
             title="Pending Requests"
             value={loading ? "..." : pendingAppointments}
-            sub={error ? "Unable to load" : undefined}
+            onClick={() => navigate("/lawyer/appointment-requests")}
+            icon={<FaClock />}
+            sub={
+              <Link to="/lawyer/appointment-requests" className="font-medium text-blue-600">
+                View Request details
+              </Link>
+            }
           />
           <StatCard
             title="Total Earnings"
-            value={allAppointmentsLoading ? "..." : formatCurrency(completedRevenue)}
+            value={
+              allAppointmentsLoading ? "..." : formatCurrency(completedRevenue)
+            }
+            icon={<FaMoneyBill />}
+            onClick={() => navigate("/lawyer/appointments")}
             sub={
               <Link to="/lawyer/earnings" className="font-medium text-blue-600">
                 View earnings details
@@ -221,59 +250,69 @@ const LawyerDashboard = () => {
               title="Up Next"
               badge={
                 upcomingAppointment
-                  ? new Date(upcomingAppointment.date).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                    })
+                  ? new Date(upcomingAppointment.date).toLocaleDateString(
+                      "en-US",
+                      {
+                        month: "short",
+                        day: "numeric",
+                      },
+                    )
                   : "No upcoming"
               }
             >
               {allAppointmentsLoading ? (
-                <p className="text-sm text-gray-500">Loading next appointment...</p>
+                <p className="text-sm text-gray-500">
+                  Loading next appointment...
+                </p>
               ) : upcomingAppointment ? (
                 <>
-                <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-                  <div className="flex items-center gap-4">
-                    <img
-                      src="/assets/images/user.png"
-                      className="h-14 w-14 rounded-lg"
-                      alt="client"
-                    />
-                    <div>
-                      <p className="font-semibold">
-                        {upcomingAppointment.userId?.name || "Client"}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {upcomingAppointment.caseCategory} • {upcomingAppointment.timeSlot}
-                      </p>
-                      <p className="text-xs text-gray-400">
-                        {new Date(upcomingAppointment.date).toLocaleDateString(
-                          "en-US",
-                          {
+                  <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+                    <div className="flex items-center gap-4">
+                      <img
+                        src="/assets/images/user.png"
+                        className="h-14 w-14 rounded-lg"
+                        alt="client"
+                      />
+                      <div>
+                        <p className="font-semibold">
+                          {upcomingAppointment.userId?.name || "Client"}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {upcomingAppointment.caseCategory} •{" "}
+                          {upcomingAppointment.timeSlot}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          {new Date(
+                            upcomingAppointment.date,
+                          ).toLocaleDateString("en-US", {
                             weekday: "long",
                             month: "short",
                             day: "numeric",
                             year: "numeric",
-                          },
-                        )}
-                      </p>
+                          })}
+                        </p>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="flex gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedAppointment(upcomingAppointment)}
-                      className="rounded-lg border border-gray-200 px-4 py-2 text-sm transition hover:border-blue-300 hover:text-blue-600"
-                    >
-                      Details
-                    </button>
-                    {/* <button className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm text-white">
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSelectedAppointment(upcomingAppointment)
+                        }
+                        className="rounded-lg border border-gray-200 px-4 py-2 text-sm transition hover:border-blue-300 hover:text-blue-600"
+                      >
+                        Details
+                      </button>
+                      {/* <button className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm text-white">
                       <FaVideo /> Join Meeting
                     </button> */}
+                    </div>
                   </div>
-                </div>
-                <MeetingAccessCard appointment={upcomingAppointment} className="mt-4" />
+                  <MeetingAccessCard
+                    appointment={upcomingAppointment}
+                    className="mt-4"
+                  />
                 </>
               ) : (
                 <p className="text-sm text-gray-500">
@@ -404,20 +443,28 @@ const LawyerDashboard = () => {
   );
 };
 
-const StatCard = ({ title, value, sub, icon }) => (
-  <div className="rounded-xl bg-white p-4 shadow-sm">
-    <div className="mb-2 flex items-center justify-between">
+const StatCard = ({ title, value, sub, icon, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={`w-full rounded-xl bg-white p-4 text-left shadow-sm transition lg:grid grid-cols-2 ${
+      onClick
+        ? "cursor-pointer hover:shadow-md hover:-translate-y-0.5 hover:border hover:border-blue-500"
+        : ""
+    }`}
+  >
+    <div className=" flex flex-col items-center justify-center">
       <p className="text-sm text-gray-600">{title}</p>
-      {icon && <span className="text-blue-600">{icon}</span>}
+      <p className="text-2xl font-bold">{value}</p>
     </div>
-    <p className="text-2xl font-bold">{value}</p>
+    <div className="flex justify-center items-center">{icon && <span className="text-blue-600 text-5xl p-3 rounded-2xl bg-gray-100/50">{icon}</span>}</div>
     {sub &&
       (typeof sub === "string" ? (
         <p className="text-xs text-green-600">{sub}</p>
       ) : (
         sub
       ))}
-  </div>
+  </button>
 );
 
 const Card = ({ title, badge, action, right, children }) => (
@@ -526,7 +573,8 @@ const AppointmentDetailsModal = ({ appointment, onClose }) => {
                   {appointment.caseCategory} Consultation
                 </h2>
                 <p className="mt-2 text-sm text-slate-500">
-                  Review the scheduled meeting and the client information in one place.
+                  Review the scheduled meeting and the client information in one
+                  place.
                 </p>
               </div>
             </div>
@@ -637,6 +685,3 @@ const ClientInfoRow = ({ icon, label, value }) => (
 );
 
 export default LawyerDashboard;
-
-
-

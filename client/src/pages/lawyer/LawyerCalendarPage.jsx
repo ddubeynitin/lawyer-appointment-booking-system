@@ -71,7 +71,7 @@ const LawyerCalendarPage = () => {
   }, [appointments]);
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-gray-100 to-gray-200">
+    <div className="min-h-screen bg-linear-to-br from-gray-100 to-gray-200 font-barlow">
       <LawyerHeader />
 
       <main className="mx-auto max-w-7xl space-y-8 px-6 py-10">

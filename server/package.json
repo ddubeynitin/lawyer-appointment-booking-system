@@ -4,6 +4,7 @@
   "main": "server.js",
   "scripts": {
     "start": "npx nodemon server.js",
+    "seed:admin": "node scripts/bootstrap-admin.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

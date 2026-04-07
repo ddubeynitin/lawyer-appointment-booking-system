@@ -20,6 +20,7 @@ const AdminDashBoard = lazy(() => import("./pages/admin/AdminDashBoard"));
 const LoginPage = lazy(() => import("./pages/auth/LoginPage"));
 const AdminLoginPage = lazy(() => import("./pages/admin/AdminLoginPage"));
 const LawyerDashboard = lazy(() => import("./pages/lawyer/LawyerDashboard"));
+const LawyerAppointmentsPage = lazy(() => import("./pages/lawyer/LawyerAppointmentsPage"));
 const LawyerEarningsPage = lazy(() => import("./pages/lawyer/LawyerEarningsPage"));
 const ManageAvailabilityAndFees = lazy(() => import("./pages/lawyer/ManageAvailabilityAndFees"));
 const EditLawyerProfile = lazy(() => import("./pages/lawyer/EditLawyerProfile"));
@@ -65,6 +66,10 @@ const AppShell = () => {
         <Route
           path="/lawyer/lawyer-dashboard"
           element={<LawyerDashboard />}
+        />
+        <Route
+          path="/lawyer/appointments"
+          element={<LawyerAppointmentsPage />}
         />
         <Route
           path="/lawyer/earnings"

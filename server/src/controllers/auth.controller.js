@@ -621,12 +621,15 @@ const resetPasswordWithOtp = async (req, res) => {
 const loginUser = async (req, res) => {
   try {
     const { email, password, role } = req.body;
-    console.log(req.body);
+    if (role === "admin") {
+      return res.status(400).json({
+        error: "Use the admin login endpoint for admin accounts",
+      });
+    }
+
     let user;
     if (role === "lawyer") {
       user = await Lawyer.findOne({ email });
-    } else if (role === "admin") {
-      user = await Admin.findOne({ email });
     } else {
       user = await User.findOne({ email });
     }
@@ -666,9 +669,131 @@ const loginUser = async (req, res) => {
   }
 };
 
+const loginAdmin = async (req, res) => {
+  try {
+    const email = String(req.body.email || "").toLowerCase().trim();
+    const password = String(req.body.password || "");
+
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email and password are required" });
+    }
+
+    const admin = await Admin.findOne({ email });
+    if (!admin) {
+      return res.status(400).json({ error: "Invalid email or password" });
+    }
+
+    const isMatch = await admin.comparePassword(password);
+    if (!isMatch) {
+      return res.status(400).json({ error: "Invalid email or password" });
+    }
+
+    const token = jwt.sign(
+      { id: admin._id, email: admin.email, role: "admin" },
+      env.JWT_SECRET,
+      { expiresIn: env.JWT_EXPIRES_IN || "7d" },
+    );
+
+    res.json({
+      message: "Login Successful",
+      token,
+      user: {
+        id: admin._id,
+        name: admin.name,
+        email: admin.email,
+        role: "admin",
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+const createAdminRecord = async ({ name, email, password }) => {
+  const admin = await Admin.create({
+    name,
+    email,
+    password,
+    role: "admin",
+  });
+
+  return {
+    id: admin._id,
+    name: admin.name,
+    email: admin.email,
+    role: admin.role,
+  };
+};
+
+const createAdmin = async (req, res) => {
+  try {
+    const requesterRole = req.user?.role;
+    if (requesterRole !== "admin") {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
+    const name = String(req.body.name || "").trim();
+    const email = String(req.body.email || "").toLowerCase().trim();
+    const password = String(req.body.password || "");
+
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        error: "Name, email, and password are required",
+      });
+    }
+
+    const existingAdmin = await Admin.findOne({ email });
+    if (existingAdmin) {
+      return res.status(400).json({ error: "Admin already exists with this email" });
+    }
+
+    const admin = await createAdminRecord({ name, email, password });
+
+    res.status(201).json({
+      message: "Admin created successfully",
+      admin,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+const bootstrapAdmin = async (req, res) => {
+  try {
+    const existingCount = await Admin.countDocuments();
+    if (existingCount > 0) {
+      return res.status(409).json({
+        error: "Bootstrap is only allowed before the first admin is created",
+      });
+    }
+
+    const name = String(req.body.name || "").trim();
+    const email = String(req.body.email || "").toLowerCase().trim();
+    const password = String(req.body.password || "");
+
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        error: "Name, email, and password are required",
+      });
+    }
+
+    const admin = await createAdminRecord({ name, email, password });
+
+    res.status(201).json({
+      message: "First admin created successfully",
+      admin,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
+  loginAdmin,
+  createAdmin,
+  bootstrapAdmin,
   requestRegistrationOtp,
   verifyRegistrationOtp,
   requestLoginOtp,
