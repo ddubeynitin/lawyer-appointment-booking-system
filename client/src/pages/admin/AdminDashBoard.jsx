@@ -11,15 +11,18 @@ import {
   ChevronDown,
   Menu,
   X,
+  Flag,
 } from "lucide-react";
 import { GoLaw } from "react-icons/go";
 import UserManagement from "../../components/UserManagement";
 import Overview from "../../components/Overview";
 import VerificationQueue from "../../components/VerificationQueue";
-import Financials from "../../components/Financials";
+import Revenue from "../../components/Revenue";
+import AdminNotificationBell from "../../components/AdminNotificationBell";
+import AdminReportManagement from "../../components/AdminReportManagement";
 import UserAppointments from "../../components/UserAppointments";
 import LawyerAppointments from "../../components/LawyerAppointments";
-import Reports from "../../components/Reports";
+import PaymentManagement from "../../components/PaymentManagement";
 import SettingsPage from "../../components/Settings";
 
 // Server URL - direct server routes use kar rahe hain
@@ -67,6 +70,25 @@ export default function Dashboard() {
   });
   const [AllLawyers, setAllLawyers] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Get logged-in admin data
+  const [adminData, setAdminData] = useState({ name: "Admin", email: "" });
+  
+  useEffect(() => {
+    const userData = localStorage.getItem("user");
+    if (userData) {
+      try {
+        const parsedUser = JSON.parse(userData);
+        setAdminData({
+          name: parsedUser.name || "Admin",
+          email: parsedUser.email || "",
+          role: parsedUser.role || "admin"
+        });
+      } catch (e) {
+        console.error("Failed to parse user data:", e);
+      }
+    }
+  }, []);
 
   const pendingVerificationCount = Array.isArray(AllLawyers)
     ? AllLawyers.filter((lawyer) => lawyer?.verification !== "Approved").length
@@ -84,8 +106,9 @@ export default function Dashboard() {
   ];
 
   const operationItems = [
-    { id: "financials", label: "Financials", icon: DollarSign },
-    { id: "reports", label: "Reports", icon: CalendarDays },
+    { id: "revenue", label: "Revenue", icon: DollarSign },
+    { id: "payment-management", label: "Payment Management", icon: CalendarDays },
+    { id: "report-management", label: "Report Management", icon: Flag },
   ];
 
   const [isAppointmentMenuOpen, setIsAppointmentMenuOpen] = useState(false);
@@ -720,15 +743,19 @@ export default function Dashboard() {
               {activeMenu === "users" && "User Management"}
               {activeMenu === "lawyers" && "Lawyer Management"}
               {activeMenu === "verification" && "Verification Queue"}
-              {activeMenu === "financials" && "Financials"}
+              {activeMenu === "revenue" && "Revenue"}
               {activeMenu === "user-appointments" && "User Appointments"}
               {activeMenu === "lawyer-appointments" && "Lawyer Appointments"}
-              {activeMenu === "reports" && "Reports"}
+              {activeMenu === "payment-management" && "Payment Management"}
+              {activeMenu === "report-management" && "Report Management"}
               {activeMenu === "settings" && "Settings"}
             </h1>
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+            <div className="flex items-center gap-3">
+              <AdminNotificationBell />
+            </div>
             <div className="relative w-full sm:w-auto">
               <Search
                 size={16}
@@ -745,8 +772,8 @@ export default function Dashboard() {
                 className="rounded-full w-9 h-9 cursor-pointer hover:shadow-lg hover:scale-110 transition-all duration-200"
               />
               <div className="text-sm">
-                <p className="font-medium leading-none">Jagannath Sahu</p>
-                <span className="text-xs text-gray-400">Super Admin</span>
+                <p className="font-medium leading-none">{adminData.name}</p>
+                <span className="text-xs text-gray-400">{adminData.role === "admin" ? "Admin" : "Super Admin"}</span>
               </div>
             </div>
           </div>
@@ -763,6 +790,9 @@ export default function Dashboard() {
                   ).length
                 : 0
             }
+            todayAppointmentsCount={0}
+            users={users}
+            lawyers={lawyers}
           />
         )}
 
@@ -886,13 +916,15 @@ export default function Dashboard() {
           />
         )}
 
-        {activeMenu === "financials" && <Financials />}
+        {activeMenu === "revenue" && <Revenue />}
 
         {activeMenu === "user-appointments" && <UserAppointments />}
 
         {activeMenu === "lawyer-appointments" && <LawyerAppointments />}
 
-        {activeMenu === "reports" && <Reports />}
+        {activeMenu === "payment-management" && <PaymentManagement />}
+
+        {activeMenu === "report-management" && <AdminReportManagement />}
 
         {activeMenu === "settings" && <SettingsPage />}
       </main>

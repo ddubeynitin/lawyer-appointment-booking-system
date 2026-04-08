@@ -69,7 +69,20 @@ export default function LawyerAppointments() {
   }, [appointments]);
 
   const filteredLawyers = useMemo(() => {
-    return lawyers.filter((lawyer) => {
+    // Filter only lawyers with at least 1 booking
+    const lawyersWithBookings = lawyers.filter((lawyer) => {
+      const appointmentCount = lawyerAppointmentCounts[lawyer._id] || 0;
+      return appointmentCount > 0;
+    });
+    
+    // Sort by number of bookings (descending - most bookings first)
+    const sortedByBookings = [...lawyersWithBookings].sort((a, b) => {
+      const countA = lawyerAppointmentCounts[a._id] || 0;
+      const countB = lawyerAppointmentCounts[b._id] || 0;
+      return countB - countA;
+    });
+    
+    return sortedByBookings.filter((lawyer) => {
       const searchLower = searchQuery.toLowerCase();
       const matchesSearch = 
         (lawyer.name || "").toLowerCase().includes(searchLower) ||
@@ -82,7 +95,7 @@ export default function LawyerAppointments() {
 
       return matchesSearch && matchesStatus && matchesSpecialization;
     });
-  }, [lawyers, searchQuery, statusFilter, specializationFilter]);
+  }, [lawyers, lawyerAppointmentCounts, searchQuery, statusFilter, specializationFilter]);
 
   const totalPages = Math.ceil(filteredLawyers.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -100,6 +113,8 @@ export default function LawyerAppointments() {
   const totalLawyers = lawyers.length;
   const pendingCount = lawyers.filter(l => l?.verification !== "Approved").length;
   const approvedCount = lawyers.filter(l => l?.verification === "Approved").length;
+  const totalBookings = appointments.length;
+  const lawyersWithAppointments = filteredLawyers.length;
 
   const clearFilters = () => {
     setSearchQuery("");
@@ -149,7 +164,7 @@ export default function LawyerAppointments() {
         <div className="flex flex-wrap items-center gap-2">
           <div className="p-3 bg-blue-100 rounded-lg text-blue-600"><Users size={20} /></div>
           <h2 className="text-xl font-semibold text-gray-800">Lawyer Appointments</h2>
-          <span className="px-3 py-1 text-xs font-semibold bg-gray-100 text-gray-700 rounded-full">{totalLawyers} Total Lawyers</span>
+          <span className="px-3 py-1 text-xs font-semibold bg-blue-100 text-blue-700 rounded-full">{lawyersWithAppointments} Lawyers with Bookings</span>
           <span className="px-3 py-1 text-xs font-semibold bg-amber-100 text-amber-700 rounded-full">{pendingCount} Pending</span>
           <span className="px-3 py-1 text-xs font-semibold bg-green-100 text-green-700 rounded-full">{approvedCount} Approved</span>
         </div>
