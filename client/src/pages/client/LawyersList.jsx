@@ -1,6 +1,6 @@
 import React from "react";
-import { FaGavel, FaSearch } from "react-icons/fa";
-import { Link, useSearchParams } from "react-router-dom";
+import { FaArrowAltCircleLeft, FaGavel, FaSearch } from "react-icons/fa";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Pagination } from "@heroui/pagination";
 import useFetch from "../../hooks/useFetch";
 import LawyerCard from "../../components/common/LawyerCard";
@@ -20,8 +20,9 @@ function LawyerList() {
   const itemsPerPage = 6;
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
 
-  const { data, loading, error } = useFetch(`${API_URL}/lawyers`);
+  const { data, loading, error } = useFetch(`${API_URL}/lawyers/available`);
   console.log("Data:", data);
   console.log("Loading:", loading);
   console.log("Error:", error);
@@ -160,7 +161,12 @@ function LawyerList() {
               </p>
             </div>
 
-            <div className="flex w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-xl">
+            <button onClick={() => { navigate(-1) }} className=" flex items-center justify-center  gap-2 bg-white px-4 py-3 rounded-full font-semibold text-blue-700 transition hover:bg-red-500 hover:text-white sm:px-8">
+                <FaArrowAltCircleLeft className="text-base sm:text-lg" />
+                Back
+            </button>
+
+            <div className="flex w-[60%] max-w-xl overflow-hidden rounded-2xl bg-white shadow-xl">
               <input
                 type="text"
                 value={searchTerm}
@@ -168,11 +174,9 @@ function LawyerList() {
                 placeholder="Search by name or practice area..."
                 className="min-w-0 flex-1 px-4 py-3 text-slate-700 outline-none sm:px-5"
               />
-              <button className="flex items-center justify-center gap-2 bg-blue-700 px-4 font-semibold text-white transition hover:bg-blue-800 sm:px-8">
-                <FaSearch className="text-base sm:text-lg" />
-                <span className="hidden sm:inline">Search</span>
-              </button>
             </div>
+
+              
           </div>
         </div>
       </section>

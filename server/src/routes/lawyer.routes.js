@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const upload = require("../middlewares/upload");
-const { getAllLawyers, getLawyerById, updateLawyer, completeLawyerProfile, deleteLawyer, verificationLawyer, getFeaturedLawyers, updateFeaturedLawyerStatus } = require('../controllers/lawyer.controller');
+const { getAllLawyers, getAllAvailableLawyers, getLawyerById, updateLawyer, completeLawyerProfile, deleteLawyer, verificationLawyer, getFeaturedLawyers, updateFeaturedLawyerStatus } = require('../controllers/lawyer.controller');
 
 // lawyer routes
 router.get('/', getAllLawyers);
+router.get('/available', getAllAvailableLawyers);
 router.get('/featured', getFeaturedLawyers);
 router.get('/:id', getLawyerById);
 router.patch('/featured/:id', updateFeaturedLawyerStatus);

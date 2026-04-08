@@ -30,7 +30,7 @@ const Registration = () => {
   const [role, setRole] = useState("client");
   const [loading, setLoading] = useState(false);
   const [otpModalOpen, setOtpModalOpen] = useState(false);
-  const [otp, setOtp] = useState("");
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [otpLoading, setOtpLoading] = useState(false);
   const [otpError, setOtpError] = useState("");
   const [otpInfo, setOtpInfo] = useState("");
@@ -61,7 +61,7 @@ const Registration = () => {
 
     if (name === "email") {
       setRegistrationVerificationToken("");
-      setOtp("");
+      setOtp(["", "", "", "", "", ""]);
       setOtpError("");
       setOtpInfo("");
     }
@@ -118,7 +118,7 @@ const Registration = () => {
 
   const resetOtpFlow = () => {
     setOtpModalOpen(false);
-    setOtp("");
+    setOtp(["", "", "", "", "", ""]);
     setOtpError("");
     setOtpInfo("");
     setRegistrationVerificationToken("");
@@ -198,8 +198,9 @@ const Registration = () => {
     setError("");
     setOtpError("");
 
-    if (!otp.trim()) {
-      setOtpError("Please enter the OTP");
+    const otpString = otp.join("");
+    if (!otpString || otpString.length !== 6) {
+      setOtpError("Please enter all 6 digits");
       return;
     }
 
@@ -207,7 +208,7 @@ const Registration = () => {
       setOtpLoading(true);
       const response = await axios.post(`${API_URL}/auth/register/verify-otp`, {
         ...getRegistrationPayload(),
-        otp: otp.trim(),
+        otp: otpString,
       });
       const verificationToken = response.data?.verificationToken;
       if (!verificationToken) {
@@ -233,6 +234,7 @@ const Registration = () => {
       setOtpLoading(true);
       setOtpError("");
       setOtpInfo("");
+      setOtp(["", "", "", "", "", ""]);
       await requestRegistrationOtp();
     } catch (err) {
       setOtpError(
@@ -264,167 +266,146 @@ const Registration = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-[url('./assets/images/bg-white.jpg')] bg-cover bg-center font-barlow lg:overflow-hidden">
-      <header className="w-full shadow-sm px-4 sm:px-10 py-2 flex justify-between items-center">
+    <div className="lg:h-screen lg:overflow-hidden bg-linear-to-br from-blue-50 via-white to-indigo-50 font-barlow">
+      {/* Header */}
+      <header className="w-full bg-white/80 backdrop-blur-sm shadow-sm px-4 sm:px-10 py-3 flex justify-between items-center border-b border-gray-100">
         <div className="flex items-center gap-2">
-          <FaGavel />
-          <Link to="/" className="text-xl font-bold text-black ">
-            Justif<span className="text-blue-500">Ai</span>
+          <FaGavel className="text-blue-600" />
+          <Link to="/" className="text-xl font-bold text-gray-900">
+            Justif<span className="text-blue-600">Ai</span>
           </Link>
         </div>
         <div className="flex gap-3">
           <Link
             to="/"
-            className="border p-2 bg-linear-to-r from-blue-600 to-indigo-600  flex justify-center items-center gap-2 rounded-lg text-sm text-white hover:scale-110 transition"
+            className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            title="Home"
           >
             <FaHome className="text-lg" />
           </Link>
-          <Link to="/auth/login" className="flex items-center gap-2">
-            <p className="text-blue-600 font-barlow lg:text-lg text-[10px]">
-              Already have account?
-            </p>
-            <button className="text-white bg-linear-to-r from-blue-600 to-indigo-600 rounded-lg text-sm font-medium hover:underline border px-4 py-2  ">
+          <Link to="/auth/login" title="Login" className="flex items-center gap-2">
+            <button className="bg-blue-600 text-white rounded-lg px-4 py-2 font-medium hover:bg-blue-700 transition-colors">
               Login
             </button>
           </Link>
         </div>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 w-full max-w-6xl mx-auto flex-1 lg:overflow-hidden">
-        {/* Circular Loading */}
-        {loading && (
-          <div className="absolute w-full h-screen top-[50%] left-[50%] bg-white/30 transform -translate-x-1/2 -translate-y-1/2 flex justify-center items-center z-20">
-            <LoadingFallback />
-          </div>
-        )}
-        <div className="flex flex-col justify-center items-center px-2 sm:px-12 lg:px-20 lg:py-10 py-3">
-          <div className="bg-[url('./assets/images/professional-peoples.png')] lg:w-full lg:h-60 h-50 w-full drop-shadow-lg drop-shadow-black/80 mask-b-from-65% mask-b-to-100% p-5 flex justify-end items-end  bg-cover bg-no-repeat aspect-auto  rounded-lg"></div>
-          <h1 className="text-3xl sm:text-4xl font-bold mb-4">
-            Connect with top <br /> legal professionals
-          </h1>
-
-          <p className="text-blue-600 mb-6">
-            Whehter you are looking for legal advice or growinng <br />
-            you practice, Esue provides the tools you need <br />
-            to succeed.
-          </p>
-
-          <ul className="space-y-3 text-black mb-6">
-            <li className="flex items-center gap-2">
-              <MdVerified
-                className="w-5 h-5 rounded-full text-blue-500"
-                alt=""
+      <div className="flex h-screen">
+        {/* Left Side - Hero */}
+        <div className="hidden lg:h-screen lg:flex lg:w-1/2 bg-linear-to-br from-blue-600 to-indigo-700 p-12  flex-col justify-start text-white relative overflow-hidden ">
+          <div className="relative z-10">
+            <div className="animate-float w-full max-w-sm mx-auto mb-6">
+              <img
+                src="/assets/images/professional-peoples.png"
+                alt="Professional people"
+                className="w-full max-w-md mx-auto rounded-2xl mask-b-from-70% "
               />
-              Verified lawyers and secure client matching.
-            </li>
-            <li className="flex items-center gap-2">
-              <MdVerified
-                className="w-5 h-5 rounded-full text-blue-500"
-                alt=""
-              />
-              Effortless appointment scheduling & management.
-            </li>
-            <li className="flex items-center gap-2">
-              <MdVerified
-                className="w-5 h-5 rounded-full text-blue-500"
-                alt=""
-              />
-              Secure document sharing and mesaaging.
-            </li>
-          </ul>
-        </div>
-
-        <div className=" flex items-center h-screen justify-center mt-2 px-4 py-5 overflow-scroll">
-          <div className="w-full bg-blue-600/80 rounded-xl shadow-lg pt-4 mt-20 mb-12 p-8 ">
-            <h2 className="text-3xl text-white font-semibold mb-1">
-              Create your account
-            </h2>
-            <p className="text-sm text-white/90 mb-6">
-              Get started in less than a minute
-            </p>
-
-            <div className="flex gap-3 rounded-lg p-1  bg-white relative">
-              <div
-                className="absolute top-1 bottom-1 left-1 lg:w-59 sm:w-34 rounded-md transition-transform duration-400 ease-in-out"
-                style={{
-                  transform:
-                    role === "lawyer" ? "translateX(100%)" : "translateX(0%)",
-                }}
-              />
-              <button
-                type="button"
-                onClick={() => handleSelectRole("client")}
-                // className={`w-1/2 py-1 rounded-lg border-2 border-gray-300 font-medium flex justify-center items-center gap-2 ${
-                //   role === "client"
-                //     ? "bg-blue-600 text-white"
-                //     : "bg-gray-100 text-blue-500"
-                // }`}
-                className={`relative z-10 flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-colors duration-300 ${
-                  role === "client" ? "text-white bg-blue-500" : "text-black"
-                }`}
-              >
-                <FaUser /> I am a Client
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleSelectRole("lawyer")}
-                // className={`w-1/2 py-1 rounded-lg border-2  border-gray-300 font-medium flex justify-center items-center gap-2 ${
-                //   role === "lawyer"
-                //     ? "bg-blue-600 text-white"
-                //     : "bg-gray-100 text-blue-500"
-                // }`}
-                className={`relative z-10 flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-colors duration-300 ${
-                  role === "lawyer" ? "text-white bg-blue-500" : "text-black"
-                }`}
-              >
-                <FaUserTie /> I am a Lawyer
-              </button>
             </div>
-
-            {role === "client" ? (
-              <ClientRegform
-                formData={formData}
-                handleChange={handleChange}
-                handleSubmit={handleSubmit}
-                error={error}
-                loading={loading}
-                showPassword={showPassword}
-                setShowPassword={setShowPassword}
-              />
-            ) : (
-              <LawyerRegform
-                formData={formData}
-                handleChange={handleChange}
-                handleSubmit={handleSubmit}
-                error={error}
-                loading={loading}
-                showPassword={showPassword}
-                setShowPassword={setShowPassword}
-              />
-            )}
+            <h1 className="text-4xl font-bold mb-6 leading-tight">
+              Connect with top legal professionals
+            </h1>
+            <p className="text-blue-100 mb-8 text-lg leading-relaxed">
+              Whether you're seeking legal advice or growing your practice,
+              Justifai provides the tools you need to succeed.
+            </p>
+            <ul className="space-y-4">
+              <li className="flex items-center gap-3">
+                <MdVerified className="w-6 h-6 text-green-400 shrink-0" />
+                <span>Verified lawyers and secure client matching</span>
+              </li>
+              <li className="flex items-center gap-3">
+                <MdVerified className="w-6 h-6 text-green-400 shrink-0" />
+                <span>Effortless appointment scheduling & management</span>
+              </li>
+              <li className="flex items-center gap-3">
+                <MdVerified className="w-6 h-6 text-green-400 shrink-0" />
+                <span>Secure document sharing and messaging</span>
+              </li>
+            </ul>
           </div>
         </div>
-        {/* Help Links */}
-        <div className="text-center mt-4 text-sm text-gray-500">
-          <div className="flex justify-end  gap-6">
-            {/* <Link
-            to="/help-center"
-          className="hover:text-blue-600 transition"
-          >
-          Help Center
-        </Link>
 
-        <Link
-          to="/contact-support"
-        className="hover:text-blue-600 transition"
-        >
-        Contact Support
-        </Link> */}
+        {/* Right Side - Form */}
+        <div className="lg:h-screen flex-1 lg:flex items-center justify-center lg:p-12 overflow-y-auto">
+          <div className="w-full max-w-2xl">
+            {/* Loading Overlay */}
+            {loading && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                <LoadingFallback />
+              </div>
+            )}
+
+            <div className=" bg-white lg:rounded-3xl shadow-2xl lg:mt-80 mb-10 p-8 lg:p-12">
+              <div className="text-center mb-8">
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                  Create your account
+                </h2>
+                <p className="text-gray-600">
+                  Join thousands of satisfied clients and lawyers
+                </p>
+              </div>
+
+              {/* Role Selection */}
+              <div className="mb-8">
+                <div className="flex gap-2 p-1 bg-gray-100 rounded-xl">
+                  <button
+                    type="button"
+                    onClick={() => handleSelectRole("client")}
+                    className={`flex-1 flex items-center justify-center gap-3 py-3 px-4 rounded-lg font-medium transition-all duration-300 ${
+                      role === "client"
+                        ? "bg-blue-600 text-white shadow-lg transform scale-105"
+                        : "text-gray-600 hover:text-gray-900"
+                    }`}
+                  >
+                    <FaUser className="text-lg" />
+                    <span className="hidden sm:inline">I am a Client</span>
+                    <span className="sm:hidden">Client</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSelectRole("lawyer")}
+                    className={`flex-1 flex items-center justify-center gap-3 py-3 px-4 rounded-lg font-medium transition-all duration-300 ${
+                      role === "lawyer"
+                        ? "bg-blue-600 text-white shadow-lg transform scale-105"
+                        : "text-gray-600 hover:text-gray-900"
+                    }`}
+                  >
+                    <FaUserTie className="text-lg" />
+                    <span className="hidden sm:inline">I am a Lawyer</span>
+                    <span className="sm:hidden">Lawyer</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Forms */}
+              {role === "client" ? (
+                <ClientRegform
+                  formData={formData}
+                  handleChange={handleChange}
+                  handleSubmit={handleSubmit}
+                  error={error}
+                  loading={loading}
+                  showPassword={showPassword}
+                  setShowPassword={setShowPassword}
+                />
+              ) : (
+                <LawyerRegform
+                  formData={formData}
+                  handleChange={handleChange}
+                  handleSubmit={handleSubmit}
+                  error={error}
+                  loading={loading}
+                  showPassword={showPassword}
+                  setShowPassword={setShowPassword}
+                />
+              )}
+            </div>
           </div>
         </div>
       </div>
 
+      {/* OTP Modal */}
       {otpModalOpen && (
         <EmailOtpModal
           email={formData.email}
@@ -443,36 +424,24 @@ const Registration = () => {
 };
 
 const Input = ({ icon, isPassword, onToggle, showPassword, ...props }) => (
-  <div
-    className="
-      h-10 flex items-center
-      bg-gray-100 rounded-lg
-      px-3 
-      transition
-      focus-within:ring-2 focus-within:ring-blue-600
-    "
-  >
-    <span className="text-gray-500 mr-2 pointer-events-none">{icon}</span>
-
-    <input
-      {...props}
-      required
-      className="
-        w-full
-        outline-none
-        bg-transparent
-        placeholder:text-gray-400
-      "
-    />
-    {isPassword && (
-      <button
-        type="button"
-        onClick={onToggle}
-        className="text-gray-500 hover:text-gray-700 ml-2"
-      >
-        {showPassword ? <FaEye /> : <FaEyeSlash />  }
-      </button>
-    )}
+  <div className="relative">
+    <div className="flex items-center bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 transition-all focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100">
+      <span className="text-gray-400 mr-3 shrink-0">{icon}</span>
+      <input
+        {...props}
+        required
+        className="w-full bg-transparent outline-none text-gray-900 placeholder:text-gray-400"
+      />
+      {isPassword && (
+        <button
+          type="button"
+          onClick={onToggle}
+          className="text-gray-400 hover:text-gray-600 ml-2 shrink-0"
+        >
+          {showPassword ? <FaEye /> : <FaEyeSlash />}
+        </button>
+      )}
+    </div>
   </div>
 );
 
@@ -486,11 +455,13 @@ const ClientRegform = ({
   setShowPassword,
 }) => {
   return (
-    <form onSubmit={handleSubmit} className="mt-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Full Name */}
-        <div>
-          <label className="text-sm font-medium text-white">Full Name</label>
+        <div className="md:col-span-2">
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Full Name
+          </label>
           <Input
             icon={<FaUser />}
             name="name"
@@ -502,11 +473,13 @@ const ClientRegform = ({
 
         {/* Phone */}
         <div>
-          <label className="text-sm font-medium text-white">Phone Number</label>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Phone Number
+          </label>
           <Input
             icon={<FaPhone />}
             name="phone"
-            placeholder="+91 98765 43210"
+            placeholder="9876543210"
             onChange={handleChange}
             value={formData.phone}
             type="tel"
@@ -515,17 +488,20 @@ const ClientRegform = ({
           />
         </div>
 
+        {/* Gender */}
         <div>
-          <label className="text-sm font-medium text-white">Gender</label>
-          <div className="h-10 flex items-center bg-gray-100 rounded-lg px-3 transition focus-within:ring-2 focus-within:ring-blue-600">
-            <span className="text-gray-500 mr-2 pointer-events-none">
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Gender
+          </label>
+          <div className="flex items-center bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 transition-all focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100">
+            <span className="text-gray-400 mr-3 shrink-0">
               <FaVenusMars />
             </span>
             <select
               name="gender"
               value={formData.gender}
               onChange={handleChange}
-              className="w-full outline-none bg-transparent text-slate-700"
+              className="w-full bg-transparent outline-none text-gray-900"
             >
               <option value="">Select gender</option>
               <option value="Male">Male</option>
@@ -537,7 +513,7 @@ const ClientRegform = ({
 
         {/* Email (Full Width) */}
         <div className="md:col-span-2">
-          <label className="text-sm font-medium text-white">
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
             Email Address
           </label>
           <Input
@@ -546,11 +522,16 @@ const ClientRegform = ({
             placeholder="name@example.com"
             onChange={handleChange}
             value={formData.email}
+            type="email"
           />
         </div>
 
+
+        {/* City */}
         <div>
-          <label className="text-sm font-medium text-white">City</label>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            City
+          </label>
           <Input
             icon={<FaUser />}
             name="city"
@@ -560,8 +541,11 @@ const ClientRegform = ({
           />
         </div>
 
+        {/* State */}
         <div>
-          <label className="text-sm font-medium text-white">State</label>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            State
+          </label>
           <Input
             icon={<FaUser />}
             name="state"
@@ -573,7 +557,9 @@ const ClientRegform = ({
 
         {/* Password */}
         <div>
-          <label className="text-sm font-medium text-white">Password</label>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Password
+          </label>
           <Input
             icon={<FaLock />}
             name="password"
@@ -590,7 +576,7 @@ const ClientRegform = ({
 
         {/* Confirm Password */}
         <div>
-          <label className="text-sm font-medium text-white">
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
             Confirm Password
           </label>
           <Input
@@ -608,24 +594,28 @@ const ClientRegform = ({
         </div>
       </div>
 
-      {error && <p className="text-red-500 text-sm mt-4">{error}</p>}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+          <p className="text-red-600 text-sm">{error}</p>
+        </div>
+      )}
 
       {/* Terms */}
-      <div className="flex items-center gap-2 mt-5">
+      <div className="flex items-start gap-3">
         <input
           type="checkbox"
           name="agree"
           onChange={handleChange}
           checked={formData.agree}
-          className="accent-blue-600"
+          className="mt-1 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
         />
-        <p className="text-sm text-white">
-          I agree to{" "}
-          <span className="text-white underline font-medium cursor-pointer">
-            Terms
+        <p className="text-sm text-gray-600 leading-relaxed">
+          I agree to the{" "}
+          <span className="text-blue-600 font-medium cursor-pointer hover:underline">
+            Terms of Service
           </span>{" "}
-          &{" "}
-          <span className="text-white underline font-medium cursor-pointer">
+          and{" "}
+          <span className="text-blue-600 font-medium cursor-pointer hover:underline">
             Privacy Policy
           </span>
         </p>
@@ -635,11 +625,19 @@ const ClientRegform = ({
       <button
         type="submit"
         disabled={loading}
-        className="w-full mt-6 bg-blue-800 text-white py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition flex justify-center items-center gap-2"
+        className="w-full bg-linear-to-r from-blue-600 to-indigo-600 text-white py-4 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
       >
         {loading ? "Creating Account..." : "Create Account"}
         <FaArrowRight />
       </button>
+
+      <p className="text-sm text-gray-600 text-center">
+        Already have an account?{" "}
+        <Link to={'/auth/login' } className="text-blue-600 font-medium cursor-pointer hover:underline">
+          Sign In
+        </Link>
+      </p>
+
     </form>
   );
 };
@@ -654,11 +652,13 @@ const LawyerRegform = ({
   setShowPassword,
 }) => {
   return (
-    <form onSubmit={handleSubmit} className="mt-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Full Name */}
-        <div>
-          <label className="text-sm font-medium text-white">Full Name</label>
+        <div className="md:col-span-2">
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Full Name
+          </label>
           <Input
             icon={<FaUser />}
             name="name"
@@ -670,11 +670,13 @@ const LawyerRegform = ({
 
         {/* Phone */}
         <div>
-          <label className="text-sm font-medium text-white">Phone Number</label>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Phone Number
+          </label>
           <Input
             icon={<FaPhone />}
             name="phone"
-            placeholder="+1 900 822 030"
+            placeholder="9876543210"
             onChange={handleChange}
             value={formData.phone}
             type="tel"
@@ -683,17 +685,20 @@ const LawyerRegform = ({
           />
         </div>
 
+        {/* Gender */}
         <div>
-          <label className="text-sm font-medium text-white">Gender</label>
-          <div className="h-10 flex items-center bg-gray-100 rounded-lg px-3 transition focus-within:ring-2 focus-within:ring-blue-600">
-            <span className="text-gray-500 mr-2 pointer-events-none">
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Gender
+          </label>
+          <div className="flex items-center bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 transition-all focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100">
+            <span className="text-gray-400 mr-3 shrink-0">
               <FaVenusMars />
             </span>
             <select
               name="gender"
               value={formData.gender}
               onChange={handleChange}
-              className="w-full outline-none bg-transparent text-slate-700"
+              className="w-full bg-transparent outline-none text-gray-900"
             >
               <option value="">Select gender</option>
               <option value="Male">Male</option>
@@ -705,7 +710,7 @@ const LawyerRegform = ({
 
         {/* Email */}
         <div className="md:col-span-2">
-          <label className="text-sm font-medium text-white">
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
             Email Address
           </label>
           <Input
@@ -714,12 +719,13 @@ const LawyerRegform = ({
             placeholder="lawyer@example.com"
             onChange={handleChange}
             value={formData.email}
+            type="email"
           />
         </div>
 
         {/* License Number */}
         <div className="md:col-span-2">
-          <label className="text-sm font-medium text-white">
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
             License Number
           </label>
           <Input
@@ -734,7 +740,9 @@ const LawyerRegform = ({
 
         {/* Password */}
         <div>
-          <label className="text-sm font-medium text-white">Password</label>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Password
+          </label>
           <Input
             icon={<FaLock />}
             name="password"
@@ -751,7 +759,7 @@ const LawyerRegform = ({
 
         {/* Confirm Password */}
         <div>
-          <label className="text-sm font-medium text-white">
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
             Confirm Password
           </label>
           <Input
@@ -769,24 +777,28 @@ const LawyerRegform = ({
         </div>
       </div>
 
-      {error && <p className="text-red-500 text-sm mt-4">{error}</p>}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+          <p className="text-red-600 text-sm">{error}</p>
+        </div>
+      )}
 
       {/* Terms */}
-      <div className="flex items-center gap-2 mt-5">
+      <div className="flex items-start gap-3">
         <input
           type="checkbox"
           name="agree"
           onChange={handleChange}
           checked={formData.agree}
-          className="accent-blue-600"
+          className="mt-1 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
         />
-        <p className="text-sm text-white">
-          I agree to{" "}
-          <span className="text-white underline font-medium cursor-pointer">
-            Terms
+        <p className="text-sm text-gray-600 leading-relaxed">
+          I agree to the{" "}
+          <span className="text-blue-600 font-medium cursor-pointer hover:underline">
+            Terms of Service
           </span>{" "}
-          &{" "}
-          <span className="text-white underline font-medium cursor-pointer">
+          and{" "}
+          <span className="text-blue-600 font-medium cursor-pointer hover:underline">
             Privacy Policy
           </span>
         </p>
@@ -796,11 +808,18 @@ const LawyerRegform = ({
       <button
         type="submit"
         disabled={loading}
-        className="w-full mt-6 bg-blue-800 text-white py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition flex justify-center items-center gap-2"
+        className="w-full bg-linear-to-r from-blue-600 to-indigo-600 text-white py-4 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
       >
-        Create Account
+        {loading ? "Creating Account..." : "Create Account"}
         <FaArrowRight />
       </button>
+
+      <p className="text-sm text-gray-600 text-center">
+        Already have an account?{" "}
+        <Link to={'/auth/login' } className="text-blue-600 font-medium cursor-pointer hover:underline">
+          Sign In
+        </Link>
+      </p>
     </form>
   );
 };
@@ -816,59 +835,105 @@ const EmailOtpModal = ({
   onResend,
   onClose,
 }) => {
+  const handleOtpChange = (index, value) => {
+    // Only allow single digit
+    if (!/^[0-9]?$/.test(value)) return;
+
+    const newOtp = [...otp];
+    newOtp[index] = value;
+    setOtp(newOtp);
+
+    // Auto-focus to next input if value is entered
+    if (value && index < 5) {
+      document.getElementById(`otp-${index + 1}`)?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index, e) => {
+    if (e.key === "Backspace") {
+      e.preventDefault();
+      const newOtp = [...otp];
+      newOtp[index] = "";
+      setOtp(newOtp);
+
+      // Move to previous input on backspace
+      if (index > 0) {
+        document.getElementById(`otp-${index - 1}`)?.focus();
+      }
+    } else if (e.key === "ArrowLeft" && index > 0) {
+      document.getElementById(`otp-${index - 1}`)?.focus();
+    } else if (e.key === "ArrowRight" && index < 5) {
+      document.getElementById(`otp-${index + 1}`)?.focus();
+    }
+  };
+
+  const isOtpComplete = otp.every(digit => digit !== "");
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-        <div className="flex items-start justify-between gap-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8">
+        <div className="flex items-start justify-between mb-6">
           <div>
-            <h3 className="text-2xl font-semibold text-slate-900">
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">
               Verify your email
             </h3>
-            <p className="mt-1 text-sm text-slate-600">
+            <p className="text-gray-600 text-sm">
               Enter the OTP sent to{" "}
-              <span className="font-medium text-slate-900">
+              <span className="font-semibold text-gray-900">
                 {email || "your email"}
               </span>
-              .
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full px-2 py-1 text-sm font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+            className="text-gray-400 hover:text-gray-600 p-1 text-xl"
           >
-            Close
+            ✕
           </button>
         </div>
 
-        <div className="mt-5 rounded-xl bg-blue-50 p-4 text-sm text-blue-900">
-          {otpInfo || "We sent a 6-digit verification code to your inbox."}
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-8">
+          <p className="text-blue-800 text-sm">
+            {otpInfo || "We sent a 6-digit verification code to your inbox."}
+          </p>
         </div>
 
-        <div className="mt-5">
-          <label className="mb-2 block text-sm font-medium text-slate-700">
-            OTP
+        {/* OTP Input Boxes */}
+        <div className="mb-8">
+          <label className="block text-sm font-semibold text-gray-700 mb-4">
+            Enter OTP Code
           </label>
-          <input
-            type="text"
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            maxLength={6}
-            value={otp}
-            onChange={(e) => setOtp(e.target.value)}
-            placeholder="Enter 6-digit OTP"
-            className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-          />
+          <div className="flex gap-2 justify-center">
+            {otp.map((digit, index) => (
+              <input
+                key={index}
+                id={`otp-${index}`}
+                type="tel"
+                inputMode="numeric"
+                maxLength="1"
+                value={digit}
+                onChange={(e) => handleOtpChange(index, e.target.value)}
+                onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                className="w-14 h-14 text-center text-2xl font-bold border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all placeholder:text-gray-300"
+                placeholder=""
+              />
+            ))}
+          </div>
         </div>
 
-        {otpError && <p className="mt-3 text-sm text-red-600">{otpError}</p>}
+        {otpError && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+            <p className="text-red-600 text-sm">{otpError}</p>
+          </div>
+        )}
 
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+        <div className="flex flex-col gap-3">
           <button
             type="button"
             onClick={onVerify}
-            disabled={otpLoading}
-            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
+            disabled={otpLoading || !isOtpComplete}
+            className="w-full bg-linear-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
           >
             {otpLoading ? "Verifying..." : "Verify & Create Account"}
           </button>
@@ -876,7 +941,7 @@ const EmailOtpModal = ({
             type="button"
             onClick={onResend}
             disabled={otpLoading}
-            className="inline-flex flex-1 items-center justify-center rounded-xl border border-slate-300 px-4 py-3 font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
+            className="w-full border border-gray-300 text-gray-700 py-3 rounded-xl font-semibold hover:bg-gray-50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Resend OTP
           </button>

@@ -370,7 +370,7 @@ const getAllAppointments = async (req, res) => {
     await syncCompletedAppointments();
     const appointments = await Appointment.find()
       .populate("userId", "name email phone gender city state profilePicture createdAt")
-      .populate("lawyerId", "name email phone location");
+      .populate("lawyerId", "name email phone profileImage location");
     const enrichedAppointments = await ensureMeetingDetailsForAppointments(appointments);
     res.json(enrichedAppointments);
   } catch (err) {
@@ -388,7 +388,7 @@ const getAppointmentById = async (req, res) => {
     const [appointments, totalAppointments, pendingAppointments] = await Promise.all([
       Appointment.find(query)
         .populate("userId", "name email phone gender city state profilePicture createdAt")
-        .populate("lawyerId", "name email phone location")
+        .populate("lawyerId", "name email phone profileImage location")
         .sort({ createdAt: -1 }),
       Appointment.countDocuments(baseQuery),
       Appointment.countDocuments({ ...baseQuery, status: "Pending" }),
@@ -779,7 +779,7 @@ const getAllLawyerAppointments = async (req, res) => {
     const [appointments, totalAppointments, pendingAppointments] = await Promise.all([
       Appointment.find(query)
         .populate("userId", "name email phone")
-        .populate("lawyerId", "name email phone location")
+        .populate("lawyerId", "name email phone profileImage location")
         .sort({ createdAt: -1 }),
       Appointment.countDocuments(baseQuery),
       Appointment.countDocuments({ ...baseQuery, status: "Pending" }),
@@ -804,7 +804,7 @@ const getAllUserAppointments = async (req, res) => {
     await syncCompletedAppointments({ userId: req.params.id });
     const appointments = await Appointment.find({ userId: req.params.id })
       .populate("userId", "name email phone gender city state profilePicture createdAt")
-      .populate("lawyerId", "name email phone location");
+      .populate("lawyerId", "name email phone profileImage location");
     const enrichedAppointments = await ensureMeetingDetailsForAppointments(appointments);
     
     res.json({ message: "Appointments retrieved successfully", appointments: enrichedAppointments });

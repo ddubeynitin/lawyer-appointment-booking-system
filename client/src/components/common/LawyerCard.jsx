@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FaMapMarkerAlt, FaStar, FaChevronDown } from "react-icons/fa";
+import { BsGenderFemale, BsGenderMale } from "react-icons/bs";
 import { useAuth } from "../../context/AuthContext";
 
 function LawyerCard({ lawyer }) {
@@ -15,7 +16,17 @@ function LawyerCard({ lawyer }) {
   const navigate = useNavigate();
   const {user} = useAuth();
   return (
-    <div className="relative rounded-3xl border border-slate-100 bg-white p-4 shadow-lg transition-all duration-300 hover:shadow-2xl sm:p-6">
+    <>
+      <style>{`
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
+      <div className="relative rounded-3xl border border-slate-100 bg-white p-4 shadow-lg transition-all duration-300 hover:shadow-2xl sm:p-6">
       <div className="absolute right-3 top-3 flex items-center gap-2 rounded-full bg-yellow-50 px-3 py-1 text-xs font-semibold text-yellow-700 shadow-sm sm:text-sm">
         <FaStar />
         <span>{lawyer.rating || "4.8"}</span>
@@ -37,10 +48,13 @@ function LawyerCard({ lawyer }) {
           <h4 className="text-lg font-semibold text-slate-800 sm:text-xl">
             {lawyer.name}
           </h4>
-          <p className="text-sm font-medium text-blue-700">
+          <p className="text-sm flex font-medium text-blue-700">
             {lawyer.role}
-            <span className="ml-2 inline-block rounded-lg border border-gray-200 p-1 text-xs font-normal text-slate-500">
-              {lawyer.experience ? `${lawyer.experience} Years` : "Fresher"}
+            <span className="ml-2 rounded-lg border border-gray-200 p-1 text-xs font-normal text-slate-500">
+              {lawyer.experience ? `${lawyer.experience} Years` : "Fresher"} 
+            </span>
+            <span className="ml-2 rounded-lg border border-gray-200 p-1 text-xs font-normal text-slate-500">
+            {lawyer.gender === "Male" ? <BsGenderMale className="text-blue-500"/> : <BsGenderFemale className="text-pink-500" />}
             </span>
           </p>
 
@@ -52,20 +66,15 @@ function LawyerCard({ lawyer }) {
       </div>
 
       {lawyer.specializations && lawyer.specializations.length > 0 ? (
-        <div className="mt-3 flex flex-wrap gap-2">
-          {(lawyer.specializations || []).slice(0, 3).map((specialization) => (
+        <div className="w-full mt-3 flex overflow-x-auto gap-2 scrollbar-hide">
+          {(lawyer.specializations || []).map((specialization) => (
             <span
               key={specialization}
-              className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700"
+              className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 whitespace-nowrap"
             >
               {specialization}
             </span>
           ))}
-          {lawyer.specializations.length > 3 && (
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
-              +{lawyer.specializations.length - 3} more
-            </span>
-          )}
         </div>
       ) : (
         <div className="mt-3 flex flex-wrap gap-2">
@@ -150,7 +159,8 @@ function LawyerCard({ lawyer }) {
           Book Consultation
         </button>}
       </div>
-    </div>
+      </div>
+    </>
   );
 }
 

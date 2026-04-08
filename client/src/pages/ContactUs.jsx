@@ -1,7 +1,11 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import { FaArrowLeft } from "react-icons/fa";
 
 const ContactUs = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="bg-gray-50 min-h-screen">
       
@@ -13,6 +17,9 @@ const ContactUs = () => {
           transition={{ duration: 0.6 }}
           className="max-w-6xl mx-auto px-4 text-center"
         >
+          <button onClick={ () => navigate(-1) } className="flex gap-2 justify-center items-center bg-white text-blue-600 hover:bg-gray-200 font-bold py-2 px-4 rounded-full">
+                      <FaArrowLeft/> Back
+                    </button>
           <h1 className="text-4xl font-bold mb-4">Contact Us</h1>
           <p className="text-lg opacity-90">
             We'd love to hear from you. Get in touch with us.
