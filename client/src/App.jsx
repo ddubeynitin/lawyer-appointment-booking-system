@@ -4,6 +4,7 @@ import "./App.css";
 import LoadingFallback from "./components/LoadingFallback";
 import AiChatWidget from "./components/ai/AiChatWidget";
 import AppointmentBooked from "./components/appointment/AppointmentBooked";
+import { AuthProvider } from "./context/AuthContext";
 
 // Lazy load components
 
@@ -104,11 +105,13 @@ const AppShell = () => {
 
 const App = () => {
   return (
-    <Suspense fallback={<LoadingFallback />}>
-      <Router>
-        <AppShell />
-      </Router>
-    </Suspense>
+    <AuthProvider>
+      <Suspense fallback={<LoadingFallback />}>
+        <Router>
+          <AppShell />
+        </Router>
+      </Suspense>
+    </AuthProvider>
   );
 };
 
