@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import axios from "axios";
-import { CalendarDays, Clock3, Filter, Search, Star, X } from "lucide-react";
+import { CalendarDays, Clock3, Filter, RefreshCcw, Search, Star, X } from "lucide-react";
 import ClientHeader from "../../components/common/ClientHeader";
 import ReviewRating from "../../components/ReviewRating";
 import DateTimeSlotPicker from "../../components/DateTimeSlotPicker";
@@ -75,31 +75,31 @@ export default function MyAppointments() {
   const [rescheduleError, setRescheduleError] = useState("");
   const [autoOpenedRescheduleId, setAutoOpenedRescheduleId] = useState("");
 
-  useEffect(() => {
-    const fetchAppointments = async () => {
-      if (!userId) {
-        setAppointments([]);
-        setLoading(false);
-        setError("Unable to load appointment history because the client account is missing.");
-        return;
-      }
+  const fetchAppointments = useCallback(async () => {
+    if (!userId) {
+      setAppointments([]);
+      setLoading(false);
+      setError("Unable to load appointment history because the client account is missing.");
+      return;
+    }
 
-      try {
-        setLoading(true);
-        setError("");
-        const response = await axios.get(`${API_URL}/appointments/user/${userId}`);
-        setAppointments(response.data?.appointments || []);
-      } catch (fetchError) {
-        console.error("Failed to fetch client appointments:", fetchError);
-        setAppointments([]);
-        setError("Unable to load appointment history right now.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAppointments();
+    try {
+      setLoading(true);
+      setError("");
+      const response = await axios.get(`${API_URL}/appointments/user/${userId}`);
+      setAppointments(response.data?.appointments || []);
+    } catch (fetchError) {
+      console.error("Failed to fetch client appointments:", fetchError);
+      setAppointments([]);
+      setError("Unable to load appointment history right now.");
+    } finally {
+      setLoading(false);
+    }
   }, [userId]);
+
+  useEffect(() => {
+    fetchAppointments();
+  }, [fetchAppointments]);
 
   useEffect(() => {
     const fetchReviews = async () => {
@@ -327,11 +327,11 @@ export default function MyAppointments() {
 
         <section className="rounded-3xl bg-white p-6 shadow-xl">
           <div className="grid gap-4 lg:grid-cols-[1.6fr_0.8fr_0.8fr_auto]">
-            <label className="relative flex">
-              <span className="sr-only">Search appointments</span>
+            <label className="relative ">
+              <span className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-600">Search appointments</span>
               <Search
                 size={18}
-                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                className="pointer-events-none absolute left-4 lg:top-1/2 top-2/3 -translate-y-1/2 text-slate-400"
               />
               <input
                 type="text"
@@ -378,13 +378,22 @@ export default function MyAppointments() {
               </select>
             </label>
 
-            <div className="flex items-end">
+            <div className="flex flex-col items-end gap-3">
               <button
                 type="button"
                 onClick={resetFilters}
                 className="w-full rounded-2xl border border-slate-200 px-5 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
               >
                 Reset
+              </button>
+              <button
+                type="button"
+                onClick={fetchAppointments}
+                disabled={loading}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                <RefreshCcw size={16} />
+                Refresh
               </button>
             </div>
           </div>

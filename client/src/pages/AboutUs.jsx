@@ -1,6 +1,11 @@
 import { motion } from "framer-motion";
+import { FaArrowLeft, FaBackward } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 const AboutUs = () => {
+
+  const navigate = useNavigate();
+
   return (
     <div className="bg-gray-50 min-h-screen">
       
@@ -12,6 +17,9 @@ const AboutUs = () => {
           transition={{ duration: 0.6 }}
           className="max-w-6xl mx-auto px-4 text-center"
         >
+          <button onClick={ () => navigate(-1) } className="flex gap-2 justify-center items-center bg-white text-blue-600 hover:bg-gray-200 font-bold py-2 px-4 rounded-full">
+            <FaArrowLeft/> Back
+          </button>
           <h1 className="text-4xl font-bold mb-4">
             Lawyer Appointment Booking System
           </h1>

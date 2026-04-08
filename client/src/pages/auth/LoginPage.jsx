@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { FaGavel, FaHome, FaUser, FaUserTie } from "react-icons/fa";
+import { FaGavel, FaHome, FaUser, FaUserPlus, FaUserTie } from "react-icons/fa";
 import { MdEmail } from "react-icons/md";
 import { CgLogIn } from "react-icons/cg";
 import { RiLockPasswordFill } from "react-icons/ri";
@@ -167,7 +167,8 @@ function LoginPage() {
       setLoginAlert(null);
 
       const isProfileComplete =
-        response.data.user.isProfileComplete ?? response.data.user.idProfileComplete;
+        response.data.user.isProfileComplete ??
+        response.data.user.idProfileComplete;
       if (response.data.user.role === "lawyer" && !isProfileComplete) {
         navigate("/complete-profile");
       } else {
@@ -229,10 +230,13 @@ function LoginPage() {
     setForgotMessage("");
 
     try {
-      const response = await axios.post(`${API_URL}/auth/password/request-otp`, {
-        email: forgotEmail.trim(),
-        role,
-      });
+      const response = await axios.post(
+        `${API_URL}/auth/password/request-otp`,
+        {
+          email: forgotEmail.trim(),
+          role,
+        },
+      );
       setForgotStage("reset");
       setForgotMessage(response.data?.message || "OTP sent to your email");
     } catch (err) {
@@ -261,13 +265,18 @@ function LoginPage() {
     setForgotMessage("");
 
     try {
-      const response = await axios.post(`${API_URL}/auth/password/reset-with-otp`, {
-        email: forgotEmail.trim(),
-        role,
-        otp: forgotOtp.trim(),
-        newPassword: forgotNewPassword,
-      });
-      setForgotMessage(response.data?.message || "Password updated successfully");
+      const response = await axios.post(
+        `${API_URL}/auth/password/reset-with-otp`,
+        {
+          email: forgotEmail.trim(),
+          role,
+          otp: forgotOtp.trim(),
+          newPassword: forgotNewPassword,
+        },
+      );
+      setForgotMessage(
+        response.data?.message || "Password updated successfully",
+      );
       setTimeout(() => {
         setForgotOpen(false);
         setForgotStage("request");
@@ -299,7 +308,7 @@ function LoginPage() {
   };
 
   return (
-    <div className="h-screen bg-[url('./assets/images/bg-white.jpg')] bg-cover bg-center flex items-center justify-center py-10 px-4 font-barlow">
+    <div className="h-screen bg-[url('./assets/images/bg-white.jpg')] bg-cover bg-center flex items-center justify-center py-10 lg:px-4 font-barlow overflow-hidden">
       <div className="w-full max-w-6xl mx-auto flex flex-col lg:flex-row bg-white/70 backdrop-blur-sm shadow-xl rounded-2xl overflow-hidden">
         {loading && (
           <div className="absolute w-full h-screen top-[50%] left-[50%] bg-white/30 transform -translate-x-1/2 -translate-y-1/2 flex justify-center items-center z-20">
@@ -307,17 +316,17 @@ function LoginPage() {
           </div>
         )}
         {loginAlert ? (
-              <div>
-                <AlertBox
-                  variant={loginAlert.variant}
-                  title={loginAlert.title}
-                  message={loginAlert.message}
-                  onClose={() => setLoginAlert(null)}
-                  floating
-                />
-              </div>
-            ) : null}
-
+          <div>
+            <AlertBox
+              variant={loginAlert.variant}
+              title={loginAlert.title}
+              message={loginAlert.message}
+              onClose={() => setLoginAlert(null)}
+              floating
+            />
+          </div>
+        ) : null}
+        {/* Left Side - Hero */}
         <div className="hidden lg:flex lg:w-1/2 relative bg-linear-to-br from-blue-600 via-indigo-600 to-purple-600 items-center justify-center p-10">
           <div className="text-white max-w-sm">
             <h2 className="text-3xl font-bold mb-4">Welcome 🙏</h2>
@@ -325,20 +334,44 @@ function LoginPage() {
               Access your dashboard, manage your appointments, and connect with
               trusted legal professionals.
             </p>
-           
+
             <Link
               to="/"
-              className="mt-6 inline-flex items-center gap-2 bg-white/30 hover:bg-white/50 text-white font-semibold py-2 px-4 rounded-lg transition"
+              className="mt-6 inline-flex items-center gap-2 bg-white/30 hover:bg-white/50 text-white font-semibold py-2 px-4 rounded-full transition"
             >
               <FaHome />
               Home
             </Link>
+
+            <Link
+              to="/auth/register"
+              className="mt-6 inline-flex items-center gap-2 bg-white/30 ml-3 hover:bg-white/50 text-white font-semibold py-2 px-4 rounded-full transition"
+            >
+              <FaUserPlus />
+              Sign Up
+            </Link>
           </div>
         </div>
 
-        <div className="relative w-full lg:w-1/2 flex items-center justify-center px-6 py-10">
-          <div className="relative w-full max-w-md pt-16">
-            
+        <div className="relative w-full lg:w-1/2 flex items-center justify-center px-6 py-10 overflow-y-auto">
+          <div className="relative w-full max-w-md lg:pt-16 ">
+            <div className="flex items-center justify-between gap-2 border-b lg:border-0 border-gray-200 pb-4 mb-6">
+              <Link
+                to="/"
+                className="lg:hidden flex items-center gap-2 border border-blue-500 text-blue-500 font-semibold py-1 px-4 rounded-full transition"
+              >
+                <FaHome />
+                HOME
+              </Link>
+
+              <Link
+                to="/auth/register"
+                className="lg:hidden flex items-center border border-blue-500 gap-2 text-blue-500  font-semibold py-1 px-4 rounded-full transition"
+              >
+                <FaUserPlus />
+                Sign Up
+              </Link>
+            </div>
 
             <div className="flex items-center justify-center mb-6 gap-2">
               <div className="w-8 h-8 rounded flex items-center justify-center text-black font-bold">
@@ -440,13 +473,15 @@ function LoginPage() {
                     className={`w-full bg-gray-100 rounded-tr-lg rounded-br-lg px-3 py-2 focus:outline-none border-l ${emailError ? "border-red-500" : "border-gray-300"}`}
                   />
                 </div>
-                {emailError && <p className="text-red-600 text-sm mt-1">{emailError}</p>}
+                {emailError && (
+                  <p className="text-red-600 text-sm mt-1">{emailError}</p>
+                )}
               </div>
 
               {authMode === "password" ? (
                 <div>
-                  <div className="flex justify-between mb-1">
-                    <label className="text-sm">Password</label>
+                  <div className="flex justify-between ">
+                    <label className="text-sm mb-1">Password</label>
                     <button
                       type="button"
                       className="text-sm text-blue-600 hover:underline"
@@ -477,13 +512,21 @@ function LoginPage() {
                     <button
                       type="button"
                       onClick={() => setShowPassword((s) => !s)}
-                      aria-label={showPassword ? "Hide password" : "Show password"}
-                      className="p-2  m-2 text-blue-900"
+                      aria-label={
+                        showPassword ? "Hide password" : "Show password"
+                      }
+                      className="p-1 m-2 text-blue-900"
                     >
-                      {showPassword ? <AiOutlineEye /> : <AiOutlineEyeInvisible />}
+                      {showPassword ? (
+                        <AiOutlineEye />
+                      ) : (
+                        <AiOutlineEyeInvisible />
+                      )}
                     </button>
                   </div>
-                  {passwordError && <p className="text-red-600 text-sm mt-1">{passwordError}</p>}
+                  {passwordError && (
+                    <p className="text-red-600 text-sm mt-1">{passwordError}</p>
+                  )}
                 </div>
               ) : (
                 <div>
@@ -494,12 +537,20 @@ function LoginPage() {
                       type="text"
                       value={otp}
                       onChange={(e) => setOtp(e.target.value)}
-                      placeholder={otpRequested ? "Enter the OTP sent to your email" : "Click Continue to send OTP"}
+                      placeholder={
+                        otpRequested
+                          ? "Enter the OTP sent to your email"
+                          : "Click Continue to send OTP"
+                      }
                       className="flex-1 w-8 bg-gray-100 px-3 py-2 focus:outline-none border-l border-gray-300 rounded-tr-lg rounded-br-lg"
                     />
                   </div>
-                  {otpError && <p className="text-red-600 text-sm mt-1">{otpError}</p>}
-                  {otpInfo && <p className="text-green-700 text-sm mt-1">{otpInfo}</p>}
+                  {otpError && (
+                    <p className="text-red-600 text-sm mt-1">{otpError}</p>
+                  )}
+                  {otpInfo && (
+                    <p className="text-green-700 text-sm mt-1">{otpInfo}</p>
+                  )}
                 </div>
               )}
 
@@ -508,11 +559,15 @@ function LoginPage() {
                 className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 transition"
               >
                 <CgLogIn className="inline mr-2 text-2xl mb-1" />
-                {authMode === "otp" ? (otpRequested ? "Verify OTP" : "Send OTP") : "Log In"}
+                {authMode === "otp"
+                  ? otpRequested
+                    ? "Verify OTP"
+                    : "Send OTP"
+                  : "Log In"}
               </button>
             </form>
 
-            <p className="text-center text-sm text-gray-500 mt-6">
+            <p className="hidden lg:block text-center text-sm text-gray-500 mt-6">
               Don&apos;t have an account?{" "}
               <Link to="/auth/register">
                 <span className="text-blue-600 cursor-pointer hover:underline">
@@ -618,7 +673,9 @@ function LoginPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm mb-1">Confirm Password</label>
+                    <label className="block text-sm mb-1">
+                      Confirm Password
+                    </label>
                     <input
                       type="password"
                       value={forgotConfirmPassword}
@@ -629,16 +686,28 @@ function LoginPage() {
                 </>
               )}
 
-              {forgotError && <p className="text-sm text-red-600">{forgotError}</p>}
-              {forgotMessage && <p className="text-sm text-green-700">{forgotMessage}</p>}
+              {forgotError && (
+                <p className="text-sm text-red-600">{forgotError}</p>
+              )}
+              {forgotMessage && (
+                <p className="text-sm text-green-700">{forgotMessage}</p>
+              )}
 
               <button
                 type="button"
                 disabled={forgotLoading}
-                onClick={forgotStage === "request" ? handleForgotRequest : handleForgotReset}
+                onClick={
+                  forgotStage === "request"
+                    ? handleForgotRequest
+                    : handleForgotReset
+                }
                 className="w-full rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
               >
-                {forgotLoading ? "Please wait..." : forgotStage === "request" ? "Send OTP" : "Reset Password"}
+                {forgotLoading
+                  ? "Please wait..."
+                  : forgotStage === "request"
+                    ? "Send OTP"
+                    : "Reset Password"}
               </button>
             </div>
           </div>

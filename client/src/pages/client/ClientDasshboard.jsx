@@ -1,4 +1,5 @@
 import { FaSearch, FaVideo } from "react-icons/fa";
+import { MdRefresh } from "react-icons/md";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "../../context/AuthContext";
@@ -39,7 +40,7 @@ const ClientDashboard = () => {
       (firstLawyer, secondLawyer) =>
         (secondLawyer.rating || 0) - (firstLawyer.rating || 0),
     )
-    .slice(0, 2);
+    .slice(0, 3);
 
   const matchedLawyers = useMemo(() => {
     const normalizedQuery = searchInput.trim().toLowerCase();
@@ -181,25 +182,34 @@ const ClientDashboard = () => {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good Morning" : hour < 18 ? "Good Afternoon" : "Good Evening";
 
+  const totalAppointments = appointmentHistory.length;
+  const approvedAppointmentsCount = appointmentHistory.filter(
+    (appointment) => appointment.status === "Approved",
+  ).length;
+  const pendingAppointmentsCount = appointmentHistory.filter(
+    (appointment) => appointment.status === "Pending",
+  ).length;
+  const completedAppointmentsCount = appointmentHistory.filter(
+    (appointment) => appointment.status === "Completed",
+  ).length;
+
+  const fetchAppointments = async () => {
+    if (!user?.id) return;
+    try {
+      const response = await axios.get(`${API_URL}/appointments/user/${user.id}`);
+      setAppointmentHistory(response.data.appointments || []);
+    } catch (error) {
+      console.error("Error fetching appointment history:", error);
+      setAppointmentHistory([]);
+    }
+  };
+
   useEffect(() => {
     if (user?.id) {
       let active = true;
 
       (async () => {
-        try {
-          const response = await axios.get(
-            `${API_URL}/appointments/user/${user.id}`,
-          );
-
-          if (active) {
-            setAppointmentHistory(response.data.appointments || []);
-          }
-        } catch (error) {
-          console.error("Error fetching appointment history:", error);
-          if (active) {
-            setAppointmentHistory([]);
-          }
-        }
+        await fetchAppointments();
       })();
 
       return () => {
@@ -219,7 +229,7 @@ const ClientDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-gray-100 to-gray-200 font-barlow">
+    <div className="min-h-screen bg-slate-100 font-barlow text-slate-900">
       <ClientHeader />
 
       <main className="mx-auto max-w-7xl space-y-10 px-6 py-10">
@@ -232,8 +242,8 @@ const ClientDashboard = () => {
           </p>
         </div>
 
-        <div className="rounded-xl bg-linear-to-b from-blue-700 to-blue-950 p-10 text-white shadow-xl">
-          <h2 className="mb-3 text-center text-2xl font-semibold">
+        <div className="rounded-4xl bg-linear-to-br from-slate-950 via-blue-900 to-blue-700 p-10 text-white shadow-2xl ring-1 ring-slate-200/10">
+          <h2 className="mb-3 text-center text-3xl font-semibold tracking-tight">
             Find the right legal help today
           </h2>
           <p className="mb-6 text-center text-sm opacity-90">
@@ -307,22 +317,76 @@ const ClientDashboard = () => {
               ) : null}
             </div>
           </div>
+
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-4xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+              <p className="text-sm uppercase tracking-[0.3em] text-slate-400">
+                Total appointments
+              </p>
+              <p className="mt-4 text-4xl font-semibold text-slate-900">
+                {totalAppointments}
+              </p>
+              <p className="mt-2 text-sm text-slate-500">
+                Completed and upcoming sessions in your account.
+              </p>
+            </div>
+            <div className="rounded-4xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+              <p className="text-sm uppercase tracking-[0.3em] text-slate-400">
+                Upcoming
+              </p>
+              <p className="mt-4 text-4xl font-semibold text-slate-900">
+                {approvedAppointmentsCount}
+              </p>
+              <p className="mt-2 text-sm text-slate-500">
+                Confirmed appointments waiting for you.
+              </p>
+            </div>
+            <div className="rounded-4xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+              <p className="text-sm uppercase tracking-[0.3em] text-slate-400">
+                Pending
+              </p>
+              <p className="mt-4 text-4xl font-semibold text-slate-900">
+                {pendingAppointmentsCount}
+              </p>
+              <p className="mt-2 text-sm text-slate-500">
+                Requests awaiting lawyer approval.
+              </p>
+            </div>
+            <div className="rounded-4xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+              <p className="text-sm uppercase tracking-[0.3em] text-slate-400">
+                Completed
+              </p>
+              <p className="mt-4 text-4xl font-semibold text-slate-900">
+                {completedAppointmentsCount}
+              </p>
+              <p className="mt-2 text-sm text-slate-500">
+                Finished consultations and closed cases.
+              </p>
+            </div>
+          </div>
         </div>
 
         <section className="rounded-3xl bg-white p-8 shadow-lg">
           <div className="mb-4 flex items-start justify-between">
             <h3 className="text-lg font-semibold">Upcoming Appointment</h3>
-            {upcomingAppointment && (
-              <span
-                className={`rounded-full px-3 py-1 text-xs ${
-                  upcomingAppointment.status === "Approved"
-                    ? "bg-blue-100 text-blue-600"
-                    : "bg-yellow-100 text-yellow-700"
-                }`}
-              >
-                {upcomingAppointment.status.toUpperCase()}
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {upcomingAppointment && (
+                <span
+                  className={`rounded-full px-3 py-1 text-xs ${
+                    upcomingAppointment.status === "Approved"
+                      ? "bg-blue-100 text-blue-600"
+                      : "bg-yellow-100 text-yellow-700"
+                  }`}
+                >
+                  {upcomingAppointment.status.toUpperCase()}
+                </span>
+              )}
+              <MdRefresh
+                className="cursor-pointer text-gray-500 hover:text-blue-600"
+                onClick={fetchAppointments}
+                title="Refresh upcoming appointments"
+              />
+            </div>
           </div>
 
           {upcomingAppointment ? (
@@ -358,10 +422,12 @@ const ClientDashboard = () => {
                 <p>{upcomingAppointment.timeSlot}</p>
                 <p>{upcomingAppointment.caseCategory} consultation</p>
               </div>
-              <div className="flex justify-center gap-4">
-                {/* <button className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm text-white">
-                  <FaVideo /> Join Video Call
-                </button> */}
+              <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+                {upcomingAppointmentMode === "Online" && (
+                  <button className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm text-white transition hover:bg-blue-700">
+                    <FaVideo /> Join Video Call
+                  </button>
+                )}
                 {canRescheduleAppointment(upcomingAppointment) ? (
                   <button
                     type="button"
@@ -370,7 +436,7 @@ const ClientDashboard = () => {
                         state: { rescheduleAppointmentId: upcomingAppointment._id },
                       })
                     }
-                    className="rounded-lg border px-4 py-2 text-sm"
+                    className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-700 transition hover:border-blue-300 hover:bg-slate-50"
                   >
                     Request Reschedule
                   </button>
@@ -400,7 +466,7 @@ const ClientDashboard = () => {
               <h3 className="text-lg font-semibold">Appointment History</h3>
               <Link
                 to="/client/appointment-history"
-                className="text-sm text-blue-600"
+                className="text-sm text-blue-600 font-bold"
               >
                 View All
               </Link>
@@ -411,6 +477,7 @@ const ClientDashboard = () => {
                 <thead>
                   <tr className="bg-gray-100">
                     <th className="px-2 py-3 text-center text-gray-600">DATE</th>
+                    <th className="px-2 py-3 text-center text-gray-600">PROFILE</th>
                     <th className="px-2 py-3 text-center text-gray-600">LAWYER</th>
                     <th className="px-2 py-3 text-center text-gray-600">TYPE</th>
                     <th className="px-2 py-3 text-center text-gray-600">MODE</th>
@@ -418,7 +485,7 @@ const ClientDashboard = () => {
                     <th className="px-2 py-3 text-center text-gray-600">ACTION</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-gray-200 lg:text-lg text-sm">
                   {recentAppointmentHistory.length > 0 ? (
                     recentAppointmentHistory.map((appointment, index) => (
                       <tr
@@ -429,7 +496,7 @@ const ClientDashboard = () => {
                             : "bg-gray-50 hover:bg-gray-100"
                         }
                       >
-                        <td className="py-4 text-center">
+                        <td className="lg:py-4 text-center border border-dashed border-gray-200">
                           {new Date(appointment.date).toLocaleDateString(
                             "en-US",
                             {
@@ -439,21 +506,24 @@ const ClientDashboard = () => {
                             },
                           )}
                         </td>
-                        <td className="text-center">{appointment.lawyerName}</td>
-                        <td className="text-center">{appointment.caseCategory}</td>
-                        <td className="text-center">
+                        <td className="text-center border border-dashed border-gray-200">
+                          <img
+                            src={appointment.lawyerId.profileImage?.url || "/assets/images/profile.png"}
+                            alt={appointment.lawyerName}
+                            className="mx-auto h-10 w-10  rounded-full object-cover"
+                          />
+                        </td>
+                        <td className="text-center border border-dashed border-gray-200">{appointment.lawyerName}</td>
+                        <td className="text-center border border-dashed border-gray-200">{appointment.caseCategory}</td>
+                        <td className="text-center border border-dashed border-gray-200">
                           <div className="space-y-1">
                             <p className="font-medium text-gray-900">
                               {appointment?.appointmentMode || "Online"}
                             </p>
-                            <p className="mx-auto max-w-[12rem] text-xs text-gray-500">
-                              {(appointment?.appointmentMode || "Online") === "Office"
-                                ? formatLawyerLocation(appointment?.lawyerId)
-                                : "Online meeting link will be emailed before the session"}
-                            </p>
+                          
                           </div>
                         </td>
-                        <td className="text-center">
+                        <td className="text-center border border-dashed border-gray-200">
                           <span
                             className={`rounded-full px-2 py-1 text-xs ${
                               appointment.status === "Completed"
@@ -470,11 +540,9 @@ const ClientDashboard = () => {
                             {appointment.status}
                           </span>
                         </td>
-                        <td className="text-center">
+                        <td className="text-center border border-dashed border-gray-200">
                           {appointment.status === "Completed" ? (
-                            <span className="cursor-pointer text-blue-600">
-                              View Notes
-                            </span>
+                            ""
                           ) : appointment.status === "Pending" ? (
                             <button
                               type="button"
@@ -513,7 +581,7 @@ const ClientDashboard = () => {
 
           <div className="space-y-6 lg:col-span-3">
             <h3 className="mb-2 text-lg font-semibold">Recommended</h3>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {recommendedLawyers.length > 0 ? (
                 recommendedLawyers.map((lawyer) => (
                   <div
@@ -558,34 +626,5 @@ const ClientDashboard = () => {
     </div>
   );
 };
-
-const Field = ({ label, disabled, className = "", ...props }) => (
-  <label className={`block ${className}`}>
-    <span className="mb-1 block text-sm font-medium text-slate-600">{label}</span>
-    <input
-      {...props}
-      disabled={disabled}
-      className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-500"
-    />
-  </label>
-);
-
-const SelectField = ({ label, options, disabled, className = "", ...props }) => (
-  <label className={`block ${className}`}>
-    <span className="mb-1 block text-sm font-medium text-slate-600">{label}</span>
-    <select
-      {...props}
-      disabled={disabled}
-      className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-500"
-    >
-      <option value="">Select</option>
-      {options.map((option) => (
-        <option key={option} value={option}>
-          {option}
-        </option>
-      ))}
-    </select>
-  </label>
-);
 
 export default ClientDashboard;

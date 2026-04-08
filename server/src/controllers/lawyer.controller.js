@@ -3,7 +3,16 @@ const Lawyer = require("../models/lawyer.model");
 
 const getAllLawyers = async (req, res) => {
   try {
-    const lawyers = await Lawyer.find({ isActive: true });
+    const lawyers = await Lawyer.find({ isActive: true }, { password: 0 });
+    res.status(200).json(lawyers);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const getAllAvailableLawyers = async (req, res) => {
+  try {
+    const lawyers = await Lawyer.find({ isActive: true, isProfileComplete: true, verification: "Approved" }, { password: 0 });
     res.status(200).json(lawyers);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -190,6 +199,7 @@ const verificationLawyer = async (req, res) => {
 
 module.exports = {
   getAllLawyers,
+  getAllAvailableLawyers,
   getLawyerById,
   updateLawyer,
   completeLawyerProfile,

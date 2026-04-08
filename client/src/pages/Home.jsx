@@ -11,8 +11,12 @@ import {
   FaEnvelope,
   FaUserTie,
   FaPowerOff,
+  FaComments,
+  FaRobot,
+  FaCheckCircle,
+  FaCalendarCheck,
 } from "react-icons/fa";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import useFetch from "../hooks/useFetch";
 import { API_URL } from "../utils/api";
 import CountUp from "react-countup";
@@ -43,10 +47,10 @@ const Home = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const typewriterPhrases = [
-    "Find your legal match in seconds",
-    "Expert legal advice at your fingertips",
-    "Book appointments with ease",
-    "Get legal advice anytime, anywhere",
+    "AI-powered legal guidance in seconds",
+    "Verified lawyers for every case",
+    "Schedule consultations instantly",
+    "Manage your appointments with confidence",
   ];
   const [typewriterText, setTypewriterText] = useState("");
   const [typewriterIndex, setTypewriterIndex] = useState(0);
@@ -352,9 +356,40 @@ const Home = () => {
             </h1>
           </div>
           <p className="text-slate-500 max-w-2xl mx-auto mb-8 text-lg">
-            Connect with top-rated lawyers for expert legal advice and seamless
-            appointment booking. Secure your future with professional counsel.
+            Connect with verified lawyers, secure payments, and AI-powered legal
+            support — all in one secure platform.
           </p>
+
+          <div className="max-w-4xl mx-auto grid grid-cols-2 gap-4 text-sm text-slate-600 mb-10">
+            <div className="rounded-3xl border border-slate-200 bg-white/90 px-5 py-4 flex items-center gap-3 shadow-sm">
+              <FaCheckCircle className="text-blue-600 text-xl" />
+              <div>
+                <p className="font-semibold">Verified Lawyers</p>
+                <p className="text-slate-500">Trusted legal experts with approval checks.</p>
+              </div>
+            </div>
+            <div className="rounded-3xl border border-slate-200 bg-white/90 px-5 py-4 flex items-center gap-3 shadow-sm">
+              <FaCalendarCheck className="text-blue-600 text-xl" />
+              <div>
+                <p className="font-semibold">Instant Booking</p>
+                <p className="text-slate-500">Schedule consultations in just a few clicks.</p>
+              </div>
+            </div>
+            <div className="rounded-3xl border border-slate-200 bg-white/90 px-5 py-4 flex items-center gap-3 shadow-sm">
+              <FaComments className="text-blue-600 text-xl" />
+              <div>
+                <p className="font-semibold">Secure Messaging</p>
+                <p className="text-slate-500">Chat directly with your lawyer on the platform.</p>
+              </div>
+            </div>
+            <div className="rounded-3xl border border-slate-200 bg-white/90 px-5 py-4 flex items-center gap-3 shadow-sm">
+              <FaRobot className="text-blue-600 text-xl" />
+              <div>
+                <p className="font-semibold">AI Guidance</p>
+                <p className="text-slate-500">Get smart legal assistance and booking help.</p>
+              </div>
+            </div>
+          </div>
 
           {/* Search Bar */}
           <div className="max-w-4xl mx-auto bg-white shadow-xl rounded-2xl flex flex-col md:flex-row items-center overflow-hidden border border-slate-200 hover:shadow-2xl transition">
@@ -407,7 +442,8 @@ const Home = () => {
           <ScrollReveal>
             <h2 className="text-3xl font-bold text-center mb-4">How It Works</h2>
             <p className="text-center text-slate-500 mb-16">
-              Simple. Secure. Professional.
+              Quickly discover verified lawyers, book a consultation, and manage
+              your case from one dashboard.
             </p>
           </ScrollReveal>
 
@@ -415,22 +451,22 @@ const Home = () => {
             <ScrollReveal delay={0}>
               <PremiumCard
                 icon={<FaSearch />}
-                title="Search Experts"
-                desc="Find top lawyers by specialization and location."
+                title="Find Verified Lawyers"
+                desc="Search by practice area, ratings, and availability."
               />
             </ScrollReveal>
             <ScrollReveal delay={120}>
               <PremiumCard
-                icon={<FaBriefcase />}
-                title="Book Instantly"
-                desc="Choose a time that works for you."
+                icon={<FaCalendarCheck />}
+                title="Book Appointments"
+                desc="Pick a date and secure your consultation instantly."
               />
             </ScrollReveal>
             <ScrollReveal delay={240}>
               <PremiumCard
-                icon={<FaGavel />}
-                title="Secure Consultation"
-                desc="Video or in-person consultations."
+                icon={<FaComments />}
+                title="Chat & Follow Up"
+                desc="Keep conversations and appointment details in one place."
               />
             </ScrollReveal>
           </div>
@@ -442,18 +478,25 @@ const Home = () => {
         <div className="max-w-7xl mx-auto px-6">
           <ScrollReveal>
             <h2 className="text-3xl font-bold text-center mb-16">
-              Top Specializations
+              Popular Practice Areas
             </h2>
           </ScrollReveal>
 
-          <div className="grid md:grid-cols-4 gap-8">
-            {["Family Law", "Corporate Law", "Criminal Defense", "Real Estate"].map(
-              (title, index) => (
-                <ScrollReveal key={title} delay={index * 120}>
-                  <SpecCard title={title} />
-                </ScrollReveal>
-              ),
-            )}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {[
+              "Family Law",
+              "Corporate Law",
+              "Criminal Defense",
+              "Real Estate",
+              "Immigration",
+              "Employment Law",
+              "Personal Injury",
+              "Intellectual Property",
+            ].map((title, index) => (
+              <ScrollReveal key={title} delay={index * 80}>
+                <SpecCard title={title} />
+              </ScrollReveal>
+            ))}
           </div>
         </div>
       </section>
@@ -493,29 +536,29 @@ const Home = () => {
             <ScrollReveal delay={0}>
               <FeatureCard
                 title="Verified Lawyers"
-                desc="All lawyers are verified for credibility."
-                icon={<FaBalanceScale />}
+                desc="Professionals approved and verified for quality service."
+                icon={<FaCheckCircle />}
               />
             </ScrollReveal>
             <ScrollReveal delay={120}>
               <FeatureCard
-                title="Easy Booking"
-                desc="Book consultations with just a few clicks."
-                icon={<FaBriefcase />}
+                title="Fast Booking"
+                desc="Find availability and confirm appointments instantly."
+                icon={<FaCalendarCheck />}
               />
             </ScrollReveal>
             <ScrollReveal delay={240}>
               <FeatureCard
-                title="Secure Payments"
-                desc="Safe and secure payment methods."
-                icon={<FaGavel />}
+                title="AI Guidance"
+                desc="Get smart legal suggestions and booking help from AI."
+                icon={<FaRobot />}
               />
             </ScrollReveal>
             <ScrollReveal delay={360}>
               <FeatureCard
-                title="24/7 Support"
-                desc="Our team is here to help anytime."
-                icon={<FaHome />}
+                title="Secure Messaging"
+                desc="Keep your conversations and case notes in one secure place."
+                icon={<FaComments />}
               />
             </ScrollReveal>
           </div>
@@ -543,7 +586,7 @@ const Home = () => {
             </ScrollReveal>
             <ScrollReveal delay={240}>
               <StatCard
-                value={stats.satisfactionRate + "%" || "95%"}
+                value={stats.satisfactionRate ? `${stats.satisfactionRate}%` : "95%"}
                 label="Satisfaction Rate"
               />
             </ScrollReveal>
@@ -588,8 +631,8 @@ const Home = () => {
             </ScrollReveal>
             <ScrollReveal delay={120}>
               <FAQItem
-                question="What payment methods are accepted?"
-                answer="We accept credit cards, debit cards, and secure online payments."
+                question="Can I ask for legal guidance before booking?"
+                answer="Yes, use our AI assistant to get quick guidance and next-step recommendations."
               />
             </ScrollReveal>
             <ScrollReveal delay={240}>
@@ -605,11 +648,11 @@ const Home = () => {
       {/* ================= CALL TO ACTION ================= */}
       <section className="py-24 bg-blue-600 text-white text-center">
         <ScrollReveal className="px-6">
-          <h2 className="text-3xl font-bold mb-6">Ready to Get Started?</h2>
+          <h2 className="text-3xl font-bold mb-6">Ready to take the next step?</h2>
           <p className="mb-8">
-            Find your lawyer today or join LexLink as a professional.
+            Connect with top lawyers, book secure consultations, and manage your legal journey with ease.
           </p>
-          <div className="flex justify-center gap-4">
+          <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link
               to="/client/lawyer-list"
               className="px-6 py-3 bg-white text-blue-600 font-semibold rounded-xl hover:scale-105 transition"
@@ -634,7 +677,7 @@ const Home = () => {
               Justif<span className="text-blue-500">Ai</span>
             </h3>
             <p className="text-sm w-full lg:w-3/4 text-center text-slate-500">
-              Connecting people with world-class legal professionals.
+              Empowering clients with AI-backed legal support and trusted lawyer connections.
             </p>
           </div>
           <div className="flex flex-wrap gap-5 justify-center px-10 md:justify-start">

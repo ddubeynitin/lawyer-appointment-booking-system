@@ -938,7 +938,7 @@ const MessagesPage = () => {
                     );
                   })
                 ) : (
-                  <div className="rounded-[24px] border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
+                  <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
                     <p className="text-sm font-semibold text-slate-800">
                       No conversations found
                     </p>
@@ -1055,7 +1055,7 @@ const MessagesPage = () => {
                               className={`group relative flex ${isMine ? "justify-end" : "justify-start"}`}
                             >
                               <div
-                                className={`relative max-w-[92%] rounded-[24px] px-3 py-3 shadow-sm sm:max-w-[70%] sm:rounded-[28px] sm:px-4 ${
+                                className={`relative max-w-[92%] rounded-3xl px-3 py-3 shadow-sm sm:max-w-[70%] sm:rounded-[28px] sm:px-4 ${
                                   isMine
                                     ? "rounded-br-md bg-blue-600 text-white"
                                     : "rounded-bl-md border border-slate-200 bg-white text-slate-700"
@@ -1161,9 +1161,9 @@ const MessagesPage = () => {
 
                   <form
                     onSubmit={handleSendMessage}
-                    className="border-t border-slate-200/80 p-3 sm:p-3"
+                    className="border-t border-slate-200/80 p-3 lg:mb-0 mb-10 sm:p-3"
                   >
-                    <div className="flex w-full items-end gap-3 rounded-[24px] border border-slate-200 bg-slate-50 px-3 py-3 shadow-sm sm:w-[90%] sm:rounded-[28px] sm:px-4">
+                    <div className="flex w-full items-end gap-3 rounded-3xl border border-slate-200 bg-slate-50 px-3 py-3 shadow-sm sm:w-[90%] sm:rounded-[28px] sm:px-4">
                       {/* <button
                         type="button"
                         className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-slate-500 transition hover:text-blue-600"
