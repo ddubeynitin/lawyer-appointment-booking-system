@@ -586,7 +586,7 @@ const AppointmentSchedulingPage = () => {
                   )}
 
                   <div className="grid gap-4 lg:grid-cols-2">
-                    <div className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 p-4 shadow-sm">
+                    <div className="rounded-2xl border border-amber-200 bg-linear-to-br from-amber-50 to-orange-50 p-4 shadow-sm">
                       <div className="mb-4 flex items-center justify-between">
                         <h4 className="text-sm font-semibold uppercase tracking-[0.14em] text-amber-900">
                           Morning Slots
@@ -607,7 +607,7 @@ const AppointmentSchedulingPage = () => {
                       )}
                     </div>
 
-                    <div className="rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 to-cyan-50 p-4 shadow-sm">
+                    <div className="rounded-2xl border border-blue-200 bg-linear-to-br from-blue-50 to-cyan-50 p-4 shadow-sm">
                       <div className="mb-4 flex items-center justify-between">
                         <h4 className="text-sm font-semibold uppercase tracking-[0.14em] text-blue-900">
                           Afternoon Slots

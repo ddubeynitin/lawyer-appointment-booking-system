@@ -338,10 +338,10 @@ const LawyerAppointmentsPage = () => {
                         </p>
                       </div>
 
-                      <MeetingAccessCard appointment={appointment} />
+                      {appointment.status === "Completed" && appointment.meetingLink ? null : <MeetingAccessCard appointment={appointment} />}
                     </div>
 
-                    <div className="min-w-full rounded-2xl bg-slate-50 p-4 text-sm text-slate-600 lg:min-w-[220px]">
+                    <div className="min-w-full rounded-2xl bg-slate-50 p-4 text-sm text-slate-600 lg:min-w-55">
                       <p className="font-medium text-slate-800">Client Email</p>
                       <p className="mt-1 break-all">{appointment.userId?.email || "Not provided"}</p>
                       <p className="mt-4 font-medium text-slate-800">Client Phone</p>

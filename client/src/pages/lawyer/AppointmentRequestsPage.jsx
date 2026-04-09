@@ -66,6 +66,7 @@ const AppointmentRequestsPage = () => {
   const [clientProfileLoading, setClientProfileLoading] = useState(false);
   const [clientProfileError, setClientProfileError] = useState("");
   const [refreshingAppointments, setRefreshingAppointments] = useState(false);
+  const [refreshingReschedule, setRefreshingReschedule] = useState(false);
 
   const fetchPendingAppointments = async () => {
     if (!lawyerId) {
@@ -119,6 +120,24 @@ const AppointmentRequestsPage = () => {
       setError("Unable to refresh pending requests right now.");
     } finally {
       setRefreshingAppointments(false);
+    }
+  };
+
+  const refreshRescheduleRequestsOnly = async () => {
+    if (!lawyerId) return;
+
+    try {
+      setRefreshingReschedule(true);
+      setRescheduleError("");
+      const rescheduleResponse = await axios.get(
+        `${API_URL}/appointments/lawyer/${lawyerId}/reschedule-requests?rescheduleStatus=Pending`,
+      );
+      setRescheduleRequests(rescheduleResponse.data?.appointments || []);
+    } catch (fetchError) {
+      console.error("Failed to refresh reschedule requests:", fetchError);
+      setRescheduleError("Unable to refresh reschedule requests right now.");
+    } finally {
+      setRefreshingReschedule(false);
     }
   };
 
@@ -477,7 +496,7 @@ const AppointmentRequestsPage = () => {
                         </div>
                       </div>
 
-                      <div className="flex min-w-full flex-col gap-3 lg:min-w-[220px]">
+                      <div className="flex min-w-full flex-col gap-3 lg:min-w-55">
                         <button
                           type="button"
                           onClick={() =>
@@ -514,7 +533,7 @@ const AppointmentRequestsPage = () => {
         </section>
 
         <section className="rounded-3xl bg-white p-6 shadow-xl mt-5">
-          <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+          <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-sm font-medium uppercase tracking-[0.2em] text-blue-600">
                 Reschedule Requests
@@ -523,9 +542,21 @@ const AppointmentRequestsPage = () => {
                 Pending reschedule approvals
               </h2>
             </div>
-            <div className="rounded-2xl bg-slate-50 px-5 py-4 text-sm text-slate-600">
-              <span className="font-semibold text-slate-800">{rescheduleRequests.length}</span>{" "}
-              request{rescheduleRequests.length === 1 ? "" : "s"} awaiting decision
+            <div className="flex items-center gap-4">
+              <div className="rounded-2xl bg-slate-50 px-5 py-4 text-sm text-slate-600">
+                <span className="font-semibold text-slate-800">{rescheduleRequests.length}</span>{" "}
+                request{rescheduleRequests.length === 1 ? "" : "s"} awaiting decision
+              </div>
+              <button
+                type="button"
+                onClick={refreshRescheduleRequestsOnly}
+                disabled={refreshingReschedule || rescheduleLoading}
+                className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
+                title="Refresh reschedule requests section"
+              >
+                <MdRefresh size={16} className={refreshingReschedule ? "animate-spin" : ""} />
+                Refresh
+              </button>
             </div>
           </div>
 
@@ -615,7 +646,7 @@ const AppointmentRequestsPage = () => {
                         </div>
                       </div>
 
-                      <div className="flex min-w-full flex-col gap-3 lg:min-w-[220px]">
+                      <div className="flex min-w-full flex-col gap-3 lg:min-w-55">
                         <button
                           type="button"
                           onClick={() =>
