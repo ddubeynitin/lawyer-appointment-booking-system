@@ -308,7 +308,7 @@ function LoginPage() {
   };
 
   return (
-    <div className="h-screen bg-[url('./assets/images/bg-white.jpg')] bg-cover bg-center flex items-center justify-center py-10 lg:px-4 font-barlow overflow-hidden">
+    <div className="h-screen bg-white flex items-center justify-center py-10 lg:px-4 font-barlow overflow-hidden">
       <div className="w-full max-w-6xl mx-auto flex flex-col lg:flex-row bg-white/70 backdrop-blur-sm shadow-xl rounded-2xl overflow-hidden">
         {loading && (
           <div className="absolute w-full h-screen top-[50%] left-[50%] bg-white/30 transform -translate-x-1/2 -translate-y-1/2 flex justify-center items-center z-20">

@@ -634,7 +634,7 @@ const ClientRegform = ({
       <p className="text-sm text-gray-600 text-center">
         Already have an account?{" "}
         <Link to={'/auth/login' } className="text-blue-600 font-medium cursor-pointer hover:underline">
-          Sign In
+          Login
         </Link>
       </p>
 
@@ -817,7 +817,7 @@ const LawyerRegform = ({
       <p className="text-sm text-gray-600 text-center">
         Already have an account?{" "}
         <Link to={'/auth/login' } className="text-blue-600 font-medium cursor-pointer hover:underline">
-          Sign In
+          Login
         </Link>
       </p>
     </form>
