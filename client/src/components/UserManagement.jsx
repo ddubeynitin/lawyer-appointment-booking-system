@@ -137,7 +137,7 @@ function UserList({ users, userSearchQuery, setUserSearchQuery, handleInactiveUs
 }
 
 // ============= User Form Component =============
-function UserForm({ userFormRef, isUserFormAtEnd, userName, setUserName, userEmail, setUserEmail, userPhone, setUserPhone, userRole, setUserRole, userPassword, setUserPassword, userConfirmPassword, setUserConfirmPassword, userErrors, setUserErrors, handleCreateUser, checkScrollEnd, setIsUserFormAtEnd }) {
+function UserForm({ userFormRef, isUserFormAtEnd, userName, setUserName, userEmail, setUserEmail, userPhone, setUserPhone, userRole, setUserRole, userGender, setUserGender, userCity, setUserCity, userState, setUserState, userPassword, setUserPassword, userConfirmPassword, setUserConfirmPassword, userErrors, setUserErrors, handleCreateUser, checkScrollEnd, setIsUserFormAtEnd }) {
   return (
     <div className="bg-linear-to-br from-blue-50 to-blue-100 rounded-xl shadow-lg border-2 border-blue-200 animate-in fade-in slide-in-from-top duration-300">
       <div ref={userFormRef} onScroll={() => checkScrollEnd(userFormRef.current, setIsUserFormAtEnd)} className="max-h-[70vh] overflow-y-auto px-4 pt-6 pb-4 sm:px-6 lg:px-8" style={{ scrollbarWidth: "thin" }}>
@@ -157,6 +157,26 @@ function UserForm({ userFormRef, isUserFormAtEnd, userName, setUserName, userEma
             <label className="block text-sm font-semibold text-blue-900 mb-3">Phone Number</label>
             <input type="tel" value={userPhone} onChange={(e) => { setUserPhone(e.target.value); setUserErrors({ ...userErrors, userPhone: "" }); }} placeholder="Enter phone number" className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent bg-white transition ${userErrors.userPhone ? "border-red-500 ring-2 ring-red-500 bg-red-50" : "border-blue-200 focus:ring-blue-500"}`} />
             {userErrors.userPhone && <p className="text-red-600 text-xs mt-2 font-semibold">{userErrors.userPhone}</p>}
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-blue-900 mb-3">Gender</label>
+            <select value={userGender} onChange={(e) => { setUserGender(e.target.value); setUserErrors({ ...userErrors, userGender: "" }); }} className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent bg-white transition ${userErrors.userGender ? "border-red-500 ring-2 ring-red-500 bg-red-50" : "border-blue-200 focus:ring-blue-500"}`}>
+              <option value="">Select Gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+            {userErrors.userGender && <p className="text-red-600 text-xs mt-2 font-semibold">{userErrors.userGender}</p>}
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-blue-900 mb-3">City</label>
+            <input type="text" value={userCity} onChange={(e) => { setUserCity(e.target.value); setUserErrors({ ...userErrors, userCity: "" }); }} placeholder="Enter city name" className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent bg-white transition ${userErrors.userCity ? "border-red-500 ring-2 ring-red-500 bg-red-50" : "border-blue-200 focus:ring-blue-500"}`} />
+            {userErrors.userCity && <p className="text-red-600 text-xs mt-2 font-semibold">{userErrors.userCity}</p>}
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-blue-900 mb-3">State</label>
+            <input type="text" value={userState} onChange={(e) => { setUserState(e.target.value); setUserErrors({ ...userErrors, userState: "" }); }} placeholder="Enter state name" className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent bg-white transition ${userErrors.userState ? "border-red-500 ring-2 ring-red-500 bg-red-50" : "border-blue-200 focus:ring-blue-500"}`} />
+            {userErrors.userState && <p className="text-red-600 text-xs mt-2 font-semibold">{userErrors.userState}</p>}
           </div>
           <div>
             <label className="block text-sm font-semibold text-blue-900 mb-3">Role</label>
@@ -332,7 +352,7 @@ function LawyerList({ lawyers, lawyerSearchQuery, setLawyerSearchQuery, lawyerSt
 }
 
 // ============= Lawyer Form Component =============
-function LawyerForm({ lawyerFormRef, isLawyerFormAtEnd, lawyerName, setLawyerName, lawyerEmail, setLawyerEmail, lawyerPhone, setLawyerPhone, lawyerLicense, setLawyerLicense, lawyerSpecializations, setLawyerSpecializations, lawyerExperience, setLawyerExperience, lawyerProfileImage, setLawyerProfileImage, lawyerFees, setLawyerFees, lawyerEducation, setLawyerEducation, lawyerLocation, setLawyerLocation, lawyerDescription, setLawyerDescription, lawyerPassword, setLawyerPassword, lawyerConfirmPassword, setLawyerConfirmPassword, lawyerErrors, setLawyerErrors, handleCreateLawyer, checkScrollEnd, setIsLawyerFormAtEnd }) {
+function LawyerForm({ lawyerFormRef, isLawyerFormAtEnd, lawyerName, setLawyerName, lawyerEmail, setLawyerEmail, lawyerPhone, setLawyerPhone, lawyerLicense, setLawyerLicense, lawyerSpecializations, setLawyerSpecializations, lawyerExperience, setLawyerExperience, lawyerProfileImage, setLawyerProfileImage, lawyerFees, setLawyerFees, lawyerEducation, setLawyerEducation, lawyerLocation, setLawyerLocation, lawyerDescription, setLawyerDescription, lawyerGender, setLawyerGender, lawyerPassword, setLawyerPassword, lawyerConfirmPassword, setLawyerConfirmPassword, lawyerErrors, setLawyerErrors, handleCreateLawyer, checkScrollEnd, setIsLawyerFormAtEnd }) {
   return (
     <div className="bg-linear-to-br from-green-50 to-green-100 rounded-xl shadow-lg border-2 border-green-200 animate-in fade-in slide-in-from-top duration-300">
       <div ref={lawyerFormRef} onScroll={() => checkScrollEnd(lawyerFormRef.current, setIsLawyerFormAtEnd)} className="max-h-[70vh] overflow-y-auto px-8 pt-8 pb-4" style={{ scrollbarWidth: "thin" }}>
@@ -352,6 +372,16 @@ function LawyerForm({ lawyerFormRef, isLawyerFormAtEnd, lawyerName, setLawyerNam
             <label className="block text-sm font-semibold text-green-900 mb-3">Phone Number</label>
             <input type="tel" value={lawyerPhone} onChange={(e) => { setLawyerPhone(e.target.value); setLawyerErrors({ ...lawyerErrors, lawyerPhone: "" }); }} placeholder="Enter phone number" className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent bg-white transition ${lawyerErrors.lawyerPhone ? "border-red-500 ring-2 ring-red-500 bg-red-50" : "border-green-200 focus:ring-green-500"}`} />
             {lawyerErrors.lawyerPhone && <p className="text-red-600 text-xs mt-2 font-semibold">{lawyerErrors.lawyerPhone}</p>}
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-green-900 mb-3">Gender</label>
+            <select value={lawyerGender} onChange={(e) => { setLawyerGender(e.target.value); setLawyerErrors({ ...lawyerErrors, lawyerGender: "" }); }} className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent bg-white transition ${lawyerErrors.lawyerGender ? "border-red-500 ring-2 ring-red-500 bg-red-50" : "border-green-200 focus:ring-green-500"}`}>
+              <option value="">Select Gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+            {lawyerErrors.lawyerGender && <p className="text-red-600 text-xs mt-2 font-semibold">{lawyerErrors.lawyerGender}</p>}
           </div>
           <div>
             <label className="block text-sm font-semibold text-green-900 mb-3">License Number</label>
@@ -458,14 +488,14 @@ export default function UserManagement(props) {
   const { mode } = props;
   const {
     userName, setUserName, userEmail, setUserEmail, userPhone, setUserPhone, userRole, setUserRole,
-    userPassword, setUserPassword, userConfirmPassword, setUserConfirmPassword,
+    userGender, setUserGender, userCity, setUserCity, userState, setUserState, userPassword, setUserPassword, userConfirmPassword, setUserConfirmPassword,
     userErrors, setUserErrors, handleCreateUser, handleDeleteUser, handleInactiveUser,
     handleCreateLawyer, handleInactiveLawyer, handleActivateLawyer,
     lawyerName, setLawyerName, lawyerEmail, setLawyerEmail, lawyerPhone, setLawyerPhone,
     lawyerLicense, setLawyerLicense, lawyerSpecializations, setLawyerSpecializations,
     lawyerExperience, setLawyerExperience, lawyerProfileImage, setLawyerProfileImage,
     lawyerFees, setLawyerFees, lawyerEducation, setLawyerEducation, lawyerLocation, setLawyerLocation,
-    lawyerDescription, setLawyerDescription, lawyerPassword, setLawyerPassword,
+    lawyerDescription, setLawyerDescription, lawyerGender, setLawyerGender, lawyerPassword, setLawyerPassword,
     lawyerConfirmPassword, setLawyerConfirmPassword, lawyerErrors, setLawyerErrors,
     lawyers, users,
   } = props;
@@ -524,11 +554,11 @@ export default function UserManagement(props) {
       )}
 
       {mode === "users" && showForm && (
-        <UserForm userFormRef={userFormRef} isUserFormAtEnd={isUserFormAtEnd} userName={userName} setUserName={setUserName} userEmail={userEmail} setUserEmail={setUserEmail} userPhone={userPhone} setUserPhone={setUserPhone} userRole={userRole} setUserRole={setUserRole} userPassword={userPassword} setUserPassword={setUserPassword} userConfirmPassword={userConfirmPassword} setUserConfirmPassword={setUserConfirmPassword} userErrors={userErrors} setUserErrors={setUserErrors} handleCreateUser={handleCreateUser} checkScrollEnd={checkScrollEnd} setIsUserFormAtEnd={setIsUserFormAtEnd} />
+        <UserForm userFormRef={userFormRef} isUserFormAtEnd={isUserFormAtEnd} userName={userName} setUserName={setUserName} userEmail={userEmail} setUserEmail={setUserEmail} userPhone={userPhone} setUserPhone={setUserPhone} userRole={userRole} setUserRole={setUserRole} userGender={userGender} setUserGender={setUserGender} userCity={userCity} setUserCity={setUserCity} userState={userState} setUserState={setUserState} userPassword={userPassword} setUserPassword={setUserPassword} userConfirmPassword={userConfirmPassword} setUserConfirmPassword={setUserConfirmPassword} userErrors={userErrors} setUserErrors={setUserErrors} handleCreateUser={handleCreateUser} checkScrollEnd={checkScrollEnd} setIsUserFormAtEnd={setIsUserFormAtEnd} />
       )}
 
       {mode === "lawyers" && showForm && (
-        <LawyerForm lawyerFormRef={lawyerFormRef} isLawyerFormAtEnd={isLawyerFormAtEnd} lawyerName={lawyerName} setLawyerName={setLawyerName} lawyerEmail={lawyerEmail} setLawyerEmail={setLawyerEmail} lawyerPhone={lawyerPhone} setLawyerPhone={setLawyerPhone} lawyerLicense={lawyerLicense} setLawyerLicense={setLawyerLicense} lawyerSpecializations={lawyerSpecializations} setLawyerSpecializations={setLawyerSpecializations} lawyerExperience={lawyerExperience} setLawyerExperience={setLawyerExperience} lawyerProfileImage={lawyerProfileImage} setLawyerProfileImage={setLawyerProfileImage} lawyerFees={lawyerFees} setLawyerFees={setLawyerFees} lawyerEducation={lawyerEducation} setLawyerEducation={setLawyerEducation} lawyerLocation={lawyerLocation} setLawyerLocation={setLawyerLocation} lawyerDescription={lawyerDescription} setLawyerDescription={setLawyerDescription} lawyerPassword={lawyerPassword} setLawyerPassword={setLawyerPassword} lawyerConfirmPassword={lawyerConfirmPassword} setLawyerConfirmPassword={setLawyerConfirmPassword} lawyerErrors={lawyerErrors} setLawyerErrors={setLawyerErrors} handleCreateLawyer={handleCreateLawyer} checkScrollEnd={checkScrollEnd} setIsLawyerFormAtEnd={setIsLawyerFormAtEnd} />
+        <LawyerForm lawyerFormRef={lawyerFormRef} isLawyerFormAtEnd={isLawyerFormAtEnd} lawyerName={lawyerName} setLawyerName={setLawyerName} lawyerEmail={lawyerEmail} setLawyerEmail={setLawyerEmail} lawyerPhone={lawyerPhone} setLawyerPhone={setLawyerPhone} lawyerLicense={lawyerLicense} setLawyerLicense={setLawyerLicense} lawyerSpecializations={lawyerSpecializations} setLawyerSpecializations={setLawyerSpecializations} lawyerExperience={lawyerExperience} setLawyerExperience={setLawyerExperience} lawyerProfileImage={lawyerProfileImage} setLawyerProfileImage={setLawyerProfileImage} lawyerFees={lawyerFees} setLawyerFees={setLawyerFees} lawyerEducation={lawyerEducation} setLawyerEducation={setLawyerEducation} lawyerLocation={lawyerLocation} setLawyerLocation={setLawyerLocation} lawyerDescription={lawyerDescription} setLawyerDescription={setLawyerDescription} lawyerGender={lawyerGender} setLawyerGender={setLawyerGender} lawyerPassword={lawyerPassword} setLawyerPassword={setLawyerPassword} lawyerConfirmPassword={lawyerConfirmPassword} setLawyerConfirmPassword={setLawyerConfirmPassword} lawyerErrors={lawyerErrors} setLawyerErrors={setLawyerErrors} handleCreateLawyer={handleCreateLawyer} checkScrollEnd={checkScrollEnd} setIsLawyerFormAtEnd={setIsLawyerFormAtEnd} />
       )}
     </div>
   );

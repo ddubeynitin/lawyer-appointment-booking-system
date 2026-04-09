@@ -34,6 +34,9 @@ export default function Dashboard() {
   const [userEmail, setUserEmail] = useState("");
   const [userPhone, setUserPhone] = useState("");
   const [userRole, setUserRole] = useState("user");
+  const [userGender, setUserGender] = useState("");
+  const [userCity, setUserCity] = useState("");
+  const [userState, setUserState] = useState("");
   const [userPassword, setUserPassword] = useState("");
   const [userConfirmPassword, setUserConfirmPassword] = useState("");
   const [users, setUsers] = useState([]);
@@ -44,6 +47,7 @@ export default function Dashboard() {
   const [lawyerLicense, setLawyerLicense] = useState("");
   const [lawyerExperience, setLawyerExperience] = useState("");
   const [lawyerDescription, setLawyerDescription] = useState("");
+  const [lawyerGender, setLawyerGender] = useState("");
   const [lawyerPassword, setLawyerPassword] = useState("");
   const [lawyerConfirmPassword, setLawyerConfirmPassword] = useState("");
   const [lawyerSpecializations, setLawyerSpecializations] = useState([]);
@@ -69,6 +73,7 @@ export default function Dashboard() {
     action: null,
   });
   const [AllLawyers, setAllLawyers] = useState([]);
+  const [todayAppointmentsCount, setTodayAppointmentsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   
   // Get logged-in admin data
@@ -150,11 +155,29 @@ export default function Dashboard() {
       setLawyers([]);
     }
   };
+
+  const fetchTodayAppointmentsCount = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/appointments`);
+      const allAppointments = Array.isArray(response.data) ? response.data : [];
+      const todayString = new Date().toISOString().split("T")[0];
+      const count = allAppointments.filter((appointment) => {
+        if (!appointment?.date) return false;
+        const appointmentDate = new Date(appointment.date).toISOString().split("T")[0];
+        return appointmentDate === todayString;
+      }).length;
+      setTodayAppointmentsCount(count);
+    } catch (error) {
+      console.error("Failed to fetch today's appointments:", error);
+      setTodayAppointmentsCount(0);
+    }
+  };
+
   useEffect(() => {
     setLoading(true);
     const loadData = async () => {
       try {
-        await Promise.all([fetchLawyers(), fetchUsers()]);
+        await Promise.all([fetchLawyers(), fetchUsers(), fetchTodayAppointmentsCount()]);
       } finally {
         setLoading(false);
       }
@@ -181,6 +204,8 @@ export default function Dashboard() {
     if (!userEmail.trim()) errors.userEmail = "Email is required";
     if (!userPhone.trim()) errors.userPhone = "Phone number is required";
     if (!userRole.trim()) errors.userRole = "Role is required";
+    if (!userCity.trim()) errors.userCity = "City is required";
+    if (!userState.trim()) errors.userState = "State is required";
     if (!userPassword.trim()) errors.userPassword = "Password is required";
     if (!userConfirmPassword.trim())
       errors.userConfirmPassword = "Confirm password is required";
@@ -203,6 +228,9 @@ export default function Dashboard() {
         name: userName,
         email: userEmail,
         phone: userPhone,
+        gender: userGender,
+        city: userCity,
+        state: userState,
         password: userPassword,
         role: userRole,
       });
@@ -225,6 +253,9 @@ export default function Dashboard() {
       setUserEmail("");
       setUserPhone("");
       setUserRole("user");
+      setUserGender("");
+      setUserCity("");
+      setUserState("");
       setUserPassword("");
       setUserConfirmPassword("");
       setUserErrors({});
@@ -268,6 +299,7 @@ export default function Dashboard() {
         name: lawyerName,
         email: lawyerEmail,
         phone: lawyerPhone,
+        gender: lawyerGender,
         password: lawyerPassword,
         role: "lawyer",
         licenseNo: lawyerLicense,
@@ -364,6 +396,7 @@ export default function Dashboard() {
       setLawyerLocation({ address: "", city: "", state: "" });
       setLawyerExperience("");
       setLawyerDescription("");
+      setLawyerGender("");
       setLawyerPassword("");
       setLawyerConfirmPassword("");
       setLawyerErrors({});
@@ -790,7 +823,8 @@ export default function Dashboard() {
                   ).length
                 : 0
             }
-            todayAppointmentsCount={0}
+            todayAppointmentsCount={todayAppointmentsCount}
+            onTodayAppointmentsCountChange={setTodayAppointmentsCount}
             users={users}
             lawyers={lawyers}
           />
@@ -807,6 +841,12 @@ export default function Dashboard() {
             setUserPhone={setUserPhone}
             userRole={userRole}
             setUserRole={setUserRole}
+            userGender={userGender}
+            setUserGender={setUserGender}
+            userCity={userCity}
+            setUserCity={setUserCity}
+            userState={userState}
+            setUserState={setUserState}
             userPassword={userPassword}
             setUserPassword={setUserPassword}
             userConfirmPassword={userConfirmPassword}
@@ -839,6 +879,8 @@ export default function Dashboard() {
             setLawyerLocation={setLawyerLocation}
             lawyerDescription={lawyerDescription}
             setLawyerDescription={setLawyerDescription}
+            lawyerGender={lawyerGender}
+            setLawyerGender={setLawyerGender}
             lawyerPassword={lawyerPassword}
             setLawyerPassword={setLawyerPassword}
             lawyerConfirmPassword={lawyerConfirmPassword}
@@ -862,6 +904,12 @@ export default function Dashboard() {
             setUserPhone={setUserPhone}
             userRole={userRole}
             setUserRole={setUserRole}
+            userGender={userGender}
+            setUserGender={setUserGender}
+            userCity={userCity}
+            setUserCity={setUserCity}
+            userState={userState}
+            setUserState={setUserState}
             userPassword={userPassword}
             setUserPassword={setUserPassword}
             userConfirmPassword={userConfirmPassword}
@@ -894,6 +942,8 @@ export default function Dashboard() {
             setLawyerLocation={setLawyerLocation}
             lawyerDescription={lawyerDescription}
             setLawyerDescription={setLawyerDescription}
+            lawyerGender={lawyerGender}
+            setLawyerGender={setLawyerGender}
             lawyerPassword={lawyerPassword}
             setLawyerPassword={setLawyerPassword}
             lawyerConfirmPassword={lawyerConfirmPassword}

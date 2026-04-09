@@ -9,6 +9,7 @@ export default function Overview({
   lawyersCount = 0,
   activeLawyersCount = 0,
   todayAppointmentsCount = 0,
+  onTodayAppointmentsCountChange,
   users = [],
   lawyers = [],
 }) {
@@ -299,7 +300,7 @@ export default function Overview({
       {/* Today's Appointments Table */}
       {showTodayAppointmentsTable && (
         <div className="flex-1 mt-6">
-          <AdminTodayAppointments />
+          <AdminTodayAppointments onTodayCountChange={onTodayAppointmentsCountChange} />
         </div>
       )}
 

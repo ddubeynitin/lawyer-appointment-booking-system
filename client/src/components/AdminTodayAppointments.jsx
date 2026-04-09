@@ -6,6 +6,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000
 
 export default function AdminTodayAppointments({
   onAppointmentClick,
+  onTodayCountChange,
 }) {
   const [appointments, setAppointments] = useState([]);
   const [users, setUsers] = useState([]);
@@ -36,6 +37,7 @@ export default function AdminTodayAppointments({
       });
       
       setAppointments(todayAppointments);
+      if (onTodayCountChange) onTodayCountChange(todayAppointments.length);
     } catch (err) {
       console.error("Failed to fetch appointments:", err);
       if (err.code === 'ECONNABORTED') {
