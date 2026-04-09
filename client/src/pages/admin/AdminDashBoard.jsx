@@ -34,6 +34,7 @@ export default function Dashboard() {
   const [userEmail, setUserEmail] = useState("");
   const [userPhone, setUserPhone] = useState("");
   const [userRole, setUserRole] = useState("user");
+  const [userGender, setUserGender] = useState("");
   const [userPassword, setUserPassword] = useState("");
   const [userConfirmPassword, setUserConfirmPassword] = useState("");
   const [users, setUsers] = useState([]);
@@ -44,6 +45,7 @@ export default function Dashboard() {
   const [lawyerLicense, setLawyerLicense] = useState("");
   const [lawyerExperience, setLawyerExperience] = useState("");
   const [lawyerDescription, setLawyerDescription] = useState("");
+  const [lawyerGender, setLawyerGender] = useState("");
   const [lawyerPassword, setLawyerPassword] = useState("");
   const [lawyerConfirmPassword, setLawyerConfirmPassword] = useState("");
   const [lawyerSpecializations, setLawyerSpecializations] = useState([]);
@@ -203,6 +205,7 @@ export default function Dashboard() {
         name: userName,
         email: userEmail,
         phone: userPhone,
+        gender: userGender,
         password: userPassword,
         role: userRole,
       });
@@ -225,6 +228,7 @@ export default function Dashboard() {
       setUserEmail("");
       setUserPhone("");
       setUserRole("user");
+      setUserGender("");
       setUserPassword("");
       setUserConfirmPassword("");
       setUserErrors({});
@@ -268,6 +272,7 @@ export default function Dashboard() {
         name: lawyerName,
         email: lawyerEmail,
         phone: lawyerPhone,
+        gender: lawyerGender,
         password: lawyerPassword,
         role: "lawyer",
         licenseNo: lawyerLicense,
@@ -364,6 +369,7 @@ export default function Dashboard() {
       setLawyerLocation({ address: "", city: "", state: "" });
       setLawyerExperience("");
       setLawyerDescription("");
+      setLawyerGender("");
       setLawyerPassword("");
       setLawyerConfirmPassword("");
       setLawyerErrors({});
@@ -807,6 +813,8 @@ export default function Dashboard() {
             setUserPhone={setUserPhone}
             userRole={userRole}
             setUserRole={setUserRole}
+            userGender={userGender}
+            setUserGender={setUserGender}
             userPassword={userPassword}
             setUserPassword={setUserPassword}
             userConfirmPassword={userConfirmPassword}
@@ -839,6 +847,8 @@ export default function Dashboard() {
             setLawyerLocation={setLawyerLocation}
             lawyerDescription={lawyerDescription}
             setLawyerDescription={setLawyerDescription}
+            lawyerGender={lawyerGender}
+            setLawyerGender={setLawyerGender}
             lawyerPassword={lawyerPassword}
             setLawyerPassword={setLawyerPassword}
             lawyerConfirmPassword={lawyerConfirmPassword}
@@ -862,6 +872,8 @@ export default function Dashboard() {
             setUserPhone={setUserPhone}
             userRole={userRole}
             setUserRole={setUserRole}
+            userGender={userGender}
+            setUserGender={setUserGender}
             userPassword={userPassword}
             setUserPassword={setUserPassword}
             userConfirmPassword={userConfirmPassword}
@@ -894,6 +906,8 @@ export default function Dashboard() {
             setLawyerLocation={setLawyerLocation}
             lawyerDescription={lawyerDescription}
             setLawyerDescription={setLawyerDescription}
+            lawyerGender={lawyerGender}
+            setLawyerGender={setLawyerGender}
             lawyerPassword={lawyerPassword}
             setLawyerPassword={setLawyerPassword}
             lawyerConfirmPassword={lawyerConfirmPassword}
