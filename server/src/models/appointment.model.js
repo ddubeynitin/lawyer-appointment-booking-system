@@ -151,7 +151,12 @@ appointmentSchema.index({ date: 1 });
 appointmentSchema.index({ lawyerId: 1, date: 1 });
 appointmentSchema.index(
   { lawyerId: 1, date: 1, timeSlot: 1 },
-  { unique: true }
+  { 
+    unique: true,
+    partialFilterExpression: { 
+      status: { $in: ["Pending", "Approved"] }
+    } 
+  }
 );
 
 module.exports = mongoose.model("Appointment", appointmentSchema);
