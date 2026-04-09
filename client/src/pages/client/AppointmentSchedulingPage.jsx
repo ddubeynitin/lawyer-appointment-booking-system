@@ -9,6 +9,7 @@ import {
   Scale,
   UserRound,
   UploadCloud,
+  Sparkles,
 } from "lucide-react";
 import ClientHeader from "../../components/common/ClientHeader";
 import AppointmentBooked from "../../components/appointment/AppointmentBooked";
@@ -16,6 +17,7 @@ import { useAuth } from "../../context/AuthContext";
 import { API_URL } from "../../utils/api";
 import useFetch from "../../hooks/useFetch";
 import LoadingFallback from "../../components/LoadingFallback";
+import { FaBuilding, FaCalendar, FaClock, FaLaptop, FaRupeeSign, FaTag } from "react-icons/fa";
 
 const TIME_SLOTS = [
   "09:00 AM",
@@ -109,6 +111,7 @@ const AppointmentSchedulingPage = () => {
   const [bookingDetails, setBookingDetails] = useState(null);
   const [bookingAnimationActive, setBookingAnimationActive] = useState(false);
   const [error, setError] = useState("");
+  const [aiAssistantTab, setAiAssistantTab] = useState("category");
 
   const lawyers = useMemo(
     () => (Array.isArray(lawyersData) ? lawyersData : []),
@@ -467,11 +470,11 @@ const AppointmentSchedulingPage = () => {
                 value={selectedLawyerId}
                 onChange={(event) => setSelectedLawyerId(event.target.value)}
                 className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-slate-700 outline-none focus:border-blue-500"
-                disabled={lawyersLoading}
+                disabled={lawyersLoading || !!id}
               >
-                {lawyers.map((lawyer) => (
+                {(id ? lawyers.filter((lawyer) => lawyer._id === id) : lawyers).map((lawyer) => (
                   <option key={lawyer._id} value={lawyer._id}>
-                    {lawyer.name} - {(lawyer.specializations || []).join(", ") || "General Practice"}
+                    {lawyer.name} 
                   </option>
                 ))}
               </select>
@@ -546,7 +549,7 @@ const AppointmentSchedulingPage = () => {
                           : "border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50"
                       }`}
                     >
-                      <p>{mode}</p>
+                      <p className="flex items-center justify-start gap-1" >{mode} {mode === "Online" ? <FaLaptop/> : <FaBuilding/>}</p>
                       <p className="mt-1 text-xs font-normal text-slate-500">
                         {mode === "Online"
                           ? "Meet virtually without visiting the office."
@@ -708,6 +711,87 @@ const AppointmentSchedulingPage = () => {
           </form>
 
           <aside className="h-fit space-y-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-xl">
+            {/* AI Assistant Tab Section */}
+            <div className="rounded-2xl border border-purple-200 bg-linear-to-br from-purple-100 via-purple-300 to-purple-100 p-4">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="rounded-lg bg-linear-to-tr from-purple-800 via-purple-700 to-purple-500 p-2 text-white">
+                  <Sparkles size={18} />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-slate-800 text-sm">Justifai Assistant</h3>
+                  <p className="text-xs text-slate-600">Get expert guidance on your case</p>
+                </div>
+              </div>
+
+              {/* Tab Buttons */}
+              <div className="flex gap-2 mb-4">
+                <button
+                  type="button"
+                  onClick={() => setAiAssistantTab("category")}
+                  className={`px-4 py-2 text-xs font-medium rounded-lg transition ${
+                    aiAssistantTab === "category"
+                      ? "bg-linear-to-tr from-purple-800 via-purple-700 to-purple-500 text-white"
+                      : "bg-white text-purple-600 border border-purple-200 hover:bg-purple-50"
+                  }`}
+                >
+                  Case Category
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAiAssistantTab("case")}
+                  className={`px-4 py-2 text-xs font-medium rounded-lg transition ${
+                    aiAssistantTab === "case"
+                      ? "bg-linear-to-tr from-purple-800 via-purple-700 to-purple-500 text-white"
+                      : "bg-white text-purple-600 border border-purple-200 hover:bg-purple-50"
+                  }`}
+                >
+                  About Your Case
+                </button>
+              </div>
+
+              {/* Tab Content */}
+              <div className="text-sm text-slate-700 space-y-3">
+                {aiAssistantTab === "category" ? (
+                  <div className="space-y-3">
+                    <p className="font-semibold text-slate-800">
+                      Do you know your case category?
+                    </p>
+                    <div className="bg-white rounded-lg p-3 space-y-2 border border-purple-100">
+                      <p className="text-sm text-slate-600">
+                        Understanding your case category helps match you with the right lawyer and ensures accurate fee calculation.
+                      </p>
+                      <p className="text-xs text-purple-600 font-medium">
+                        💡 Tip: Select a category from the dropdown that best describes your legal issue above.
+                      </p>
+                    </div>
+                    <p className="text-xs text-slate-500 italic">
+                      Not sure? Our AI can help you identify the right category based on your case description.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="font-semibold text-slate-800">
+                      Prepare your case details
+                    </p>
+                    <div className="bg-white rounded-lg p-3 space-y-2 border border-purple-100">
+                      <p className="text-sm text-slate-600">
+                        A detailed case description helps your lawyer prepare better for the consultation and provide more accurate advice.
+                      </p>
+                      <div className="text-xs space-y-2 text-slate-500">
+                        <p>✓ Describe the issue concisely</p>
+                        <p>✓ Include relevant timeline</p>
+                        <p>✓ Mention key parties involved</p>
+                        <p>✓ Upload supporting documents</p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-slate-500 italic">
+                      Try Justifai Assistant to get AI-powered suggestions for your case details.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
             <div>
               <p className="text-sm font-medium text-blue-600">Booking Summary</p>
               <h2 className="mt-2 text-2xl font-bold text-slate-800">
@@ -725,33 +809,33 @@ const AppointmentSchedulingPage = () => {
                   "https://randomuser.me/api/portraits/lego/1.jpg"
                 }
                 alt={selectedLawyer?.name || "Lawyer"}
-                className="h-20 w-20 rounded-2xl object-cover"
+                className="h-20 w-20 lg:h-50 lg:w-50 lg:ml-20 lg:rounded-full rounded-2xl object-cover"
               />
               <div className="mt-4 space-y-3 text-sm text-slate-600">
                 <div className="flex justify-between gap-4">
-                  <span>Date</span>
+                  <span className="flex items-center justify-center gap-1"> <FaCalendar/> Date</span>
                   <span className="font-medium text-slate-800">
                     {selectedDate || "Not selected"}
                   </span>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <span>Time Slot</span>
+                  <span className="flex items-center justify-center gap-1"> <FaClock/> Time Slot</span>
                   <span className="font-medium text-slate-800">
                     {selectedTimeSlot || "Not selected"}
                   </span>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <span>Category</span>
+                  <span className="flex items-center justify-center gap-1"> <FaTag/> Category</span>
                   <span className="font-medium text-slate-800">
                     {caseCategory || "Not selected"}
                   </span>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <span>Mode</span>
+                  <span className="flex items-center justify-center gap-1"> {appointmentMode === "Online" ? <FaLaptop/> : <FaBuilding/> } Mode</span>
                   <span className="font-medium text-slate-800">{appointmentMode}</span>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <span>Consultation Fee</span>
+                  <span className="flex items-center justify-center gap-1"> <FaRupeeSign/> Consultation Fee</span>
                   <span className="font-medium text-slate-800">Rs {selectedFee}</span>
                 </div>
               </div>

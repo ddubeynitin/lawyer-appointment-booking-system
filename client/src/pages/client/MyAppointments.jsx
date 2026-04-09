@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import axios from "axios";
-import { CalendarDays, Clock3, Filter, RefreshCcw, Search, Star, X } from "lucide-react";
+import { CalendarDays, Clock3, Filter, RefreshCcw, Search, Star, X, AlertCircle } from "lucide-react";
 import ClientHeader from "../../components/common/ClientHeader";
 import ReviewRating from "../../components/ReviewRating";
 import DateTimeSlotPicker from "../../components/DateTimeSlotPicker";
@@ -27,7 +27,73 @@ const getStatusClasses = (status) => {
   return "bg-gray-100 text-gray-600";
 };
 
-const RESCHEDULE_CUTOFF_HOURS = 3;
+const RESCHEDULE_CUTOFF_HOURS = 1;
+
+/**
+ * Check if appointment can be cancelled (Pending status)
+ */
+const canCancelAppointment = (appointment) => {
+  return appointment?.status === "Pending";
+};
+
+/**
+ * Check if appointment can be rescheduled
+ * Must be Approved AND at least 1 hour before appointment time
+ */
+const canRescheduleAppointment = (appointment) => {
+  if (!appointment || appointment.status !== "Approved" || appointment.rescheduleStatus === "Pending") {
+    return false;
+  }
+
+  const appointmentDateTime = getAppointmentDateTime(appointment.date, appointment.timeSlot);
+  if (!appointmentDateTime) {
+    return false;
+  }
+
+  const timeRemainingMs = appointmentDateTime.getTime() - Date.now();
+  return timeRemainingMs >= RESCHEDULE_CUTOFF_HOURS * 60 * 60 * 1000;
+};
+
+/**
+ * Check if we should show the meeting card with timer
+ * Show when appointment is Approved and within 1 hour of start time
+ */
+const shouldShowMeetingCard = (appointment) => {
+  if (!appointment || !["Approved", "Ongoing"].includes(appointment.status)) {
+    return false;
+  }
+
+  const appointmentDateTime = getAppointmentDateTime(appointment.date, appointment.timeSlot);
+  if (!appointmentDateTime) {
+    return false;
+  }
+
+  const timeRemainingMs = appointmentDateTime.getTime() - Date.now();
+  // Show card if appointment is within 1 hour OR already started
+  return timeRemainingMs < RESCHEDULE_CUTOFF_HOURS * 60 * 60 * 1000;
+};
+
+/**
+ * Check if Join Meeting button should be enabled
+ * Only enable if status is Ongoing OR appointment time has passed
+ */
+const canJoinMeeting = (appointment) => {
+  if (!appointment || !["Approved", "Ongoing"].includes(appointment.status)) {
+    return false;
+  }
+
+  if (appointment.status === "Ongoing") {
+    return true;
+  }
+
+  const appointmentDateTime = getAppointmentDateTime(appointment.date, appointment.timeSlot);
+  if (!appointmentDateTime) {
+    return false;
+  }
+
+  const timeRemainingMs = appointmentDateTime.getTime() - Date.now();
+  return timeRemainingMs <= 0; // Appointment time has passed
+};
 
 const getAppointmentDateTime = (dateValue, timeSlot) => {
   if (!dateValue || !timeSlot) return null;
@@ -68,12 +134,14 @@ export default function MyAppointments() {
   const [reviews, setReviews] = useState([]);
   const [selectedAppointmentForReview, setSelectedAppointmentForReview] = useState(null);
   const [selectedAppointmentForReschedule, setSelectedAppointmentForReschedule] = useState(null);
+  const [selectedAppointmentForCancel, setSelectedAppointmentForCancel] = useState(null);
   const [rescheduleDate, setRescheduleDate] = useState(null);
   const [rescheduleTime, setRescheduleTime] = useState("");
   const [rescheduleReason, setRescheduleReason] = useState("");
   const [rescheduleSubmitting, setRescheduleSubmitting] = useState(false);
   const [rescheduleError, setRescheduleError] = useState("");
   const [autoOpenedRescheduleId, setAutoOpenedRescheduleId] = useState("");
+  const [cancelSubmitting, setCancelSubmitting] = useState(false);
 
   const fetchAppointments = useCallback(async () => {
     if (!userId) {
@@ -244,6 +312,31 @@ export default function MyAppointments() {
       );
     } finally {
       setRescheduleSubmitting(false);
+    }
+  };
+
+  const handleCancelAppointment = async () => {
+    if (!selectedAppointmentForCancel) return;
+
+    if (!window.confirm("Are you sure you want to cancel this appointment?")) {
+      return;
+    }
+
+    try {
+      setCancelSubmitting(true);
+      await axios.delete(`${API_URL}/appointments/${selectedAppointmentForCancel._id}`);
+      
+      // Refresh appointments after cancellation
+      await axios.get(`${API_URL}/appointments/user/${userId}`).then((response) => {
+        setAppointments(response.data?.appointments || []);
+      });
+
+      setSelectedAppointmentForCancel(null);
+    } catch (error) {
+      console.error("Failed to cancel appointment:", error);
+      alert(error.response?.data?.error || "Unable to cancel appointment.");
+    } finally {
+      setCancelSubmitting(false);
     }
   };
 
@@ -491,6 +584,51 @@ export default function MyAppointments() {
                           </span>
                         ) : null}
 
+                        {/* Pending: Show Cancel Button */}
+                        {appointment.status === "Pending" ? (
+                          <button
+                            type="button"
+                            onClick={() => setSelectedAppointmentForCancel(appointment)}
+                            className="inline-flex items-center gap-2 rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-200"
+                          >
+                            <X size={12} />
+                            Cancel
+                          </button>
+                        ) : null}
+
+                        {/* Approved: Show Reschedule or Meeting Card with Timer */}
+                        {appointment.status === "Approved" ? (
+                          <>
+                            {canRescheduleAppointment(appointment) ? (
+                              <button
+                                type="button"
+                                onClick={() => openRescheduleModal(appointment)}
+                                className="inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700 transition hover:bg-blue-200"
+                              >
+                                <Clock3 size={12} className="fill-current" />
+                                Reschedule
+                              </button>
+                            ) : null}
+                            {shouldShowMeetingCard(appointment) ? (
+                              <MeetingAccessCard
+                                appointment={appointment}
+                                canJoin={canJoinMeeting(appointment)}
+                                className="mt-2"
+                              />
+                            ) : null}
+                          </>
+                        ) : null}
+
+                        {/* Ongoing: Show Meeting Card with Join enabled */}
+                        {appointment.status === "Ongoing" ? (
+                          <MeetingAccessCard
+                            appointment={appointment}
+                            canJoin={true}
+                            className="mt-2"
+                          />
+                        ) : null}
+
+                        {/* Completed: Show Review Button if not reviewed */}
                         {appointment.status === "Completed" ? (
                           hasReview ? (
                             <span className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
@@ -507,22 +645,15 @@ export default function MyAppointments() {
                               Review & Rate
                             </button>
                           )
-                        ) : canRescheduleAppointment(appointment) ? (
-                          <button
-                            type="button"
-                            onClick={() => openRescheduleModal(appointment)}
-                            className="inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700 transition hover:bg-blue-200"
-                          >
-                            <Clock3 size={12} className="fill-current" />
-                            Reschedule
-                          </button>
-                        ) : (
-                          <span className="text-sm text-slate-400">
-                            Not available
-                          </span>
-                        )}
+                        ) : null}
 
-                        <MeetingAccessCard appointment={appointment} className="mt-3" />
+                        {/* Rejected: Show No action available */}
+                        {appointment.status === "Rejected" ? (
+                          <span className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
+                            <AlertCircle size={12} />
+                            No action available
+                          </span>
+                        ) : null}
                       </div>
                     </div>
 
@@ -587,6 +718,51 @@ export default function MyAppointments() {
                           </span>
                         ) : null}
 
+                        {/* Pending: Show Cancel Button */}
+                        {appointment.status === "Pending" ? (
+                          <button
+                            type="button"
+                            onClick={() => setSelectedAppointmentForCancel(appointment)}
+                            className="inline-flex items-center gap-2 rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-200"
+                          >
+                            <X size={12} />
+                            Cancel
+                          </button>
+                        ) : null}
+
+                        {/* Approved: Show Reschedule or Meeting Card with Timer */}
+                        {appointment.status === "Approved" ? (
+                          <>
+                            {canRescheduleAppointment(appointment) ? (
+                              <button
+                                type="button"
+                                onClick={() => openRescheduleModal(appointment)}
+                                className="inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700 transition hover:bg-blue-200"
+                              >
+                                <Clock3 size={12} className="fill-current" />
+                                Reschedule
+                              </button>
+                            ) : null}
+                            {shouldShowMeetingCard(appointment) ? (
+                              <MeetingAccessCard
+                                appointment={appointment}
+                                canJoin={canJoinMeeting(appointment)}
+                                className="mt-2"
+                              />
+                            ) : null}
+                          </>
+                        ) : null}
+
+                        {/* Ongoing: Show Meeting Card with Join enabled */}
+                        {appointment.status === "Ongoing" ? (
+                          <MeetingAccessCard
+                            appointment={appointment}
+                            canJoin={true}
+                            className="mt-2"
+                          />
+                        ) : null}
+
+                        {/* Completed: Show Review Button if not reviewed */}
                         {appointment.status === "Completed" ? (
                           hasReview ? (
                             <span className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
@@ -603,18 +779,15 @@ export default function MyAppointments() {
                               Review & Rate
                             </button>
                           )
-                        ) : canRescheduleAppointment(appointment) ? (
-                          <button
-                            type="button"
-                            onClick={() => openRescheduleModal(appointment)}
-                            className="inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700"
-                          >
-                            <Clock3 size={12} className="fill-current" />
-                            Reschedule
-                          </button>
                         ) : null}
 
-                        <MeetingAccessCard appointment={appointment} className="mt-3" />
+                        {/* Rejected: Show No action available */}
+                        {appointment.status === "Rejected" ? (
+                          <span className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
+                            <AlertCircle size={12} />
+                            No action available
+                          </span>
+                        ) : null}
                       </div>
                     </div>
                   </article>
@@ -723,6 +896,57 @@ export default function MyAppointments() {
                     {rescheduleSubmitting ? "Submitting request..." : "Send Reschedule Request"}
                   </button>
                 </form>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {selectedAppointmentForCancel ? (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 px-4 backdrop-blur-md"
+            onClick={() => setSelectedAppointmentForCancel(null)}
+            role="presentation"
+          >
+            <div
+              className="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl"
+              onClick={(event) => event.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Cancel appointment confirmation"
+            >
+              <div className="bg-red-50 px-6 py-6 text-center">
+                <div className="mx-auto w-fit rounded-full bg-red-100 p-3">
+                  <AlertCircle size={24} className="text-red-600" />
+                </div>
+                <h2 className="mt-4 text-xl font-semibold text-slate-800">
+                  Cancel Appointment?
+                </h2>
+                <p className="mt-2 text-sm text-slate-600">
+                  Are you sure you want to cancel this appointment with{" "}
+                  <strong>{selectedAppointmentForCancel.lawyerName}</strong>?
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  {formatAppointmentDate(selectedAppointmentForCancel.date)} at{" "}
+                  {selectedAppointmentForCancel.timeSlot}
+                </p>
+              </div>
+
+              <div className="flex gap-3 px-6 py-4">
+                <button
+                  type="button"
+                  onClick={() => setSelectedAppointmentForCancel(null)}
+                  className="flex-1 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                >
+                  Keep it
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancelAppointment}
+                  disabled={cancelSubmitting}
+                  className="flex-1 rounded-2xl bg-red-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {cancelSubmitting ? "Cancelling..." : "Cancel Appointment"}
+                </button>
               </div>
             </div>
           </div>

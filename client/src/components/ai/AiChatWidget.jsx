@@ -142,7 +142,7 @@ const AiChatWidget = () => {
           type="button"
           onClick={() => setIsOpen((current) => !current)}
           aria-label="Open AI assistant"
-          className="flex lg:h-20 lg:w-20 h-16 w-16 items-center justify-center rounded-full bg-linear-to-br from-blue-600 via-cyan-500 to-teal-500 text-white shadow-2xl"
+          className="flex lg:h-20 lg:w-20 h-16 w-16 items-center justify-center rounded-full bg-linear-to-br from-purple-300 via-purple-600 to-purple-900 text-white shadow-2xl"
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
           animate={{
@@ -186,7 +186,7 @@ const AiChatWidget = () => {
               }}
             />
             <motion.div
-              className="fixed bottom-0 right-0 flex h-[85vh] w-full flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl lg:bottom-5 lg:right-5 lg:h-167.5 lg:w-107.5 lg:rounded-3xl font-barlow z-50"
+              className="fixed bottom-0 right-0 flex h-[90vh] w-full flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl lg:bottom-5 lg:right-5 lg:h-167.5 lg:w-107.5 lg:rounded-3xl font-barlow z-50"
               initial={{ y: "100%", opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: "100%", opacity: 0 }}
@@ -197,7 +197,7 @@ const AiChatWidget = () => {
                 opacity: { duration: 0.2 }
               }}
             >
-            <div className="flex items-center justify-between bg-linear-to-r from-blue-800 via-blue-700 to-blue-600 px-5 py-4 text-white">
+            <div className="flex items-center justify-between bg-linear-to-tr from-purple-800 via-purple-800 to-purple-500 px-5 py-4 text-white">
               <div className="flex items-center gap-3">
                 <div className="rounded-2xl bg-white/10 p-2">
                   <Bot size={20} />
@@ -281,13 +281,8 @@ const AiChatWidget = () => {
             </div>
 
             <div className="border-t border-slate-200 bg-white p-4">
-              <p className="mb-3 text-xs text-slate-500">
-                This assistant provides general information, not formal legal advice.
-              </p>
-              <div className="mb-4">
-                <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  Ready Prompts
-                </p>
+              
+              <div className="mb-2">
                 <div
                   ref={chipsScrollerRef}
                   onMouseEnter={() => {
@@ -313,7 +308,7 @@ const AiChatWidget = () => {
                       isChipsPausedRef.current = false;
                     }, 1200);
                   }}
-                  className="hide-scrollbar overflow-x-auto overflow-y-hidden"
+                  className="hide-scrollbar overflow-x-auto overflow-y-hidden pb-2"
                 >
                   <div className="flex w-max flex-nowrap gap-2 pr-6">
                     {READY_PROMPTS.map((prompt) => (
@@ -321,7 +316,7 @@ const AiChatWidget = () => {
                         key={prompt}
                         type="button"
                         onClick={() => setInput(prompt)}
-                        className="shrink-0 whitespace-nowrap rounded-full border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700 transition hover:border-blue-200 hover:bg-blue-100"
+                        className="shrink-0 whitespace-nowrap rounded-full border border-purple-100 bg-purple-50 px-3 py-2 text-xs font-medium text-purple-700 transition hover:border-purple-200 hover:bg-purple-100"
                       >
                         {prompt}
                       </button>
@@ -340,17 +335,20 @@ const AiChatWidget = () => {
                     }
                   }}
                   placeholder="Ask a legal or appointment question..."
-                  className="flex-1 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none focus:border-blue-500"
+                  className="flex-1 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none focus:border-purple-500"
                 />
                 <button
                   type="button"
                   onClick={sendMessage}
                   disabled={isLoading || !input.trim()}
-                  className="rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="rounded-2xl bg-linear-to-tr from-purple-800 via-purple-800 to-purple-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Send
                 </button>
               </div>
+              <p className="mt-3 text-xs text-slate-500">
+                This assistant provides general information, not formal legal advice.
+              </p>
             </div>
           </motion.div>
           </>

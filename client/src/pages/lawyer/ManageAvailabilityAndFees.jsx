@@ -35,7 +35,9 @@ const DEFAULT_TIME_SLOTS = [
   "04:30 PM",
 ];
 
-const FEE_HINTS = ["Consultation", "Drafting", "Court Appearance", "Documentation", "Retainer"];
+const AVAILABLE_CATEGORIES = ["Criminal", "Civil", "Corporate", "Family", "Property"];
+
+// const FEE_HINTS = [""];
 const TIME_SLOT_REGEX = /^(\d{1,2}):(\d{2})\s?(AM|PM)$/i;
 
 const getTodayDateInputValue = () => {
@@ -911,22 +913,37 @@ const ManageAvailabilityAndFees = () => {
                 </p>
 
                 <div className="mt-5 flex flex-wrap gap-2">
-                  {FEE_HINTS.map((hint) => (
-                    <button
-                      key={hint}
-                      type="button"
-                      onClick={() => handleAddFeeRow(hint)}
-                      className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
-                    >
-                      + {hint}
-                    </button>
-                  ))}
+                  {AVAILABLE_CATEGORIES.map((categoryName) => {
+                    const isSelected = feeRows.some(
+                      (row) => row.category.toLowerCase() === categoryName.toLowerCase(),
+                    );
+                    return (
+                      <button
+                        key={categoryName}
+                        type="button"
+                        onClick={() => {
+                          if (!isSelected) {
+                            handleAddFeeRow(categoryName);
+                          }
+                        }}
+                        disabled={isSelected}
+                        className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition ${
+                          isSelected
+                            ? "border border-blue-500 bg-blue-50 text-blue-700 cursor-default"
+                            : "border border-slate-300 bg-white text-slate-700 hover:border-blue-400 hover:bg-blue-50"
+                        }`}
+                      >
+                        {categoryName}
+                        {isSelected && <BadgeCheck size={14} />}
+                      </button>
+                    );
+                  })}
                 </div>
 
                 <div className="mt-5 space-y-4">
                   {feeRows.map((row, index) => (
                     <div
-                      key={`${row.category || "fee"}-${index}`}
+                      key={index}
                       className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
                     >
                       <div className="grid gap-3 sm:grid-cols-[1fr_120px]">
@@ -997,11 +1014,6 @@ const ManageAvailabilityAndFees = () => {
                   </button>
                 </div>
 
-                <datalist id="fee-categories">
-                  {FEE_HINTS.map((hint) => (
-                    <option key={hint} value={hint} />
-                  ))}
-                </datalist>
               </div>
 
               <div className="rounded-3xl border border-green-100 bg-green-50 p-5">

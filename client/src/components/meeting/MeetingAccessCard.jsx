@@ -43,7 +43,7 @@ const formatCountdown = (durationMs) => {
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 };
 
-const MeetingAccessCard = ({ appointment, className = "" }) => {
+const MeetingAccessCard = ({ appointment, canJoin, className = "" }) => {
   const [now, setNow] = useState(Date.now());
 
   const appointmentDateTime = useMemo(
@@ -76,6 +76,12 @@ const MeetingAccessCard = ({ appointment, className = "" }) => {
   const timeUntilMeeting = appointmentDateTime.getTime() - now;
   const isCountdownVisible = timeUntilMeeting > TEN_MINUTES_MS;
   const countdownText = isCountdownVisible ? formatCountdown(timeUntilMeeting - TEN_MINUTES_MS) : "";
+  
+  // Determine if join button should be enabled
+  // If canJoin is explicitly provided (for manual control), use that
+  // Otherwise, enable if appointment time has passed
+  const isJoinEnabled = canJoin !== undefined ? canJoin : timeUntilMeeting <= 0;
+  
   const handleJoinMeeting = () => {
     window.open(appointment.meetingLink, "_blank", "noopener,noreferrer");
   };
@@ -110,11 +116,17 @@ const MeetingAccessCard = ({ appointment, className = "" }) => {
             <button
               type="button"
               onClick={handleJoinMeeting}
-              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+              disabled={!isJoinEnabled}
+              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-blue-600"
             >
               <ArrowUpRight size={16} />
               Join Meeting
             </button>
+            {!isJoinEnabled && (
+              <p className="mt-2 text-xs text-blue-700">
+                Join button will be available at appointment time
+              </p>
+            )}
           </div>
 
           <p className="mt-3 text-xs text-blue-700/80">
