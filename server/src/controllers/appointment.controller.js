@@ -10,6 +10,9 @@ const {
   sendAppointmentProofEmail,
   sendAppointmentRejectionEmail,
 } = require("../services/email.service");
+const {
+  updateAppointmentStatuses,
+} = require("../services/appointment.service");
 
 const TIME_SLOT_REGEX = /^(\d{1,2}):(\d{2})\s?(AM|PM)$/i;
 const RESCHEDULE_CUTOFF_HOURS = 3;
@@ -546,6 +549,8 @@ const updateAppointment = async (req, res) => {
 const requestReschedule = async (req, res) => {
   try {
     const { date, timeSlot, reason } = req.body;
+    console.log(date, timeSlot, reason);
+    
     const requestedDate = toAppointmentDate(date);
     const normalizedTimeSlot = normalizeTimeSlot(timeSlot);
     const appointment = await Appointment.findById(req.params.id);
@@ -813,6 +818,24 @@ const getAllUserAppointments = async (req, res) => {
   }
 };
 
+/**
+ * Manually trigger appointment status updates
+ * Converts Approved → Ongoing → Completed based on appointment time
+ */
+const triggerStatusUpdate = async (req, res) => {
+  try {
+    const userRole = req.user?.role;
+    if (userRole !== "admin") {
+      return res.status(403).json({ error: "Only admins can trigger status updates" });
+    }
+
+    await updateAppointmentStatuses();
+    res.json({ message: "Appointment statuses updated successfully" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 module.exports = {
   createAppointment,
   getAllAppointments,
@@ -823,4 +846,5 @@ module.exports = {
   deleteAppointment,
   getAllLawyerAppointments,
   getAllUserAppointments,
+  triggerStatusUpdate,
 };

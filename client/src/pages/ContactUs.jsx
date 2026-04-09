@@ -95,14 +95,14 @@ const ContactUs = () => {
             <h3 className="text-lg font-semibold text-blue-600 mb-2">
               Phone
             </h3>
-            <p className="text-gray-600">+91 98765 43210</p>
+            <p className="text-gray-600">+91 9198410501</p>
           </div>
 
           <div className="bg-white p-6 rounded-2xl shadow">
             <h3 className="text-lg font-semibold text-blue-600 mb-2">
               Email
             </h3>
-            <p className="text-gray-600">support@lawyerbooking.com</p>
+            <p className="text-gray-600">justifai.labs@gmail.com</p>
           </div>
 
           <div className="bg-white p-6 rounded-2xl shadow">

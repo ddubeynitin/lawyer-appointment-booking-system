@@ -181,10 +181,11 @@ const Home = () => {
     logout();
   };
 
-  const navLinkClass = "group inline-flex items-center gap-2 transition hover:text-blue-600";
+  const navLinkClass =
+    "group inline-flex items-center gap-2 transition hover:text-blue-600";
   const navIconClass = "text-slate-400 transition group-hover:text-blue-600";
   return (
-    <div className="min-h-screen bg-[url('./assets/images/bg-white.jpg')] bg-center bg-cover  from-slate-50 via-white to-slate-100 text-slate-800 font-barlow">
+    <div className="min-h-screen bg-white bg-linear-to-r from-white to-blue-200 text-slate-800 font-barlow">
       {/* ================= HEADER ================= */}
       <header className="sticky top-0 z-50 backdrop-blur-md bg-white/80 border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -197,10 +198,7 @@ const Home = () => {
                   {user && user.role === "lawyer" ? (
                     ""
                   ) : (
-                    <Link
-                      to="/client/lawyer-list"
-                      className={navLinkClass}
-                    >
+                    <Link to="/client/lawyer-list" className={navLinkClass}>
                       <FaSearch className={navIconClass} /> Find Lawyer
                     </Link>
                   )}
@@ -240,10 +238,7 @@ const Home = () => {
             {user && user.role === "lawyer" ? (
               ""
             ) : (
-              <Link
-                to="/client/lawyer-list"
-                className={navLinkClass}
-              >
+              <Link to="/client/lawyer-list" className={navLinkClass}>
                 <FaSearch className={navIconClass} /> Find Lawyer
               </Link>
             )}
@@ -264,10 +259,7 @@ const Home = () => {
             {user ? (
               ""
             ) : (
-              <Link
-                to="/auth/register"
-                className={navLinkClass}
-              >
+              <Link to="/auth/register" className={navLinkClass}>
                 <FaUserTie className={navIconClass} /> Join as Lawyer
               </Link>
             )}
@@ -365,28 +357,36 @@ const Home = () => {
               <FaCheckCircle className="text-blue-600 text-xl" />
               <div>
                 <p className="font-semibold">Verified Lawyers</p>
-                <p className="text-slate-500">Trusted legal experts with approval checks.</p>
+                <p className="text-slate-500">
+                  Trusted legal experts with approval checks.
+                </p>
               </div>
             </div>
             <div className="rounded-3xl border border-slate-200 bg-white/90 px-5 py-4 flex items-center gap-3 shadow-sm">
               <FaCalendarCheck className="text-blue-600 text-xl" />
               <div>
                 <p className="font-semibold">Instant Booking</p>
-                <p className="text-slate-500">Schedule consultations in just a few clicks.</p>
+                <p className="text-slate-500">
+                  Schedule consultations in just a few clicks.
+                </p>
               </div>
             </div>
             <div className="rounded-3xl border border-slate-200 bg-white/90 px-5 py-4 flex items-center gap-3 shadow-sm">
               <FaComments className="text-blue-600 text-xl" />
               <div>
                 <p className="font-semibold">Secure Messaging</p>
-                <p className="text-slate-500">Chat directly with your lawyer on the platform.</p>
+                <p className="text-slate-500">
+                  Chat directly with your lawyer on the platform.
+                </p>
               </div>
             </div>
             <div className="rounded-3xl border border-slate-200 bg-white/90 px-5 py-4 flex items-center gap-3 shadow-sm">
               <FaRobot className="text-blue-600 text-xl" />
               <div>
                 <p className="font-semibold">AI Guidance</p>
-                <p className="text-slate-500">Get smart legal assistance and booking help.</p>
+                <p className="text-slate-500">
+                  Get smart legal assistance and booking help.
+                </p>
               </div>
             </div>
           </div>
@@ -440,7 +440,9 @@ const Home = () => {
       <section className="py-24">
         <div className="max-w-7xl mx-auto px-6">
           <ScrollReveal>
-            <h2 className="text-3xl font-bold text-center mb-4">How It Works</h2>
+            <h2 className="text-3xl font-bold text-center mb-4">
+              How It Works
+            </h2>
             <p className="text-center text-slate-500 mb-16">
               Quickly discover verified lawyers, book a consultation, and manage
               your case from one dashboard.
@@ -586,7 +588,9 @@ const Home = () => {
             </ScrollReveal>
             <ScrollReveal delay={240}>
               <StatCard
-                value={stats.satisfactionRate ? `${stats.satisfactionRate}%` : "95%"}
+                value={
+                  stats.satisfactionRate ? `${stats.satisfactionRate}%` : "95%"
+                }
                 label="Satisfaction Rate"
               />
             </ScrollReveal>
@@ -604,11 +608,13 @@ const Home = () => {
           </ScrollReveal>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {["Aditya Singh", "Vinit Sahu", "Gaurav Malhotra"].map((name, index) => (
-              <ScrollReveal key={name} delay={index * 120}>
-                <Testimonial name={name} />
-              </ScrollReveal>
-            ))}
+            {["Aditya Singh", "Vinit Sahu", "Gaurav Malhotra"].map(
+              (name, index) => (
+                <ScrollReveal key={name} delay={index * 120}>
+                  <Testimonial name={name} />
+                </ScrollReveal>
+              ),
+            )}
           </div>
         </div>
       </section>
@@ -646,22 +652,25 @@ const Home = () => {
       </section>
 
       {/* ================= CALL TO ACTION ================= */}
-      <section className="py-24 bg-blue-600 text-white text-center">
+      <section className="py-24 bg-white  text-center">
         <ScrollReveal className="px-6">
-          <h2 className="text-3xl font-bold mb-6">Ready to take the next step?</h2>
+          <h2 className="text-3xl font-bold mb-6">
+            Ready to take the next step?
+          </h2>
           <p className="mb-8">
-            Connect with top lawyers, book secure consultations, and manage your legal journey with ease.
+            Connect with top lawyers, book secure consultations, and manage your
+            legal journey with ease.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link
               to="/client/lawyer-list"
-              className="px-6 py-3 bg-white text-blue-600 font-semibold rounded-xl hover:scale-105 transition"
+              className="px-6 py-3 bg-blue-500 text-white font-semibold rounded-xl hover:scale-105 transition"
             >
               Find a Lawyer
             </Link>
             <Link
               to="/auth/register"
-              className="px-6 py-3 border border-white font-semibold rounded-xl hover:scale-105 transition"
+              className="px-6 py-3 border border-blue-500 text-blue-500 font-semibold rounded-xl hover:scale-105 transition"
             >
               Join as Lawyer
             </Link>
@@ -677,19 +686,14 @@ const Home = () => {
               Justif<span className="text-blue-500">Ai</span>
             </h3>
             <p className="text-sm w-full lg:w-3/4 text-center text-slate-500">
-              Empowering clients with AI-backed legal support and trusted lawyer connections.
+              Empowering clients with AI-backed legal support and trusted lawyer
+              connections.
             </p>
           </div>
           <div className="flex flex-wrap gap-5 justify-center px-10 md:justify-start">
-            <FooterCol
-              title="Platform"
-              items={["Find Lawyer", "Specializations", "Pricing"]}
-            />
-            <FooterCol title="Company" items={["About", "Careers", "Blog"]} />
-            <FooterCol
-              title="Support"
-              items={["Help Center", "Contact", "Privacy", "Terms"]}
-            />
+            <FooterCol title="Platform" items={["Find Lawyer"]} />
+            <FooterCol title="Company" items={["About"]} />
+            <FooterCol title="Support" items={["Contact"]} />
           </div>
           <div className=" flex items-center justify-center">
             <img

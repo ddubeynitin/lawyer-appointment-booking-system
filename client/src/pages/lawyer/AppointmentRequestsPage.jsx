@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { MdRefresh } from "react-icons/md";
 import {
   CalendarDays,
   CheckCircle2,
@@ -64,6 +65,7 @@ const AppointmentRequestsPage = () => {
   const [clientProfile, setClientProfile] = useState(null);
   const [clientProfileLoading, setClientProfileLoading] = useState(false);
   const [clientProfileError, setClientProfileError] = useState("");
+  const [refreshingAppointments, setRefreshingAppointments] = useState(false);
 
   const fetchPendingAppointments = async () => {
     if (!lawyerId) {
@@ -99,6 +101,24 @@ const AppointmentRequestsPage = () => {
     } finally {
       setLoading(false);
       setRescheduleLoading(false);
+    }
+  };
+
+  const refreshAppointmentsOnly = async () => {
+    if (!lawyerId) return;
+
+    try {
+      setRefreshingAppointments(true);
+      setError("");
+      const response = await axios.get(
+        `${API_URL}/appointments/lawyer/${lawyerId}?status=Pending`,
+      );
+      setAppointments(response.data?.appointments || []);
+    } catch (fetchError) {
+      console.error("Failed to refresh appointment requests:", fetchError);
+      setError("Unable to refresh pending requests right now.");
+    } finally {
+      setRefreshingAppointments(false);
     }
   };
 
@@ -297,6 +317,20 @@ const AppointmentRequestsPage = () => {
         )}
 
         <section className="rounded-3xl bg-white p-6 shadow-xl">
+          <div className="mb-6 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-slate-800">Requested Appointments</h2>
+            <button
+              type="button"
+              onClick={refreshAppointmentsOnly}
+              disabled={refreshingAppointments || loading}
+              className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
+              title="Refresh appointments section"
+            >
+              <MdRefresh size={16} className={refreshingAppointments ? "animate-spin" : ""} />
+              Refresh
+            </button>
+          </div>
+
           {loading ? (
             <div className="py-12 text-center text-sm text-slate-500">
               Loading pending requests...

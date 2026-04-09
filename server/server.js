@@ -2,6 +2,7 @@ const express = require("express");
 const http = require("http");
 const connectDB = require("./src/config/db");
 const env = require("./src/config/env");
+const { startAppointmentStatusScheduler } = require("./src/services/appointment.service");
 
 //routes
 const authRoutes = require("./src/routes/auth.routes");
@@ -53,6 +54,7 @@ app.use("/api/messages", messageRoutes);
 
 const startServer = async () => {
   await connectDB();
+  startAppointmentStatusScheduler();
   createMessageRealtimeServer(server);
   server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 };

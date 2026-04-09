@@ -235,7 +235,7 @@ const LawyerDashboard = () => {
               allAppointmentsLoading ? "..." : formatCurrency(completedRevenue)
             }
             icon={<FaMoneyBill />}
-            onClick={() => navigate("/lawyer/appointments")}
+            onClick={() => navigate("/lawyer/earnings")}
             sub={
               <Link to="/lawyer/earnings" className="font-medium text-blue-600">
                 View earnings details

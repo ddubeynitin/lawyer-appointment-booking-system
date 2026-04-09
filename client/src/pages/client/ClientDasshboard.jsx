@@ -80,7 +80,8 @@ const ClientDashboard = () => {
         !Number.isNaN(appointmentDateTime.getTime()) &&
         appointmentDateTime >= new Date() &&
         appointment.status !== "Rejected" &&
-        appointment.status !== "Completed"
+        appointment.status !== "Completed" &&
+        appointment.status !== "Pending"
       );
     })
     .sort((firstAppointment, secondAppointment) => {
@@ -92,6 +93,14 @@ const ClientDashboard = () => {
       );
 
       return firstDate - secondDate;
+    })[0];
+
+  const requestedAppointment = appointmentHistory
+    .filter((appointment) => appointment.status === "Pending")
+    .sort((firstAppointment, secondAppointment) => {
+      const firstTime = new Date(firstAppointment?.createdAt || firstAppointment?.date || 0).getTime();
+      const secondTime = new Date(secondAppointment?.createdAt || secondAppointment?.date || 0).getTime();
+      return secondTime - firstTime;
     })[0];
 
   const upcomingAppointmentMode = upcomingAppointment?.appointmentMode || "Online";
@@ -423,11 +432,7 @@ const ClientDashboard = () => {
                 <p>{upcomingAppointment.caseCategory} consultation</p>
               </div>
               <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-                {upcomingAppointmentMode === "Online" && (
-                  <button className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm text-white transition hover:bg-blue-700">
-                    <FaVideo /> Join Video Call
-                  </button>
-                )}
+                
                 {canRescheduleAppointment(upcomingAppointment) ? (
                   <button
                     type="button"
@@ -454,12 +459,85 @@ const ClientDashboard = () => {
                 to="/client/lawyer-list"
                 className="inline-block rounded-lg bg-blue-600 px-4 py-2 text-sm text-white"
               >
-                Book a Lawyer
+                Book Appointment
               </Link>
             </div>
           )}
         </section>
 
+        {/* Requested Appointment Section */}
+        <section className="rounded-3xl bg-white p-8 shadow-lg">
+          <div className="mb-4 flex items-start justify-between">
+            <h3 className="text-lg font-semibold">Requested Appointment</h3>
+            <div className="flex items-center gap-2">
+              {requestedAppointment && (
+                <span className="rounded-full bg-yellow-100 px-3 py-1 text-xs text-yellow-700">
+                  {requestedAppointment.status.toUpperCase()}
+                </span>
+              )}
+              <MdRefresh
+                className="cursor-pointer text-gray-500 hover:text-blue-600"
+                onClick={fetchAppointments}
+                title="Refresh requested appointments"
+              />
+            </div>
+          </div>
+
+          {requestedAppointment ? (
+            <>
+              <h4 className="flex justify-center font-semibold">
+                Consultation with {requestedAppointment.lawyerName}
+              </h4>
+              <p className="mb-3 flex justify-center text-sm text-blue-600">
+                {requestedAppointment.lawyerSpecialization}
+              </p>
+              <div className="mb-4 flex flex-wrap justify-center gap-2 text-xs font-medium">
+                <span className="rounded-full bg-blue-100 px-3 py-1 text-blue-700">
+                  {requestedAppointment.appointmentMode || "Online"}
+                </span>
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-600">
+                  {(requestedAppointment.appointmentMode || "Online") === "Office"
+                    ? formatLawyerLocation(requestedAppointment.lawyerId)
+                    : "Online meeting link will be emailed after approval"}
+                </span>
+              </div>
+              <div className="mb-4 space-y-1 text-center text-sm text-gray-600">
+                <p>
+                  {new Date(requestedAppointment.date).toLocaleDateString(
+                    "en-US",
+                    {
+                      weekday: "long",
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    },
+                  )}
+                </p>
+                <p>{requestedAppointment.timeSlot}</p>
+                <p>{requestedAppointment.caseCategory} consultation</p>
+              </div>
+              <div className="rounded-2xl border border-yellow-100 bg-yellow-50 p-4 mb-4">
+                <p className="text-sm text-yellow-800">
+                  ⏳ This appointment is pending approval from the lawyer. You'll be notified once it's confirmed.
+                </p>
+              </div>
+              <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() => handleCancelAppointment(requestedAppointment._id)}
+                  className="rounded-lg bg-red-100 px-6 py-2 text-sm font-medium text-red-700 transition hover:bg-red-200"
+                >
+                  Cancel Request
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="space-y-3 text-center text-gray-500">
+              <p>No pending appointment requests.</p>
+            
+            </div>
+          )}
+        </section>
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           <div className="space-y-4 lg:col-span-3">
             <div className="mb-2 flex items-center justify-between">
@@ -482,7 +560,6 @@ const ClientDashboard = () => {
                     <th className="px-2 py-3 text-center text-gray-600">TYPE</th>
                     <th className="px-2 py-3 text-center text-gray-600">MODE</th>
                     <th className="px-2 py-3 text-center text-gray-600">STATUS</th>
-                    <th className="px-2 py-3 text-center text-gray-600">ACTION</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 lg:text-lg text-sm">
@@ -540,31 +617,7 @@ const ClientDashboard = () => {
                             {appointment.status}
                           </span>
                         </td>
-                        <td className="text-center border border-dashed border-gray-200">
-                          {appointment.status === "Completed" ? (
-                            ""
-                          ) : appointment.status === "Pending" ? (
-                            <button
-                              type="button"
-                              onClick={() => handleCancelAppointment(appointment._id)}
-                              className="rounded-lg bg-red-100 px-3 py-1 text-xs font-medium text-red-700 transition hover:bg-red-200"
-                            >
-                              Cancel
-                            </button>
-                          ) : appointment.status === "Rejected" ? (
-                            <span className="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700">
-                              Cancelled
-                            </span>
-                          ) : appointment.status === "Approved" ? (
-                            <span className="cursor-pointer text-blue-600">
-                              Book Again
-                            </span>
-                          ) : (
-                            <span className="cursor-not-allowed text-gray-400">
-                              No Action
-                            </span>
-                          )}
-                        </td>
+                        
                       </tr>
                     ))
                   ) : (

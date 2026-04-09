@@ -629,9 +629,9 @@ const loginUser = async (req, res) => {
 
     let user;
     if (role === "lawyer") {
-      user = await Lawyer.findOne({ email });
+      user = await Lawyer.findOne({ email , isActive: true });
     } else {
-      user = await User.findOne({ email });
+      user = await User.findOne({ email, isActive: true });
     }
     
     // Check if user exists

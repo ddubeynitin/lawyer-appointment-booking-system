@@ -11,12 +11,14 @@ const {
   respondToRescheduleRequest,
   deleteAppointment,
   getAllLawyerAppointments,
-  getAllUserAppointments
+  getAllUserAppointments,
+  triggerStatusUpdate,
 } = require("../controllers/appointment.controller");
 
 // appointment.routes.js
 router.post("/", authMiddleware, upload.single("caseEvidence"), createAppointment);
 router.get("/", getAllAppointments);
+router.get("/admin/trigger-status-update", triggerStatusUpdate);
 router.get("/lawyer/:id", getAllLawyerAppointments);
 router.get("/lawyer/:id/reschedule-requests", getAllLawyerAppointments);
 router.get("/user/:id", getAllUserAppointments);
