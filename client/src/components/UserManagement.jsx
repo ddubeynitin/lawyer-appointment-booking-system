@@ -494,7 +494,7 @@ export default function UserManagement(props) {
     lawyerName, setLawyerName, lawyerEmail, setLawyerEmail, lawyerPhone, setLawyerPhone,
     lawyerLicense, setLawyerLicense, lawyerSpecializations, setLawyerSpecializations,
     lawyerExperience, setLawyerExperience, lawyerProfileImage, setLawyerProfileImage,
-    lawyerFees, setLawyerFees, lawyerEducation, setLawyerEducation, lawyerLocation, setLawyerLocation,
+    lawyerFees, setLawyerFees, lawyerEducation, setLawyerEducation, lawyerLocation, setLawyerLocation,  
     lawyerDescription, setLawyerDescription, lawyerGender, setLawyerGender, lawyerPassword, setLawyerPassword,
     lawyerConfirmPassword, setLawyerConfirmPassword, lawyerErrors, setLawyerErrors,
     lawyers, users,

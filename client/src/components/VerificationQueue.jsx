@@ -13,6 +13,7 @@ export default function VerificationQueue({
   allLawyers,
   onApprove,
   onReject,
+  onToggleFeatured,
   processingId,
   processingAction,
 }) {
@@ -341,9 +342,17 @@ export default function VerificationQueue({
                             </button>
                           )}
                           {verificationStatus === "Approved" ? (
-                            <span className="px-3 py-1.5 text-xs font-semibold text-slate-700 rounded-md">
-                            No Action 
-                            </span>
+                            <button
+                              type="button"
+                              onClick={() => onToggleFeatured?.(lawyer._id, !lawyer.isFeatured)}
+                              disabled={processingId === lawyer._id && processingAction === "featured"}
+                              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors flex items-center gap-1 ${lawyer.isFeatured ? "bg-amber-100 text-amber-700 border border-amber-300" : "bg-purple-100 text-purple-700 border border-purple-300 hover:bg-purple-200"}`}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill={lawyer.isFeatured ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                              </svg>
+                              {lawyer.isFeatured ? "Featured" : "Feature"}
+                            </button>
                           ) : verificationStatus === "Rejected" ? (
                             <span className="px-3 py-1.5 text-xs font-semibold text-red-700 bg-red-100 rounded-md">
                               No Action
