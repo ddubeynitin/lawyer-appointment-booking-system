@@ -72,6 +72,44 @@ export default function Dashboard() {
     id: null,
     action: null,
   });
+
+  const handleToggleFeaturedLawyer = async (lawyerId, isFeatured) => {
+    if (!lawyerId) {
+      alert("Lawyer id not found");
+      return;
+    }
+
+    setVerificationLoading({ id: lawyerId, action: "featured" });
+    try {
+      await axios.put(`${API_URL}/lawyers/update-lawyer/${lawyerId}`, {
+        isFeatured: isFeatured,
+      });
+      setAllLawyers((prev) =>
+        prev.map((lawyer) =>
+          lawyer._id === lawyerId
+            ? { ...lawyer, isFeatured: isFeatured }
+            : lawyer,
+        ),
+      );
+      setLawyers((prev) =>
+        prev.map((lawyer) =>
+          lawyer._id === lawyerId
+            ? { ...lawyer, isFeatured: isFeatured }
+            : lawyer,
+        ),
+      );
+      alert(`Lawyer ${isFeatured ? "featured" : "unfeatured"} successfully`);
+    } catch (error) {
+      console.error("Failed to update featured status:", error);
+      const apiError =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        "Failed to update featured status";
+      alert(apiError);
+    } finally {
+      setVerificationLoading({ id: null, action: null });
+    }
+  };
   const [AllLawyers, setAllLawyers] = useState([]);
   const [todayAppointmentsCount, setTodayAppointmentsCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -961,6 +999,7 @@ export default function Dashboard() {
             allLawyers={AllLawyers}
             onApprove={handleApproveLawyer}
             onReject={handleRejectLawyer}
+            onToggleFeatured={handleToggleFeaturedLawyer}
             processingId={verificationLoading.id}
             processingAction={verificationLoading.action}
           />
