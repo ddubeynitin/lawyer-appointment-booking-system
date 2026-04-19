@@ -268,13 +268,10 @@ const Registration = () => {
   return (
     <div className="lg:h-screen lg:overflow-hidden bg-linear-to-br from-blue-50 via-white to-indigo-50 font-barlow">
       {/* Header */}
-      <header className="w-full bg-white/80 backdrop-blur-sm shadow-sm px-4 sm:px-10 py-3 flex justify-between items-center border-b border-gray-100">
-        <div className="flex items-center gap-2">
-          <FaGavel className="text-blue-600" />
-          <Link to="/" className="text-xl font-bold text-gray-900">
-            Justif<span className="text-blue-600">Ai</span>
+      <header className="w-full bg-white/80 backdrop-blur-sm shadow-sm px-4 sm:px-10 py-1 flex justify-between items-center border-b border-gray-100 overflow-hidden">
+          <Link to="/" className="font-bold text-gray-900 overflow-hidden h-15 w-23 hover:scale-105 transition-transform duration-300 flex items-center gap-2">
+            <img src="/assets/images/justifai_logo_blue_1.png" alt="logo" className="w-full h-full" />
           </Link>
-        </div>
         <div className="flex gap-3">
           <Link
             to="/"
@@ -295,11 +292,11 @@ const Registration = () => {
         {/* Left Side - Hero */}
         <div className="hidden lg:h-screen lg:flex lg:w-1/2 bg-linear-to-br from-blue-600 to-indigo-700 p-12  flex-col justify-start text-white relative overflow-hidden ">
           <div className="relative z-10">
-            <div className="animate-float w-full max-w-sm mx-auto mb-6">
+            <div className="animate-float w-full max-w-sm mx-auto mb-10 ">
               <img
-                src="/assets/images/professional-peoples.png"
+                src="/assets/images/cover_banner_3.png"
                 alt="Professional people"
-                className="w-full max-w-md mx-auto rounded-2xl mask-b-from-70% "
+                className="w-full max-w-md mx-auto mask-b-from-70% mask-b-to-85% rounded-2xl scale-160"
               />
             </div>
             <h1 className="text-4xl font-bold mb-6 leading-tight">

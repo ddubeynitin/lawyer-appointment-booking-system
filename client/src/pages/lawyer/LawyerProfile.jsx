@@ -471,7 +471,7 @@ const LawyerProfile = () => {
                     "https://randomuser.me/api/portraits/women/44.jpg"
                   }
                   alt={lawyerProfileData.name}
-                  className="w-full h-full object-cover"
+                  className="w-full object-fit"
                 />
               </div>
             </div>

@@ -617,12 +617,12 @@ const EditLawyerProfile = () => {
                     className="block w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 file:mr-4 file:rounded-xl file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-blue-700"
                   />
 
-                  <div className="overflow-hidden rounded-3xl border border-slate-200 bg-slate-50">
+                  <div className="w-72 h-72 overflow-hidden rounded-3xl border border-slate-200 bg-slate-50">
                     {profileImagePreview ? (
                       <img
                         src={profileImagePreview}
                         alt="Current profile"
-                        className="h-64 w-full object-cover"
+                        className=" w-full object-fit"
                       />
                     ) : (
                       <div className="flex h-64 items-center justify-center text-sm text-slate-500">

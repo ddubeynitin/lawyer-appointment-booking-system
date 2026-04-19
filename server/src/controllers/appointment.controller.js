@@ -7,8 +7,12 @@ const {
   createAppointmentNotifications,
 } = require("../services/notification.service");
 const {
-  sendAppointmentProofEmail,
+  sendAppointmentRequestEmail,
+  sendAppointmentRequestNotificationEmail,
+  sendAppointmentApprovalEmail,
   sendAppointmentRejectionEmail,
+  sendRescheduleRequestEmail,
+  sendRescheduleRequestNotificationEmail,
 } = require("../services/email.service");
 const {
   updateAppointmentStatuses,
@@ -314,10 +318,10 @@ const createAppointment = async (req, res) => {
 
     const appointment = await Appointment.create(appointmentPayload);
     const [bookedUser, bookedLawyer] = await Promise.all([
-      req.user?.id
-        ? User.findById(req.user.id).select("name email").lean()
+      appointment.userId
+        ? User.findById(appointment.userId).select("name email").lean()
         : Promise.resolve(null),
-      Lawyer.findById(appointment.lawyerId).select("name location").lean(),
+      Lawyer.findById(appointment.lawyerId).select("name email location").lean(),
     ]);
 
     try {
@@ -339,24 +343,38 @@ const createAppointment = async (req, res) => {
         lawyerMessage: `New appointment request from ${appointment.userId?.name || "a client"} for ${appointment.timeSlot} on ${new Date(appointment.date).toLocaleDateString()}.`,
       });
 
-      if (bookedUser?.email) {
-        try {
-          await sendAppointmentProofEmail({
-            email: bookedUser.email,
-            name: bookedUser.name,
-            lawyerName: appointment.lawyerName,
-            lawyerSpecialization: appointment.lawyerSpecialization,
-            appointmentMode: appointment.appointmentMode,
-            date: appointment.date,
-            timeSlot: appointment.timeSlot,
-            caseCategory: appointment.caseCategory,
-            feeCharged: appointment.feeCharged,
-            lawyerLocation: bookedLawyer?.location,
-          });
-        } catch (emailError) {
-          console.error("Failed to send appointment proof email:", emailError);
+      const emailResults = await Promise.allSettled([
+        bookedUser?.email
+          ? sendAppointmentRequestEmail({
+              email: bookedUser.email,
+              name: bookedUser.name,
+              lawyerName: appointment.lawyerName,
+              appointmentMode: appointment.appointmentMode,
+              date: appointment.date,
+              timeSlot: appointment.timeSlot,
+              caseCategory: appointment.caseCategory,
+            })
+          : Promise.resolve(),
+        bookedLawyer?.email
+          ? sendAppointmentRequestNotificationEmail({
+              email: bookedLawyer.email,
+              name: bookedLawyer.name,
+              clientName: bookedUser?.name || appointment.userId?.name || "a client",
+              lawyerSpecialization: appointment.lawyerSpecialization,
+              appointmentMode: appointment.appointmentMode,
+              date: appointment.date,
+              timeSlot: appointment.timeSlot,
+              caseCategory: appointment.caseCategory,
+            })
+          : Promise.resolve(),
+      ]);
+
+      emailResults.forEach((result, index) => {
+        if (result.status === "rejected") {
+          const label = index === 0 ? "appointment request email" : "appointment request notification email";
+          console.error(`Failed to send ${label}:`, result.reason);
         }
-      }
+      });
     } catch (syncError) {
       await Appointment.findByIdAndDelete(appointment._id);
       throw syncError;
@@ -510,6 +528,32 @@ const updateAppointment = async (req, res) => {
               : `You rejected the appointment with ${appointment.userId?.name || "a client"}.`,
         });
 
+        if (req.body.status === "Approved") {
+          try {
+            const populatedAppointment = await Appointment.findById(req.params.id)
+              .populate("userId", "name email")
+              .populate("lawyerId", "name email location");
+
+            if (populatedAppointment?.userId?.email) {
+              await sendAppointmentApprovalEmail({
+                email: populatedAppointment.userId.email,
+                name: populatedAppointment.userId.name,
+                lawyerName: populatedAppointment.lawyerId?.name || appointment.lawyerName,
+                lawyerSpecialization: appointment.lawyerSpecialization,
+                appointmentMode: populatedAppointment.appointmentMode,
+                date: populatedAppointment.date,
+                timeSlot: populatedAppointment.timeSlot,
+                caseCategory: populatedAppointment.caseCategory,
+                feeCharged: populatedAppointment.feeCharged,
+                lawyerLocation: populatedAppointment.lawyerId?.location,
+                meetingLink: populatedAppointment.meetingLink,
+              });
+            }
+          } catch (emailError) {
+            console.error("Failed to send appointment approval email:", emailError);
+          }
+        }
+
         if (req.body.status === "Rejected") {
           try {
             const populatedAppointment = await Appointment.findById(req.params.id)
@@ -619,8 +663,12 @@ const requestReschedule = async (req, res) => {
     appointment.rescheduleReason = String(reason || "").trim();
     await appointment.save();
 
+    const populatedAppointment = await Appointment.findById(req.params.id)
+      .populate("userId", "name email")
+      .populate("lawyerId", "name email");
+
     await createAppointmentNotifications({
-      appointment,
+      appointment: populatedAppointment || appointment,
       type: "appointment_reschedule_requested",
       userTitle: "Reschedule request submitted",
       userDescription: `Your reschedule request for ${appointment.lawyerName} has been sent.`,
@@ -628,6 +676,41 @@ const requestReschedule = async (req, res) => {
       lawyerTitle: "Reschedule request received",
       lawyerDescription: `A client asked to move an approved appointment.`,
       lawyerMessage: `A reschedule request is waiting for approval for ${normalizedTimeSlot} on ${requestedDate.toLocaleDateString()}.`,
+    });
+
+    const rescheduleEmailResults = await Promise.allSettled([
+      populatedAppointment?.userId?.email
+        ? sendRescheduleRequestEmail({
+            email: populatedAppointment.userId.email,
+            name: populatedAppointment.userId.name,
+            lawyerName: populatedAppointment.lawyerName,
+            currentDate: populatedAppointment.date,
+            currentTimeSlot: populatedAppointment.timeSlot,
+            requestedDate,
+            requestedTimeSlot: normalizedTimeSlot,
+            reason,
+          })
+        : Promise.resolve(),
+      populatedAppointment?.lawyerId?.email
+        ? sendRescheduleRequestNotificationEmail({
+            email: populatedAppointment.lawyerId.email,
+            name: populatedAppointment.lawyerId.name,
+            clientName: populatedAppointment.userId?.name || "a client",
+            lawyerName: populatedAppointment.lawyerName,
+            currentDate: populatedAppointment.date,
+            currentTimeSlot: populatedAppointment.timeSlot,
+            requestedDate,
+            requestedTimeSlot: normalizedTimeSlot,
+            reason,
+          })
+          : Promise.resolve(),
+    ]);
+
+    rescheduleEmailResults.forEach((result, index) => {
+      if (result.status === "rejected") {
+        const label = index === 0 ? "reschedule request email" : "reschedule request notification email";
+        console.error(`Failed to send ${label}:`, result.reason);
+      }
     });
 
     res.json({
@@ -663,7 +746,7 @@ const respondToRescheduleRequest = async (req, res) => {
       });
     }
 
-      if (action === "Approved") {
+    if (action === "Approved") {
       const slotAvailable = await isSlotAvailableForLawyer({
         lawyerId: appointment.lawyerId,
         date: requestedDate,

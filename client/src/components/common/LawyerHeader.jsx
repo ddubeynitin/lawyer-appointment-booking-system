@@ -12,6 +12,7 @@ import {
   MessageCircle,
   PencilLine,
   UserRound,
+  Settings,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import BookingNotifications from "../BookingNotifications";
@@ -117,11 +118,8 @@ const LawyerHeader = () => {
           </div>
 
           <Link to="/">
-            <div className="flex items-center gap-2">
-              <FaGavel className="text-xl text-blue-700" />
-              <span className="font-barlow text-xl font-bold text-gray-800">
-                Justif<span className="text-blue-500">Ai</span>
-              </span>
+            <div className="w-23 h-15 flex items-center gap-2 hover:scale-105 transition-transform duration-300">
+              <img src="/assets/images/justifai_logo_blue_1.png" alt="logo" className="w-full h-full" />
             </div>
           </Link>
 
@@ -194,7 +192,7 @@ const LawyerHeader = () => {
                 src={user?.profileImage?.url || "/assets/images/profile.png"}
                 alt="profile"
                 onClick={() => setShowProfile(!showProfile)}
-                className="h-9 w-9 cursor-pointer rounded-full hover:ring-2 hover:ring-blue-500 hover:scale-110 transition"
+                className="h-9 w-9 object-cover cursor-pointer rounded-full hover:ring-2 hover:ring-blue-500 hover:scale-110 transition"
               />
 
               <div
@@ -204,12 +202,14 @@ const LawyerHeader = () => {
                     : "-translate-y-2 scale-95 opacity-0 pointer-events-none"
                 }`}
               >
-                <div className="mb-4 flex items-center gap-4">
+                <div className="mb-4 flex items-center gap-4 overflow-hidden">
+                  <div className="w-14 h-14 rounded-full overflow-hidden">
                   <img
                     src={user?.profileImage?.url || "/assets/images/profile.png"}
                     alt="lawyer"
-                    className="h-14 w-14 rounded-full"
-                  />
+                    className="w-full h-full object-cover"
+                    />
+                    </div>
                   <div>
                     <h4 className="font-semibold text-gray-800">{user.name}</h4>
                     <p className="text-sm text-gray-500">{user.role}</p>
@@ -239,6 +239,16 @@ const LawyerHeader = () => {
                     <PencilLine size={16} className="text-slate-600" />
                     Edit Profile
                   </button>
+                  {/* <button
+                    onClick={() => {
+                      setShowProfile(false);
+                      navigate("/lawyer/account-settings");
+                    }}
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition hover:bg-gray-100"
+                  >
+                    <Settings size={16} className="text-slate-600" />
+                    Settings
+                  </button> */}
                   <button
                     onClick={handleLogout}
                     className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-red-600 transition hover:bg-red-50"
