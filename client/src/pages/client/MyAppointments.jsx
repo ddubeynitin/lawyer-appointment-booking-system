@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import axios from "axios";
-import { CalendarDays, Clock3, Filter, RefreshCcw, Search, Star, X, AlertCircle } from "lucide-react";
+import { CalendarDays, Clock3, Filter, RefreshCcw, Search, Star, X, AlertCircle, CreditCard } from "lucide-react";
 import ClientHeader from "../../components/common/ClientHeader";
 import ReviewRating from "../../components/ReviewRating";
 import DateTimeSlotPicker from "../../components/DateTimeSlotPicker";
@@ -24,6 +24,13 @@ const getStatusClasses = (status) => {
   if (status === "Pending") return "bg-yellow-100 text-yellow-700";
   if (status === "Approved") return "bg-blue-100 text-blue-700";
   if (status === "Rejected") return "bg-red-100 text-red-700";
+  return "bg-gray-100 text-gray-600";
+};
+
+const getPaymentStatusClasses = (paymentStatus) => {
+  if (paymentStatus === "Success") return "bg-green-100 text-green-700";
+  if (paymentStatus === "Failed") return "bg-red-100 text-red-700";
+  if (paymentStatus === "Pending") return "bg-yellow-100 text-yellow-700";
   return "bg-gray-100 text-gray-600";
 };
 
@@ -514,12 +521,13 @@ export default function MyAppointments() {
             </div>
           ) : (
             <>
-              <div className="hidden grid-cols-[1.1fr_1.1fr_1fr_0.9fr_0.9fr_1fr] gap-4 border-b border-slate-200 bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-600 md:grid">
+              <div className="hidden grid-cols-[1.1fr_1.1fr_1fr_0.9fr_0.9fr_0.9fr_1fr] gap-4 border-b border-slate-200 bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-600 md:grid">
                 <span>Date</span>
                 <span>Lawyer</span>
                 <span>Category</span>
                 <span>Status</span>
                 <span>Fee</span>
+                <span>Payment</span>
                 <span>Action</span>
               </div>
 
@@ -532,7 +540,7 @@ export default function MyAppointments() {
                       key={appointment._id}
                       className="px-6 py-5 transition hover:bg-slate-50"
                     >
-                    <div className="hidden items-start gap-4 md:grid md:grid-cols-[1.1fr_1.1fr_1fr_0.9fr_0.9fr_1fr]">
+                    <div className="hidden items-start gap-4 md:grid md:grid-cols-[1.1fr_1.1fr_1fr_0.9fr_0.9fr_0.9fr_1fr]">
                       <div>
                         <p className="font-medium text-slate-800">
                           {formatAppointmentDate(appointment.date)}
@@ -577,6 +585,16 @@ export default function MyAppointments() {
                       </div>
 
                       <div>
+                        <span
+                          className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getPaymentStatusClasses(
+                            appointment.paymentStatus || "Pending",
+                          )}`}
+                        >
+                          {appointment.paymentStatus || "Pending"}
+                        </span>
+                      </div>
+
+                      <div>
                         {appointment.rescheduleStatus === "Pending" ? (
                           <span className="mb-2 inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
                             <Clock3 size={12} className="fill-current" />
@@ -599,16 +617,27 @@ export default function MyAppointments() {
                         {/* Approved: Show Reschedule or Meeting Card with Timer */}
                         {appointment.status === "Approved" ? (
                           <>
-                            {canRescheduleAppointment(appointment) ? (
-                              <button
-                                type="button"
-                                onClick={() => openRescheduleModal(appointment)}
-                                className="inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700 transition hover:bg-blue-200"
-                              >
-                                <Clock3 size={12} className="fill-current" />
-                                Reschedule
-                              </button>
-                            ) : null}
+                            <div className="space-y-2">
+                              {canRescheduleAppointment(appointment) ? (
+                                <button
+                                  type="button"
+                                  onClick={() => openRescheduleModal(appointment)}
+                                  className="inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700 transition hover:bg-blue-200"
+                                >
+                                  <Clock3 size={12} className="fill-current" />
+                                  Reschedule
+                                </button>
+                              ) : null}
+                              {appointment.paymentStatus !== "Success" && (
+                                <button
+                                  type="button"
+                                  className="ml-2 inline-flex items-center gap-2 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700 transition hover:bg-green-200"
+                                >
+                                  <CreditCard size={12} />
+                                  Pay Now
+                                </button>
+                              )}
+                            </div>
                             {shouldShowMeetingCard(appointment) ? (
                               <MeetingAccessCard
                                 appointment={appointment}
@@ -703,6 +732,17 @@ export default function MyAppointments() {
                         </div>
                       </div>
 
+                      <div className="mb-3 flex items-center justify-between">
+                        <p className="text-sm text-slate-500">Payment</p>
+                        <span
+                          className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getPaymentStatusClasses(
+                            appointment.paymentStatus || "Pending",
+                          )}`}
+                        >
+                          {appointment.paymentStatus || "Pending"}
+                        </span>
+                      </div>
+
                       <div>
                         <p className="text-sm text-slate-500">Case Description</p>
                         <p className="mt-1 text-sm leading-6 text-slate-700">
@@ -733,16 +773,27 @@ export default function MyAppointments() {
                         {/* Approved: Show Reschedule or Meeting Card with Timer */}
                         {appointment.status === "Approved" ? (
                           <>
-                            {canRescheduleAppointment(appointment) ? (
-                              <button
-                                type="button"
-                                onClick={() => openRescheduleModal(appointment)}
-                                className="inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700 transition hover:bg-blue-200"
-                              >
-                                <Clock3 size={12} className="fill-current" />
-                                Reschedule
-                              </button>
-                            ) : null}
+                            <div className="space-y-2">
+                              {canRescheduleAppointment(appointment) ? (
+                                <button
+                                  type="button"
+                                  onClick={() => openRescheduleModal(appointment)}
+                                  className="inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700 transition hover:bg-blue-200"
+                                >
+                                  <Clock3 size={12} className="fill-current" />
+                                  Reschedule
+                                </button>
+                              ) : null}
+                              {appointment.paymentStatus !== "Success" && (
+                                <button
+                                  type="button"
+                                  className="ml-2 inline-flex items-center gap-2 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700 transition hover:bg-green-200"
+                                >
+                                  <CreditCard size={12} />
+                                  Pay Now
+                                </button>
+                              )}
+                            </div>
                             {shouldShowMeetingCard(appointment) ? (
                               <MeetingAccessCard
                                 appointment={appointment}

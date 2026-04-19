@@ -18,30 +18,30 @@ import BookingNotifications from "../BookingNotifications";
 import { API_URL } from "../../utils/api";
 
 const ClientHeader = () => {
-    // const [showNotifications, setShowNotifications] = useState(false);
-    const [showProfileModal, setShowProfileModal] = useState(false);
-    const [isMenuVisible, setIsMenuVisible] = useState(false);
-    const [showProfileDropdown, setShowProfileDropdown] = useState(false);
-    const [isEditingProfile, setIsEditingProfile] = useState(false);
-    const [isSavingProfile, setIsSavingProfile] = useState(false);
-    const [profileUpdateError, setProfileUpdateError] = useState("");
-    const [profileUpdateSuccess, setProfileUpdateSuccess] = useState("");
-    const [profileImageFile, setProfileImageFile] = useState(null);
-    const [profileImagePreview, setProfileImagePreview] = useState("");
-    const [profileForm, setProfileForm] = useState({
-      name: "",
-      email: "",
-      phone: "",
-      gender: "",
-      city: "",
-      state: "",
-    });
-    const profileRef = useRef(null);
+  // const [showNotifications, setShowNotifications] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [isMenuVisible, setIsMenuVisible] = useState(false);
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileUpdateError, setProfileUpdateError] = useState("");
+  const [profileUpdateSuccess, setProfileUpdateSuccess] = useState("");
+  const [profileImageFile, setProfileImageFile] = useState(null);
+  const [profileImagePreview, setProfileImagePreview] = useState("");
+  const [profileForm, setProfileForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    gender: "",
+    city: "",
+    state: "",
+  });
+  const profileRef = useRef(null);
 
-    const { user, token, login, logout } = useAuth();
-    const navigate = useNavigate();
+  const { user, token, login, logout } = useAuth();
+  const navigate = useNavigate();
 
-    const handleLogout = () => {
+  const handleLogout = () => {
     logout();
     navigate("/");
   };
@@ -54,7 +54,9 @@ const ClientHeader = () => {
     isActive ? "font-semibold text-blue-600" : "transition hover:text-blue-600";
 
   const navIconClassName = (isActive) =>
-    isActive ? "text-blue-600" : "text-slate-400 transition group-hover:text-blue-600";
+    isActive
+      ? "text-blue-600"
+      : "text-slate-400 transition group-hover:text-blue-600";
 
   const openProfileModal = (editMode = true) => {
     setShowProfileDropdown(false);
@@ -74,7 +76,9 @@ const ClientHeader = () => {
       state: user?.state || "",
     });
     setProfileImagePreview(
-      user?.profilePicture || user?.profileImage?.url || "/assets/images/user.png",
+      user?.profilePicture ||
+        user?.profileImage?.url ||
+        "/assets/images/user.png",
     );
     setProfileImageFile(null);
     setProfileUpdateError("");
@@ -164,7 +168,9 @@ const ClientHeader = () => {
         city: updatedUser.city || "",
         state: updatedUser.state || "",
       });
-      setProfileImagePreview(updatedUser.profilePicture || "/assets/images/user.png");
+      setProfileImagePreview(
+        updatedUser.profilePicture || "/assets/images/user.png",
+      );
       setIsEditingProfile(false);
       setProfileUpdateSuccess("Profile updated successfully.");
     } catch (error) {
@@ -179,7 +185,7 @@ const ClientHeader = () => {
   };
   return (
     <>
-        <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/70 backdrop-blur-lg font-barlow">
+      <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/70 backdrop-blur-lg font-barlow">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div onClick={showMenu} className="sm:hidden">
             <TfiMenuAlt />
@@ -233,36 +239,55 @@ const ClientHeader = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <FaGavel className="text-xl text-blue-700" />
             <Link to="/">
-              <span className="text-xl font-bold text-gray-800">
-                Justif<span className="text-blue-500">Ai</span>
-              </span>
+              <div className="w-23 h-15 flex items-center gap-2 hover:scale-105 transition-transform duration-300">
+                <img
+                  src="/assets/images/justifai_logo_blue_1.png"
+                  alt="logo"
+                  className="w-full h-full"
+                />
+              </div>
             </Link>
           </div>
 
           <nav className="hidden items-center gap-8 font-medium text-gray-600 md:flex">
-            <NavLink to="/client/client-dashboard" className="group flex items-center gap-2" end>
+            <NavLink
+              to="/client/client-dashboard"
+              className="group flex items-center gap-2"
+              end
+            >
               {({ isActive }) => (
                 <>
                   <FaHome className={navIconClassName(isActive)} />
-                  <span className={navLinkClassName({ isActive })}>Dashboard</span>
+                  <span className={navLinkClassName({ isActive })}>
+                    Dashboard
+                  </span>
                 </>
               )}
             </NavLink>
-            <NavLink to="/client/lawyer-list" className="group flex items-center gap-2">
+            <NavLink
+              to="/client/lawyer-list"
+              className="group flex items-center gap-2"
+            >
               {({ isActive }) => (
                 <>
                   <FaSearch className={navIconClassName(isActive)} />
-                  <span className={navLinkClassName({ isActive })}>Search Lawyers</span>
+                  <span className={navLinkClassName({ isActive })}>
+                    Search Lawyers
+                  </span>
                 </>
               )}
             </NavLink>
-            <NavLink to="/client/appointment-history" className="group flex items-center gap-2">
+            <NavLink
+              to="/client/appointment-history"
+              className="group flex items-center gap-2"
+            >
               {({ isActive }) => (
                 <>
                   <FaCalendarAlt className={navIconClassName(isActive)} />
-                  <span className={navLinkClassName({ isActive })}>Appointments</span>
+                  <span className={navLinkClassName({ isActive })}>
+                    Appointments
+                  </span>
                 </>
               )}
             </NavLink>
@@ -279,10 +304,7 @@ const ClientHeader = () => {
             </button>
 
             {user?.id && (
-              <BookingNotifications
-                userId={user.id}
-                recipientType="user"
-              />
+              <BookingNotifications userId={user.id} recipientType="user" />
             )}
 
             <div className="relative" ref={profileRef}>
@@ -321,7 +343,9 @@ const ClientHeader = () => {
                     )}
                   </div>
                   <div>
-                    <h4 className="font-semibold text-gray-800">{user?.name}</h4>
+                    <h4 className="font-semibold text-gray-800">
+                      {user?.name}
+                    </h4>
                     <p className="text-sm text-gray-500">
                       {user?.role === "user" ? "Client" : user?.role}
                     </p>
@@ -383,7 +407,8 @@ const ClientHeader = () => {
                   {isEditingProfile ? "Edit your details" : "Profile overview"}
                 </h3>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Keep your contact information current and optionally add a profile image so lawyers can recognize you faster.
+                  Keep your contact information current and optionally add a
+                  profile image so lawyers can recognize you faster.
                 </p>
 
                 <div className="mt-6 flex items-center gap-4">
@@ -563,12 +588,14 @@ const ClientHeader = () => {
         </div>
       )}
     </>
-  )
-}
+  );
+};
 
 const Field = ({ label, disabled, className = "", ...props }) => (
   <label className={`block ${className}`}>
-    <span className="mb-1 block text-sm font-medium text-slate-600">{label}</span>
+    <span className="mb-1 block text-sm font-medium text-slate-600">
+      {label}
+    </span>
     <input
       {...props}
       disabled={disabled}
@@ -577,9 +604,17 @@ const Field = ({ label, disabled, className = "", ...props }) => (
   </label>
 );
 
-const SelectField = ({ label, options, disabled, className = "", ...props }) => (
+const SelectField = ({
+  label,
+  options,
+  disabled,
+  className = "",
+  ...props
+}) => (
   <label className={`block ${className}`}>
-    <span className="mb-1 block text-sm font-medium text-slate-600">{label}</span>
+    <span className="mb-1 block text-sm font-medium text-slate-600">
+      {label}
+    </span>
     <select
       {...props}
       disabled={disabled}
@@ -595,4 +630,4 @@ const SelectField = ({ label, options, disabled, className = "", ...props }) => 
   </label>
 );
 
-export default ClientHeader
+export default ClientHeader;

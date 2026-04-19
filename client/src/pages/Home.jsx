@@ -227,12 +227,15 @@ const Home = () => {
             )}
           </div>
           {/* Logo */}
-          <div className="flex items-center gap-2 font-bold text-xl font-barlow ">
-            <FaBalanceScale />
-            <span className="tracking-wide">
-              Justif<span className="text-blue-500">Ai</span>{" "}
-            </span>
-          </div>
+          <Link to="/">
+            <div className="w-23 h-15 flex items-center gap-2 hover:scale-105 transition-transform duration-300">
+              <img
+                src="/assets/images/justifai_logo_blue_1.png"
+                alt="logo"
+                className="w-full h-full"
+              />
+            </div>
+          </Link>
           {/* Navigation */}
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
             {user && user.role === "lawyer" ? (
@@ -682,9 +685,11 @@ const Home = () => {
       <footer className="bg-black/90 text-slate-400 py-16  overflow-hidden">
         <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-10 justify-center items-center ">
           <div className=" flex flex-col justify-center items-center ">
-            <h3 className="text-white lg:text-6xl text-3xl font-semibold mb-4 font-barlow">
-              Justif<span className="text-blue-500">Ai</span>
-            </h3>
+            <Link to="/">
+              <div className="w-63 h-45 flex items-center gap-2 hover:scale-105 transition-transform duration-300">
+                <img src="/assets/images/justifai_logo_blue_1.png" alt="logo" className="drop-shadow-2xl drop-shadow-blue-500 w-full h-full" />
+              </div>
+            </Link>
             <p className="text-sm w-full lg:w-3/4 text-center text-slate-500">
               Empowering clients with AI-backed legal support and trusted lawyer
               connections.
@@ -736,11 +741,11 @@ const LawyerCard = ({ name, specialization, rating, photo }) => {
   return (
     <div className="bg-white rounded-2xl shadow-md border border-slate-100 hover:shadow-2xl hover:scale-105 transition-transform duration-300 overflow-hidden">
       {/* Lawyer Photo */}
-      <div className="h-80 w-full overflow-hidden">
+      <div className=" w-full h-80 overflow-hidden">
         <img
           src={photo}
           alt={name}
-          className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+          className="w-full h-fit object-fit bg-linear-to-br from-blue-400 via-sky-300 to-indigo-500 transition-transform duration-500 hover:scale-110"
         />
       </div>
 

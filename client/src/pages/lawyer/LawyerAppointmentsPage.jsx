@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
-import { CalendarDays, Clock3, Filter, Search, Table2, Users, LayoutGrid } from "lucide-react";
+import { CalendarDays, Clock3, Filter, Search, Table2, Users, LayoutGrid, CreditCard } from "lucide-react";
 import LawyerHeader from "../../components/common/LawyerHeader";
 import MeetingAccessCard from "../../components/meeting/MeetingAccessCard";
 import { useAuth } from "../../context/AuthContext";
@@ -21,6 +21,13 @@ const getStatusClasses = (status) => {
   if (status === "Pending") return "bg-yellow-100 text-yellow-700";
   if (status === "Approved") return "bg-blue-100 text-blue-700";
   if (status === "Rejected") return "bg-red-100 text-red-700";
+  return "bg-gray-100 text-gray-600";
+};
+
+const getPaymentStatusClasses = (paymentStatus) => {
+  if (paymentStatus === "Success") return "bg-green-100 text-green-700";
+  if (paymentStatus === "Failed") return "bg-red-100 text-red-700";
+  if (paymentStatus === "Pending") return "bg-yellow-100 text-yellow-700";
   return "bg-gray-100 text-gray-600";
 };
 
@@ -255,6 +262,8 @@ const LawyerAppointmentsPage = () => {
                     <th className="px-6 py-4 font-semibold">Category</th>
                     <th className="px-6 py-4 font-semibold">Mode</th>
                     <th className="px-6 py-4 font-semibold">Status</th>
+                    <th className="px-6 py-4 font-semibold">Fee</th>
+                    <th className="px-6 py-4 font-semibold">Payment</th>
                     <th className="px-6 py-4 font-semibold">Meeting</th>
                   </tr>
                 </thead>
@@ -290,6 +299,18 @@ const LawyerAppointmentsPage = () => {
                           {appointment.status}
                         </span>
                       </td>
+                      <td className="px-6 py-5 text-sm text-slate-700">
+                        Rs {appointment.feeCharged}
+                      </td>
+                      <td className="px-6 py-5">
+                        <span
+                          className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getPaymentStatusClasses(
+                            appointment.paymentStatus || "Success",
+                          )}`}
+                        >
+                          {appointment.paymentStatus || "Paid"}
+                        </span>
+                      </td>
                       <td className="px-6 py-5">
                         {appointment.status === "Completed" && appointment.meetingLink ? null : (
                           <MeetingAccessCard appointment={appointment} />
@@ -319,6 +340,13 @@ const LawyerAppointmentsPage = () => {
                         </span>
                         <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
                           {appointment.appointmentMode || "Online"}
+                        </span>
+                        <span
+                          className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getPaymentStatusClasses(
+                            appointment.paymentStatus || "Pending",
+                          )}`}
+                        >
+                          {appointment.paymentStatus || "Pending"}
                         </span>
                       </div>
 

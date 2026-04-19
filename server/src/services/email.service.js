@@ -141,7 +141,120 @@ const formatLawyerLocation = (location = {}) => {
   return parts.length > 0 ? parts.join(", ") : "Office location not available";
 };
 
-const sendAppointmentProofEmail = async ({
+const sendAppointmentRequestEmail = async ({
+  email,
+  name,
+  lawyerName,
+  appointmentMode,
+  date,
+  timeSlot,
+  caseCategory,
+}) => {
+  const formattedDate = formatAppointmentDate(date);
+
+  const subject = `Your appointment request was sent to ${lawyerName || "the lawyer"}`;
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#0f172a">
+      <h2 style="margin:0 0 12px">Appointment Request Sent</h2>
+      <p style="margin:0 0 16px">Hi ${name || "there"},</p>
+      <p style="margin:0 0 16px">
+        Your appointment request has been sent successfully to ${lawyerName || "the lawyer"}.
+      </p>
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:16px">
+        <p style="margin:0 0 8px"><strong>Lawyer:</strong> ${lawyerName || "-"}</p>
+        <p style="margin:0 0 8px"><strong>Date:</strong> ${formattedDate}</p>
+        <p style="margin:0 0 8px"><strong>Time:</strong> ${timeSlot || "-"}</p>
+        <p style="margin:0 0 8px"><strong>Mode:</strong> ${appointmentMode || "-"}</p>
+        <p style="margin:0 0 8px"><strong>Category:</strong> ${caseCategory || "-"}</p>
+      </div>
+      <p style="margin:16px 0 0">
+        Please wait for the lawyer's confirmation. Once approved, you will receive the full appointment details.
+      </p>
+      <p style="margin:16px 0 0;color:#64748b">
+        If you did not request this appointment, please contact support immediately.
+      </p>
+    </div>
+  `;
+
+  const text = [
+    "Appointment Request Sent",
+    "",
+    `Hi ${name || "there"},`,
+    `Your appointment request has been sent successfully to ${lawyerName || "the lawyer"}.`,
+    "",
+    `Lawyer: ${lawyerName || "-"}`,
+    `Date: ${formattedDate}`,
+    `Time: ${timeSlot || "-"}`,
+    `Mode: ${appointmentMode || "-"}`,
+    `Category: ${caseCategory || "-"}`,
+    "Please wait for the lawyer's confirmation. Once approved, you will receive the full appointment details.",
+  ].join("\n");
+
+  return sendBrevoEmail({
+    to: { email, name: name || email },
+    subject,
+    html,
+    text,
+  });
+};
+
+const sendAppointmentRequestNotificationEmail = async ({
+  email,
+  name,
+  clientName,
+  lawyerSpecialization,
+  appointmentMode,
+  date,
+  timeSlot,
+  caseCategory,
+}) => {
+  const formattedDate = formatAppointmentDate(date);
+  const subject = `New appointment request from ${clientName || "a client"}`;
+
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#0f172a">
+      <h2 style="margin:0 0 12px">New Appointment Request</h2>
+      <p style="margin:0 0 16px">Hi ${name || "Lawyer"},</p>
+      <p style="margin:0 0 16px">
+        You have received a new appointment request from ${clientName || "a client"}.
+      </p>
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:16px">
+        <p style="margin:0 0 8px"><strong>Client:</strong> ${clientName || "-"}</p>
+        <p style="margin:0 0 8px"><strong>Specialization:</strong> ${lawyerSpecialization || "-"}</p>
+        <p style="margin:0 0 8px"><strong>Date:</strong> ${formattedDate}</p>
+        <p style="margin:0 0 8px"><strong>Time:</strong> ${timeSlot || "-"}</p>
+        <p style="margin:0 0 8px"><strong>Mode:</strong> ${appointmentMode || "-"}</p>
+        <p style="margin:0"><strong>Category:</strong> ${caseCategory || "-"}</p>
+      </div>
+      <p style="margin:16px 0 0">Please review and confirm the request in the dashboard.</p>
+    </div>
+  `;
+
+  const text = [
+    "New Appointment Request",
+    "",
+    `Hi ${name || "Lawyer"},`,
+    `You have received a new appointment request from ${clientName || "a client"}.`,
+    "",
+    `Client: ${clientName || "-"}`,
+    `Specialization: ${lawyerSpecialization || "-"}`,
+    `Date: ${formattedDate}`,
+    `Time: ${timeSlot || "-"}`,
+    `Mode: ${appointmentMode || "-"}`,
+    `Category: ${caseCategory || "-"}`,
+    "",
+    "Please review and confirm the request in the dashboard.",
+  ].join("\n");
+
+  return sendBrevoEmail({
+    to: { email, name: name || email },
+    subject,
+    html,
+    text,
+  });
+};
+
+const sendAppointmentApprovalEmail = async ({
   email,
   name,
   lawyerName,
@@ -152,18 +265,19 @@ const sendAppointmentProofEmail = async ({
   caseCategory,
   feeCharged,
   lawyerLocation,
+  meetingLink,
 }) => {
   const formattedDate = formatAppointmentDate(date);
   const officeLocation = formatLawyerLocation(lawyerLocation);
   const isOffice = appointmentMode === "Office";
 
-  const subject = `Appointment confirmation with ${lawyerName || "your lawyer"}`;
+  const subject = `Your appointment with ${lawyerName || "your lawyer"} is confirmed`;
   const html = `
     <div style="font-family:Arial,sans-serif;line-height:1.6;color:#0f172a">
-      <h2 style="margin:0 0 12px">Appointment Booking Confirmation</h2>
+      <h2 style="margin:0 0 12px">Appointment Confirmed</h2>
       <p style="margin:0 0 16px">Hi ${name || "there"},</p>
       <p style="margin:0 0 16px">
-        Your appointment has been booked successfully. Please keep this email as proof of booking.
+        Your appointment request has been approved. Here are the full appointment details.
       </p>
       <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:16px">
         <p style="margin:0 0 8px"><strong>Lawyer:</strong> ${lawyerName || "-"}</p>
@@ -177,19 +291,19 @@ const sendAppointmentProofEmail = async ({
       ${
         isOffice
           ? `<p style="margin:16px 0 0"><strong>Lawyer Office:</strong> ${officeLocation}</p>`
-          : `<p style="margin:16px 0 0">The online meeting link will be provided to your registered email a few minutes before the appointment time.</p>`
+          : `<p style="margin:16px 0 0"><strong>Meeting Link:</strong> <a href="${meetingLink || "#"}">${meetingLink || "Not available yet"}</a></p>`
       }
       <p style="margin:16px 0 0;color:#64748b">
-        If you did not request this appointment, please contact support immediately.
+        Please keep this email for your records.
       </p>
     </div>
   `;
 
   const text = [
-    "Appointment Booking Confirmation",
+    "Appointment Confirmed",
     "",
     `Hi ${name || "there"},`,
-    "Your appointment has been booked successfully. Please keep this email as proof of booking.",
+    "Your appointment request has been approved. Here are the full appointment details.",
     "",
     `Lawyer: ${lawyerName || "-"}`,
     `Specialization: ${lawyerSpecialization || "-"}`,
@@ -200,7 +314,9 @@ const sendAppointmentProofEmail = async ({
     `Fee: Rs ${feeCharged ?? "-"}`,
     isOffice
       ? `Lawyer Office: ${officeLocation}`
-      : "The online meeting link will be provided to your registered email a few minutes before the appointment time.",
+      : `Meeting Link: ${meetingLink || "Not available yet"}`,
+    "",
+    "Please keep this email for your records.",
   ].join("\n");
 
   return sendBrevoEmail({
@@ -265,11 +381,133 @@ const sendAppointmentRejectionEmail = async ({
   });
 };
 
+const sendRescheduleRequestEmail = async ({
+  email,
+  name,
+  lawyerName,
+  currentDate,
+  currentTimeSlot,
+  requestedDate,
+  requestedTimeSlot,
+  reason,
+}) => {
+  const formattedCurrentDate = formatAppointmentDate(currentDate);
+  const formattedRequestedDate = formatAppointmentDate(requestedDate);
+
+  const subject = `Your reschedule request was sent to ${lawyerName || "the lawyer"}`;
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#0f172a">
+      <h2 style="margin:0 0 12px">Reschedule Request Sent</h2>
+      <p style="margin:0 0 16px">Hi ${name || "there"},</p>
+      <p style="margin:0 0 16px">
+        Your reschedule request has been sent successfully to ${lawyerName || "the lawyer"}.
+        Please wait for confirmation.
+      </p>
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:16px">
+        <p style="margin:0 0 8px"><strong>Current Date:</strong> ${formattedCurrentDate}</p>
+        <p style="margin:0 0 8px"><strong>Current Time:</strong> ${currentTimeSlot || "-"}</p>
+        <p style="margin:0 0 8px"><strong>Requested Date:</strong> ${formattedRequestedDate}</p>
+        <p style="margin:0 0 8px"><strong>Requested Time:</strong> ${requestedTimeSlot || "-"}</p>
+        <p style="margin:0"><strong>Reason:</strong> ${String(reason || "").trim() || "No reason provided"}</p>
+      </div>
+      <p style="margin:16px 0 0">
+        We will notify you once the lawyer approves or rejects the request.
+      </p>
+    </div>
+  `;
+
+  const text = [
+    "Reschedule Request Sent",
+    "",
+    `Hi ${name || "there"},`,
+    `Your reschedule request has been sent successfully to ${lawyerName || "the lawyer"}. Please wait for confirmation.`,
+    "",
+    `Current Date: ${formattedCurrentDate}`,
+    `Current Time: ${currentTimeSlot || "-"}`,
+    `Requested Date: ${formattedRequestedDate}`,
+    `Requested Time: ${requestedTimeSlot || "-"}`,
+    `Reason: ${String(reason || "").trim() || "No reason provided"}`,
+    "",
+    "We will notify you once the lawyer approves or rejects the request.",
+  ].join("\n");
+
+  return sendBrevoEmail({
+    to: { email, name: name || email },
+    subject,
+    html,
+    text,
+  });
+};
+
+const sendRescheduleRequestNotificationEmail = async ({
+  email,
+  name,
+  clientName,
+  lawyerName,
+  currentDate,
+  currentTimeSlot,
+  requestedDate,
+  requestedTimeSlot,
+  reason,
+}) => {
+  const formattedCurrentDate = formatAppointmentDate(currentDate);
+  const formattedRequestedDate = formatAppointmentDate(requestedDate);
+
+  const subject = `Reschedule request from ${clientName || "a client"}`;
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#0f172a">
+      <h2 style="margin:0 0 12px">Reschedule Request Received</h2>
+      <p style="margin:0 0 16px">Hi ${name || "Lawyer"},</p>
+      <p style="margin:0 0 16px">
+        ${clientName || "A client"} has requested to reschedule their appointment.
+      </p>
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:16px">
+        <p style="margin:0 0 8px"><strong>Client:</strong> ${clientName || "-"}</p>
+        <p style="margin:0 0 8px"><strong>Lawyer:</strong> ${lawyerName || "-"}</p>
+        <p style="margin:0 0 8px"><strong>Current Date:</strong> ${formattedCurrentDate}</p>
+        <p style="margin:0 0 8px"><strong>Current Time:</strong> ${currentTimeSlot || "-"}</p>
+        <p style="margin:0 0 8px"><strong>Requested Date:</strong> ${formattedRequestedDate}</p>
+        <p style="margin:0 0 8px"><strong>Requested Time:</strong> ${requestedTimeSlot || "-"}</p>
+        <p style="margin:0"><strong>Reason:</strong> ${String(reason || "").trim() || "No reason provided"}</p>
+      </div>
+      <p style="margin:16px 0 0">Please review the request in the dashboard and approve or reject it.</p>
+    </div>
+  `;
+
+  const text = [
+    "Reschedule Request Received",
+    "",
+    `Hi ${name || "Lawyer"},`,
+    `${clientName || "A client"} has requested to reschedule their appointment.`,
+    "",
+    `Client: ${clientName || "-"}`,
+    `Lawyer: ${lawyerName || "-"}`,
+    `Current Date: ${formattedCurrentDate}`,
+    `Current Time: ${currentTimeSlot || "-"}`,
+    `Requested Date: ${formattedRequestedDate}`,
+    `Requested Time: ${requestedTimeSlot || "-"}`,
+    `Reason: ${String(reason || "").trim() || "No reason provided"}`,
+    "",
+    "Please review the request in the dashboard and approve or reject it.",
+  ].join("\n");
+
+  return sendBrevoEmail({
+    to: { email, name: name || email },
+    subject,
+    html,
+    text,
+  });
+};
+
 module.exports = {
   hasBrevoConfig,
   sendBrevoEmail,
   sendOtpEmail,
   sendWelcomeLawyerEmail,
-  sendAppointmentProofEmail,
+  sendAppointmentRequestEmail,
+  sendAppointmentRequestNotificationEmail,
+  sendAppointmentApprovalEmail,
   sendAppointmentRejectionEmail,
+  sendRescheduleRequestEmail,
+  sendRescheduleRequestNotificationEmail,
 };

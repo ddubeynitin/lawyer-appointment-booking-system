@@ -32,6 +32,7 @@ const CompleteLawyerProfile = lazy(
   () => import("./pages/auth/CompleteLawyerProfile"),
 );
 const LawyerProfile = lazy(() => import("./pages/lawyer/LawyerProfile"));
+const LawyerAccountSettings = lazy(() => import("./pages/lawyer/LawyerAccountSettings"));
 const MessagesPage = lazy(() => import("./pages/messages/MessagesPage"));
 
 const AppShell = () => {
@@ -93,6 +94,7 @@ const AppShell = () => {
           element={<EditLawyerProfile />}
         />
         <Route path="/lawyer/lawyer-profile/:id" element={<LawyerProfile />} />
+        <Route path="/lawyer/account-settings" element={<LawyerAccountSettings />} />
         <Route path="/messages" element={<MessagesPage />} />
 
         <Route path="/admin/admin-login" element={<AdminLoginPage />} />
