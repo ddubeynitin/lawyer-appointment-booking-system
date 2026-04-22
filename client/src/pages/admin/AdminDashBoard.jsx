@@ -99,7 +99,7 @@ export default function Dashboard() {
         ),
       );
       alert(`Lawyer ${isFeatured ? "featured" : "unfeatured"} successfully`);
-    } catch (error) {
+     } catch (error) {
       console.error("Failed to update featured status:", error);
       const apiError =
         error?.response?.data?.message ||
