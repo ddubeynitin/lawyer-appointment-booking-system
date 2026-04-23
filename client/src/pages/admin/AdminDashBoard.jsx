@@ -114,7 +114,7 @@ export default function Dashboard() {
   const [todayAppointmentsCount, setTodayAppointmentsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   
-  // Get logged-in admin data
+  // Get logged-in admin data       
   const [adminData, setAdminData] = useState({ name: "Admin", email: "" });
   
   useEffect(() => {
@@ -865,6 +865,11 @@ export default function Dashboard() {
             onTodayAppointmentsCountChange={setTodayAppointmentsCount}
             users={users}
             lawyers={lawyers}
+            monthlyData={{
+              users: [45, 62, 78, 95, 110, 125, 140, 158, 172, 185, 200, 215],
+              lawyers: [12, 18, 25, 32, 38, 45, 52, 58, 65, 72, 78, 85],
+              appointments: [30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195]
+            }}
           />
         )}
 
