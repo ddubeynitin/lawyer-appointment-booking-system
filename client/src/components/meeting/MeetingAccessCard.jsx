@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowUpRight, Clock3, Video } from "lucide-react";
 
-const TEN_MINUTES_MS = 10 * 60 * 1000;
+const ONE_HOUR_MS = 60 * 60 * 1000;
 
 const TIME_SLOT_REGEX = /^(\d{1,2}):(\d{2})\s?(AM|PM)$/i;
 
@@ -74,8 +74,12 @@ const MeetingAccessCard = ({ appointment, canJoin, className = "" }) => {
   }
 
   const timeUntilMeeting = appointmentDateTime.getTime() - now;
-  const isCountdownVisible = timeUntilMeeting > TEN_MINUTES_MS;
-  const countdownText = isCountdownVisible ? formatCountdown(timeUntilMeeting - TEN_MINUTES_MS) : "";
+  if (timeUntilMeeting > ONE_HOUR_MS) {
+    return null;
+  }
+
+  const isCountdownVisible = timeUntilMeeting > 0;
+  const countdownText = isCountdownVisible ? formatCountdown(timeUntilMeeting) : "";
   
   // Determine if join button should be enabled
   // If canJoin is explicitly provided (for manual control), use that
@@ -104,7 +108,7 @@ const MeetingAccessCard = ({ appointment, canJoin, className = "" }) => {
           {isCountdownVisible ? (
             <div className="mt-2 flex items-center gap-2 text-sm text-blue-800">
               <Clock3 size={14} />
-              <span>Join opens in {countdownText}</span>
+              <span>Meeting starts in {countdownText}</span>
             </div>
           ) : (
             <p className="mt-2 text-sm text-blue-800">

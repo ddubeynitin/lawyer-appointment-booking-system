@@ -153,6 +153,7 @@ const AppointmentSchedulingPage = () => {
 
     return feeMatch?.fee || 0;
   }, [selectedLawyer, caseCategory]);
+  const appointmentFee = appointmentMode === "Office" ? 0 : selectedFee;
 
   const availableCaseCategories = useMemo(() => {
     const lawyerCategories = Array.isArray(selectedLawyer?.feesByCategory)
@@ -348,7 +349,7 @@ const AppointmentSchedulingPage = () => {
       payload.append("caseDescription", caseDescription.trim());
       payload.append("date", selectedDate);
       payload.append("timeSlot", selectedTimeSlot);
-      payload.append("feeCharged", String(selectedFee));
+      payload.append("feeCharged", String(appointmentFee));
 
       if (caseEvidence) {
         payload.append("caseEvidence", caseEvidence);
@@ -377,7 +378,7 @@ const AppointmentSchedulingPage = () => {
         timeSlot: selectedTimeSlot,
         caseCategory,
         appointmentMode,
-        feeCharged: selectedFee,
+        feeCharged: appointmentFee,
       });
       setSelectedTimeSlot("");
       setCaseDescription("");
@@ -836,7 +837,9 @@ const AppointmentSchedulingPage = () => {
                 </div>
                 <div className="flex justify-between gap-4">
                   <span className="flex items-center justify-center gap-1"> <FaRupeeSign/> Consultation Fee</span>
-                  <span className="font-medium text-slate-800">Rs {selectedFee}</span>
+                  <span className="font-medium text-slate-800">
+                    Rs {appointmentFee}
+                  </span>
                 </div>
               </div>
             </div>
@@ -861,6 +864,7 @@ const AppointmentSchedulingPage = () => {
                 <li>Your appointment will be created with the selected lawyer and case type.</li>
                 <li>Choose Online for a virtual consultation or Office to visit in person.</li>
                 <li>Fees are calculated automatically from the lawyer profile.</li>
+                <li>Office appointments are free and always show a fee of 0.</li>
               </ul>
             </div>
           </aside>

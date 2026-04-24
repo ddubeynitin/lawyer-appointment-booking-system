@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const env = require('./env');
 const Conversation = require('../models/conversation.model');
+const Review = require('../models/review.model');
 
 const connectDB = async () => {
   try {
@@ -9,6 +10,10 @@ const connectDB = async () => {
 
     await Conversation.syncIndexes();
     console.log('Conversation indexes synced successfully');
+
+    // Keep review collection indexes aligned with the schema so stale unique rules are removed.
+    await Review.syncIndexes();
+    console.log('Review indexes synced successfully');
   } catch (err) {
     console.error('MongoDB connection failed:', err.message);
     process.exit(1); // Exit process with failure

@@ -119,6 +119,10 @@ const createRazorpayOrder = async (req, res) => {
       return res.status(400).json({ error: "Payment is available only for approved appointments" });
     }
 
+    if (appointment.appointmentMode === "Office" || Number(appointment.feeCharged || 0) <= 0) {
+      return res.status(400).json({ error: "No payment is required for office appointments." });
+    }
+
     const existingPayment = await Payment.findOne({ appointmentId: appointment._id }).lean();
     if (existingPayment?.paymentStatus === "Success" || appointment.paymentStatus === "Success") {
       return res.status(409).json({ error: "This appointment is already paid" });

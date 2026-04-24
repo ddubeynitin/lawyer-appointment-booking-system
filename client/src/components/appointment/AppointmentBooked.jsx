@@ -86,7 +86,7 @@ const AppointmentBooked = ({ bookingDetails, variant = "booked" }) => {
               <div className="flex justify-between gap-4">
                 <span>Fee</span>
                 <span className="font-medium text-slate-800">
-                  Rs {bookingDetails.feeCharged || "N/A"}
+                  Rs {bookingDetails.feeCharged ?? "N/A"}
                 </span>
               </div>
             </div>

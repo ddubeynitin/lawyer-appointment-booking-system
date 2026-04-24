@@ -64,6 +64,7 @@ export default function ClientAppointments({ userId, userRole = "user" }) {
   const [statusFilter, setStatusFilter] = useState("all");
   const [refreshing, setRefreshing] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(null);
+  const [reviews, setReviews] = useState([]);
 
   const fetchAppointments = useCallback(async (isRefresh = false) => {
     if (isRefresh) {
@@ -100,9 +101,36 @@ export default function ClientAppointments({ userId, userRole = "user" }) {
     }
   }, [viewType, userId]);
 
+  const fetchReviews = useCallback(async () => {
+    if (viewType !== "client" || !userId) {
+      setReviews([]);
+      return;
+    }
+
+    try {
+      const response = await requestWithFallback("get", `/reviews/user/${userId}`);
+      setReviews(Array.isArray(response.data) ? response.data : []);
+    } catch (fetchError) {
+      console.error("Failed to fetch client reviews:", fetchError);
+      setReviews([]);
+    }
+  }, [userId, viewType]);
+
   useEffect(() => {
     fetchAppointments();
   }, [fetchAppointments]);
+
+  useEffect(() => {
+    fetchReviews();
+  }, [fetchReviews]);
+
+  const reviewedAppointmentIds = useMemo(() => {
+    return new Set(
+      reviews
+        .map((review) => review.appointmentId?._id || review.appointmentId)
+        .filter(Boolean),
+    );
+  }, [reviews]);
 
   // Cancel appointment
   const handleCancelAppointment = async (appointmentId) => {
@@ -311,6 +339,7 @@ export default function ClientAppointments({ userId, userRole = "user" }) {
                     key={appointment._id} 
                     appointment={appointment} 
                     viewType={viewType}
+                    hasReview={reviewedAppointmentIds.has(appointment._id)}
                     onCancel={handleCancelAppointment}
                     onReview={() => setShowReviewModal(appointment)}
                   />
@@ -332,6 +361,7 @@ export default function ClientAppointments({ userId, userRole = "user" }) {
                     key={appointment._id} 
                     appointment={appointment} 
                     viewType={viewType}
+                    hasReview={reviewedAppointmentIds.has(appointment._id)}
                     isPast
                     onCancel={handleCancelAppointment}
                     onReview={() => setShowReviewModal(appointment)}
@@ -346,21 +376,22 @@ export default function ClientAppointments({ userId, userRole = "user" }) {
       {/* Review Modal - Using New ReviewRating Component */}
       {showReviewModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <ReviewRating 
-            appointment={showReviewModal}
-            onClose={() => setShowReviewModal(null)}
-            onSubmitSuccess={() => {
-              fetchAppointments();
-            }}
-          />
-        </div>
-      )}
+            <ReviewRating 
+              appointment={showReviewModal}
+              onClose={() => setShowReviewModal(null)}
+              onSubmitSuccess={() => {
+                fetchAppointments();
+                fetchReviews();
+              }}
+            />
+          </div>
+        )}
     </div>
   );
 }
 
 // Appointment Card Component
-function AppointmentCard({ appointment, viewType, isPast, onCancel, onReview }) {
+function AppointmentCard({ appointment, viewType, isPast, onCancel, onReview, hasReview = false }) {
   const status = appointment?.status || "Pending";
   const statusConfig = {
     Pending: { bg: "bg-amber-100", text: "text-amber-700", icon: Clock },
@@ -411,6 +442,21 @@ function AppointmentCard({ appointment, viewType, isPast, onCancel, onReview }) 
                 ? lawyerLocation
                 : "Online meeting link will be emailed before the session"}
             </p>
+            {viewType === "client" && status === "Completed" ? (
+              <div className="mt-2">
+                {hasReview ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                    <Star size={12} className="fill-current" />
+                    Reviewed
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+                    <Star size={12} className="fill-current" />
+                    Ready to review
+                  </span>
+                )}
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -436,13 +482,20 @@ function AppointmentCard({ appointment, viewType, isPast, onCancel, onReview }) 
               </button>
             )}
             {status === "Completed" && viewType === "client" && (
-              <button
-                onClick={onReview}
-                className="px-3 py-1 text-xs bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 flex items-center gap-1"
-              >
-                <Star size={12} />
-                Review
-              </button>
+              hasReview ? (
+                <span className="px-3 py-1 text-xs bg-emerald-100 text-emerald-700 rounded-lg flex items-center gap-1">
+                  <Star size={12} />
+                  Reviewed
+                </span>
+              ) : (
+                <button
+                  onClick={onReview}
+                  className="px-3 py-1 text-xs bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 flex items-center gap-1"
+                >
+                  <Star size={12} />
+                  Review
+                </button>
+              )
             )}
           </div>
         </div>

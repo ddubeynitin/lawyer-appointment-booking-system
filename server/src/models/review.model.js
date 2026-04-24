@@ -39,7 +39,15 @@ const reviewSchema = new mongoose.Schema(
 
 reviewSchema.index({ lawyerId: 1 });
 reviewSchema.index({ userId: 1 });
-reviewSchema.index({ appointmentId: 1 }, { unique: true });
+reviewSchema.index(
+  { appointmentId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      appointmentId: { $type: "objectId" },
+    },
+  },
+);
 
 
 module.exports = mongoose.model("Review", reviewSchema);

@@ -78,7 +78,7 @@ const shouldShowMeetingCard = (appointment) => {
 
   const timeRemainingMs = appointmentDateTime.getTime() - Date.now();
   // Show card if appointment is within 1 hour OR already started
-  return timeRemainingMs < RESCHEDULE_CUTOFF_HOURS * 60 * 60 * 1000;
+  return timeRemainingMs <= RESCHEDULE_CUTOFF_HOURS * 60 * 60 * 1000;
 };
 
 /**
@@ -376,6 +376,10 @@ export default function MyAppointments() {
 
   const handlePayNow = async (appointment) => {
     if (!appointment?._id) return;
+    if (appointment.appointmentMode === "Office" || Number(appointment.feeCharged || 0) <= 0) {
+      setPaymentError("No payment is required for office appointments.");
+      return;
+    }
 
     try {
       setPayingAppointmentId(appointment._id);
@@ -656,10 +660,11 @@ export default function MyAppointments() {
             </div>
           ) : (
             <>
-              <div className="hidden grid-cols-[1.1fr_1.1fr_1fr_0.9fr_0.9fr_0.9fr_1fr] gap-4 border-b border-slate-200 bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-600 md:grid">
+              <div className="hidden grid-cols-[1.1fr_1.1fr_1fr_0.9fr_0.9fr_0.9fr_0.9fr_1fr] gap-4 border-b border-slate-200 bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-600 md:grid">
                 <span>Date</span>
                 <span>Lawyer</span>
                 <span>Category</span>
+                <span>Mode</span>
                 <span>Status</span>
                 <span>Fee</span>
                 <span>Payment</span>
@@ -675,7 +680,7 @@ export default function MyAppointments() {
                       key={appointment._id}
                       className="px-6 py-5 transition hover:bg-slate-50"
                     >
-                    <div className="hidden items-start gap-4 md:grid md:grid-cols-[1.1fr_1.1fr_1fr_0.9fr_0.9fr_0.9fr_1fr]">
+                    <div className="hidden items-start gap-4 md:grid md:grid-cols-[1.1fr_1.1fr_1fr_0.9fr_0.9fr_0.9fr_0.9fr_1fr]">
                       <div>
                         <p className="font-medium text-slate-800">
                           {formatAppointmentDate(appointment.date)}
@@ -705,6 +710,18 @@ export default function MyAppointments() {
 
                       <div>
                         <span
+                          className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                            appointment.appointmentMode === "Office"
+                              ? "bg-emerald-100 text-emerald-700"
+                              : "bg-blue-100 text-blue-700"
+                          }`}
+                        >
+                          {appointment.appointmentMode || "Online"}
+                        </span>
+                      </div>
+
+                      <div>
+                        <span
                           className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getStatusClasses(
                             appointment.status,
                           )}`}
@@ -720,13 +737,17 @@ export default function MyAppointments() {
                       </div>
 
                       <div>
-                        <span
-                          className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getPaymentStatusClasses(
-                            appointment.paymentStatus || "Pending",
-                          )}`}
-                        >
-                          {appointment.paymentStatus || "Pending"}
-                        </span>
+                        {appointment.appointmentMode === "Office" ? (
+                          <span className="text-sm font-medium text-slate-400">--</span>
+                        ) : (
+                          <span
+                            className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getPaymentStatusClasses(
+                              appointment.paymentStatus || "Pending",
+                            )}`}
+                          >
+                            {appointment.paymentStatus || "Pending"}
+                          </span>
+                        )}
                       </div>
 
                       <div>
@@ -763,7 +784,7 @@ export default function MyAppointments() {
                                   Reschedule
                                 </button>
                               ) : null}
-                              {appointment.paymentStatus !== "Success" && (
+                              {appointment.appointmentMode !== "Office" && appointment.paymentStatus !== "Success" && (
                                 <button
                                   type="button"
                                   onClick={() => handlePayNow(appointment)}
@@ -862,6 +883,18 @@ export default function MyAppointments() {
                           </p>
                         </div>
                         <div>
+                          <p className="text-slate-500">Mode</p>
+                          <p
+                            className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                              appointment.appointmentMode === "Office"
+                                ? "bg-emerald-100 text-emerald-700"
+                                : "bg-blue-100 text-blue-700"
+                            }`}
+                          >
+                            {appointment.appointmentMode || "Online"}
+                          </p>
+                        </div>
+                        <div>
                           <p className="text-slate-500">Fee</p>
                           <p className="font-medium text-slate-800">
                             Rs {appointment.feeCharged}
@@ -871,13 +904,17 @@ export default function MyAppointments() {
 
                       <div className="mb-3 flex items-center justify-between">
                         <p className="text-sm text-slate-500">Payment</p>
-                        <span
-                          className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getPaymentStatusClasses(
-                            appointment.paymentStatus || "Pending",
-                          )}`}
-                        >
-                          {appointment.paymentStatus || "Pending"}
-                        </span>
+                        {appointment.appointmentMode === "Office" ? (
+                          <span className="text-sm font-medium text-slate-400">--</span>
+                        ) : (
+                          <span
+                            className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getPaymentStatusClasses(
+                              appointment.paymentStatus || "Pending",
+                            )}`}
+                          >
+                            {appointment.paymentStatus || "Pending"}
+                          </span>
+                        )}
                       </div>
 
                       <div>
@@ -921,7 +958,7 @@ export default function MyAppointments() {
                                   Reschedule
                                 </button>
                               ) : null}
-                              {appointment.paymentStatus !== "Success" && (
+                              {appointment.appointmentMode !== "Office" && appointment.paymentStatus !== "Success" && (
                                 <button
                                   type="button"
                                   onClick={() => handlePayNow(appointment)}
