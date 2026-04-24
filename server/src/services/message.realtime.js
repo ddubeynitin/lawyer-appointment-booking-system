@@ -38,6 +38,15 @@ const createMessageRealtimeServer = (server) => {
     });
   };
 
+  const emitPresenceSnapshot = (socket) => {
+    socket.emit(
+      "presence_snapshot",
+      Array.from(presenceCounts.entries())
+        .filter(([, count]) => count > 0)
+        .map(([userId]) => String(userId)),
+    );
+  };
+
   const incrementPresence = (userId) => {
     if (!userId) {
       return;
@@ -94,6 +103,7 @@ const createMessageRealtimeServer = (server) => {
         name: payload.name || null,
       });
       incrementPresence(userId);
+      emitPresenceSnapshot(socket);
     });
 
     socket.on("join_conversation", async (payload = {}) => {
