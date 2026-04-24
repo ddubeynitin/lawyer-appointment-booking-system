@@ -2,6 +2,8 @@ const {
   ensureConversationForPair,
   getConversationsForUser,
   getConversationMessages,
+  clearConversationMessages,
+  deleteConversation,
   markConversationRead,
   serializeConversationForUser,
 } = require("../services/message.service");
@@ -101,9 +103,49 @@ const markConversationAsRead = async (req, res) => {
   }
 };
 
+const clearConversation = async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const userId = req.body.userId || req.query.userId;
+    const role = req.body.role || req.query.role;
+
+    if (!conversationId || !userId || !role) {
+      return res.status(400).json({ message: "conversationId, userId, and role are required" });
+    }
+
+    const payload = await clearConversationMessages({ conversationId, userId, role });
+    return res.json(payload);
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({
+      message: error.message || "Failed to clear conversation",
+    });
+  }
+};
+
+const removeConversation = async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const userId = req.body.userId || req.query.userId;
+    const role = req.body.role || req.query.role;
+
+    if (!conversationId || !userId || !role) {
+      return res.status(400).json({ message: "conversationId, userId, and role are required" });
+    }
+
+    const payload = await deleteConversation({ conversationId, userId, role });
+    return res.json(payload);
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({
+      message: error.message || "Failed to delete conversation",
+    });
+  }
+};
+
 module.exports = {
   ensureConversation,
   listConversations,
   fetchConversationMessages,
   markConversationAsRead,
+  clearConversation,
+  removeConversation,
 };

@@ -183,6 +183,7 @@ const LawyerProfile = () => {
   const navigate = useNavigate();
   const canShowBookingCard = !user || user.role !== "lawyer";
   const isOwnProfile = user?.role === "lawyer" && user?.id === id || user?._id === id;
+  const isAvailable = lawyerProfileData?.availability !== false;
   const primaryConsultationFee =
     lawyerProfileData?.feesByCategory &&
     lawyerProfileData.feesByCategory.length > 0
@@ -682,15 +683,23 @@ const LawyerProfile = () => {
                   <button
                     type="button"
                     onClick={() => {
+                      if (!isAvailable) {
+                        return;
+                      }
                       if (!user) {
                         navigate("/auth/login");
                       } else {
                         navigate(`/client/appointment-scheduling/${lawyerProfileData._id}`);
                       }
                     }}
-                    className="w-full bg-linear-to-r from-blue-600 to-indigo-600 text-white font-semibold py-3 rounded-xl hover:shadow-lg transition duration-200"
+                    disabled={!isAvailable}
+                    className={`w-full font-semibold py-3 rounded-xl transition duration-200 ${
+                      isAvailable
+                        ? "bg-linear-to-r from-blue-600 to-indigo-600 text-white hover:shadow-lg"
+                        : "cursor-not-allowed bg-slate-300 text-slate-600"
+                    }`}
                   >
-                    {user ? "Schedule Appointment" : "Login to Book"}
+                    {isAvailable ? (user ? "Schedule Appointment" : "Login to Book") : "Unavailable"}
                   </button>
 
                   {/* Security Badge */}

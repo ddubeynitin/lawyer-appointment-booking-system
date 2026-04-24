@@ -13,6 +13,8 @@ import {
   Plus,
   RefreshCw,
   Save,
+  ToggleLeft,
+  ToggleRight,
   Trash2,
   Copy,
 } from "lucide-react";
@@ -123,6 +125,8 @@ const ManageAvailabilityAndFees = () => {
   const [savingAvailability, setSavingAvailability] = useState(false);
   const [savingBulkAvailability, setSavingBulkAvailability] = useState(false);
   const [savingFees, setSavingFees] = useState(false);
+  const [savingAvailabilityStatus, setSavingAvailabilityStatus] = useState(false);
+  const [isAvailable, setIsAvailable] = useState(true);
   const [pageError, setPageError] = useState("");
 
   useEffect(() => {
@@ -143,6 +147,7 @@ const ManageAvailabilityAndFees = () => {
         });
         setLawyerProfile(response.data);
         setFeeRows(normalizeFeeRows(response.data?.feesByCategory));
+        setIsAvailable(response.data?.availability !== false);
       } catch (error) {
         console.error("Failed to load lawyer profile:", error);
         setPageError("Unable to load your profile right now.");
@@ -177,6 +182,36 @@ const ManageAvailabilityAndFees = () => {
     };
     fetchAvailability();
   }, [lawyerId, token]);
+
+  const handleToggleAvailability = async () => {
+    if (!lawyerId || savingAvailabilityStatus) return;
+
+    const nextAvailability = !isAvailable;
+    setSavingAvailabilityStatus(true);
+    setIsAvailable(nextAvailability);
+
+    try {
+      const response = await axios.put(
+        `${API_URL}/lawyers/update-lawyer/${lawyerId}`,
+        { availability: nextAvailability },
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        },
+      );
+
+      setLawyerProfile((current) => ({ ...current, ...response.data }));
+      setIsAvailable(response.data?.availability !== false);
+      toast.success(
+        nextAvailability ? "Profile marked as available" : "Profile marked as unavailable",
+      );
+    } catch (error) {
+      console.error("Failed to update availability:", error);
+      setIsAvailable(!nextAvailability);
+      toast.error(error?.response?.data?.message || "Unable to update availability");
+    } finally {
+      setSavingAvailabilityStatus(false);
+    }
+  };
 
   const selectedDayRecord = useMemo(
     () => availabilityData.find((entry) => entry.dateKey === selectedDate) || null,
@@ -892,6 +927,61 @@ const ManageAvailabilityAndFees = () => {
             </section>
 
             <aside className="space-y-6">
+              
+              <div className="rounded-3xl border border-blue-100 bg-blue-50 p-5">
+                <div className="flex items-start gap-3">
+                  <div className={`rounded-2xl p-3 ${isAvailable ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}>
+                    {isAvailable ? <ToggleRight size={22} /> : <ToggleLeft size={22} />}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                      Availability status
+                    </p>
+                    <h2 className="mt-1 text-xl font-bold text-slate-900">
+                      {isAvailable ? "Clients can book you" : "You are hidden from booking"}
+                    </h2>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                      Toggle this to make your profile bookable or temporarily pause new consultation requests.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <span
+                    className={`inline-flex w-fit items-center rounded-full px-3 py-1 text-sm font-semibold ${
+                      isAvailable
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "bg-rose-100 text-rose-700"
+                    }`}
+                  >
+                    {isAvailable ? "Available" : "Unavailable"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleToggleAvailability}
+                    disabled={savingAvailabilityStatus}
+                    className={`inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold text-white shadow-md transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                      isAvailable
+                        ? "bg-linear-to-r from-rose-500 to-rose-600 hover:shadow-lg"
+                        : "bg-linear-to-r from-emerald-500 to-emerald-600 hover:shadow-lg"
+                    }`}
+                  >
+                    {savingAvailabilityStatus ? (
+                      "Updating..."
+                    ) : isAvailable ? (
+                      <>
+                        <ToggleLeft size={16} />
+                        Mark unavailable
+                      </>
+                    ) : (
+                      <>
+                        <ToggleRight size={16} />
+                        Mark available
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
               <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="flex items-center gap-3">
                   <div className="rounded-2xl bg-amber-50 p-3 text-amber-600">

@@ -292,6 +292,66 @@ const markConversationRead = async ({ conversationId, userId, role }) => {
   };
 };
 
+const clearConversationMessages = async ({ conversationId, userId, role }) => {
+  const { conversation } = await ensureConversationByConversationId(conversationId);
+  const isLawyerViewer = role === "lawyer";
+  const isClientViewer = role === "user";
+
+  if (!isLawyerViewer && !isClientViewer) {
+    const error = new Error("Invalid viewer role");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (
+    (isLawyerViewer && String(conversation.lawyerId) !== String(userId)) ||
+    (isClientViewer && String(conversation.clientId) !== String(userId))
+  ) {
+    const error = new Error("Conversation does not belong to this user");
+    error.statusCode = 403;
+    throw error;
+  }
+
+  await Message.deleteMany({ conversationId: conversation.conversationId });
+
+  conversation.lastMessage = null;
+  conversation.unreadCounts = (conversation.unreadCounts || []).map((entry) => ({
+    ...(typeof entry.toObject === "function" ? entry.toObject() : entry),
+    count: 0,
+  }));
+  await conversation.save();
+
+  return {
+    conversation: await serializeConversationForUser(conversation, { userId, role }),
+  };
+};
+
+const deleteConversation = async ({ conversationId, userId, role }) => {
+  const { conversation } = await ensureConversationByConversationId(conversationId);
+  const isLawyerViewer = role === "lawyer";
+  const isClientViewer = role === "user";
+
+  if (!isLawyerViewer && !isClientViewer) {
+    const error = new Error("Invalid viewer role");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (
+    (isLawyerViewer && String(conversation.lawyerId) !== String(userId)) ||
+    (isClientViewer && String(conversation.clientId) !== String(userId))
+  ) {
+    const error = new Error("Conversation does not belong to this user");
+    error.statusCode = 403;
+    throw error;
+  }
+
+  await Message.deleteMany({ conversationId: conversation.conversationId });
+  await Conversation.deleteOne({ conversationId: conversation.conversationId });
+
+  return { conversationId: conversation.conversationId };
+};
+
 const saveConversationMessage = async ({
   conversationId,
   clientId,
@@ -466,6 +526,8 @@ module.exports = {
   getConversationsForUser,
   getConversationMessages,
   markConversationRead,
+  clearConversationMessages,
+  deleteConversation,
   saveConversationMessage,
   saveMessageReaction,
   serializeConversationForUser,
