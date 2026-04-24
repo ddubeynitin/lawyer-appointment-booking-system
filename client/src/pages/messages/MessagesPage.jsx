@@ -11,6 +11,7 @@ import {
   Search,
   Send,
   Smile,
+  Trash2,
   Video,
 } from "lucide-react";
 import { FaGavel } from "react-icons/fa";
@@ -54,7 +55,7 @@ const getRoleBadge = (conversation) =>
         className: "border-emerald-200 bg-emerald-50 text-emerald-700",
       };
 
-const normalizeConversation = (conversation) => ({
+const normalizeConversation = (conversation, online = false) => ({
   conversationId: conversation.conversationId,
   counterpartId: conversation.counterpartId,
   counterpartName: conversation.counterpartName,
@@ -64,10 +65,9 @@ const normalizeConversation = (conversation) => ({
   subtitle:
     conversation.subtitle ||
     (conversation.caseCategory ? `${conversation.caseCategory} consultation` : "Conversation"),
-  lastMessage: conversation.lastMessage?.text || "No messages yet",
   lastMessageTime: conversation.lastMessage?.time || "",
   unreadCount: Number(conversation.unreadCount || 0),
-  online: Boolean(conversation.online),
+  online: Boolean(online),
   updatedAt: conversation.updatedAt,
   createdAt: conversation.createdAt,
 });
@@ -145,10 +145,14 @@ const MessagesPage = () => {
   const [pageError, setPageError] = useState("");
   const [draft, setDraft] = useState("");
   const [openReactionMenuForMessageId, setOpenReactionMenuForMessageId] = useState("");
+  const [openConversationMenuForId, setOpenConversationMenuForId] = useState("");
+  const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState(false);
   const [isMobileConversationListOpen, setIsMobileConversationListOpen] = useState(true);
+  const [presenceByUserId, setPresenceByUserId] = useState({});
   const socketRef = useRef(null);
   const joinedConversationRef = useRef("");
   const activeConversationRef = useRef("");
+  const presenceByUserIdRef = useRef({});
   const messageEndRef = useRef(null);
   const reactionLongPressTimerRef = useRef(null);
   const reactionLongPressTriggeredRef = useRef(false);
@@ -165,6 +169,10 @@ const MessagesPage = () => {
   useEffect(() => {
     activeConversationRef.current = activeConversationId;
   }, [activeConversationId]);
+
+  useEffect(() => {
+    presenceByUserIdRef.current = presenceByUserId;
+  }, [presenceByUserId]);
 
   useEffect(() => {
     if (activeConversationId) {
@@ -212,7 +220,12 @@ const MessagesPage = () => {
 
       const nextConversations = Array.isArray(response.data?.conversations)
         ? dedupeConversationsByCounterpart(
-            response.data.conversations.map(normalizeConversation),
+            response.data.conversations.map((conversation) =>
+              normalizeConversation(
+                conversation,
+                presenceByUserIdRef.current[String(conversation.counterpartId)] || false,
+              ),
+            ),
           )
         : [];
 
@@ -276,7 +289,10 @@ const MessagesPage = () => {
       }));
 
       if (response.data?.conversation) {
-        const normalizedConversation = normalizeConversation(response.data.conversation);
+        const normalizedConversation = normalizeConversation(
+          response.data.conversation,
+          presenceByUserIdRef.current[String(response.data.conversation.counterpartId)] || false,
+        );
         setConversations((current) =>
           current.map((conversation) =>
             conversation.conversationId === normalizedConversation.conversationId
@@ -331,11 +347,16 @@ const MessagesPage = () => {
 
   useEffect(() => {
     const handleDocumentClick = (event) => {
-      if (event.target.closest?.("[data-reaction-picker-root='true']")) {
+      if (
+        event.target.closest?.("[data-reaction-picker-root='true']") ||
+        event.target.closest?.("[data-menu-root='true']")
+      ) {
         return;
       }
 
       setOpenReactionMenuForMessageId("");
+      setOpenConversationMenuForId("");
+      setIsHeaderMenuOpen(false);
     };
 
     document.addEventListener("click", handleDocumentClick);
@@ -377,6 +398,15 @@ const MessagesPage = () => {
     };
 
     const handlePresenceUpdate = (payload) => {
+      if (!payload?.userId) {
+        return;
+      }
+
+      setPresenceByUserId((current) => ({
+        ...current,
+        [String(payload.userId)]: Boolean(payload.online),
+      }));
+
       setConversations((current) =>
         current.map((conversation) =>
           sameId(conversation.counterpartId, payload.userId)
@@ -412,7 +442,22 @@ const MessagesPage = () => {
         };
       });
 
-      fetchConversations();
+      setConversations((current) =>
+        sortConversationsByRecentActivity(
+          current.map((conversation) =>
+            conversation.conversationId === payload.conversationId
+              ? {
+                  ...conversation,
+                  unreadCount:
+                    conversation.conversationId === activeConversationRef.current
+                      ? 0
+                      : Number(conversation.unreadCount || 0) + 1,
+                  updatedAt: new Date().toISOString(),
+                }
+              : conversation,
+          ),
+        ),
+      );
     };
 
     const handleConversationRead = (payload) => {
@@ -420,7 +465,19 @@ const MessagesPage = () => {
         return;
       }
 
-      fetchConversations();
+      setConversations((current) =>
+        sortConversationsByRecentActivity(
+          current.map((conversation) =>
+            conversation.conversationId === payload.conversationId
+              ? {
+                  ...conversation,
+                  unreadCount: 0,
+                  updatedAt: new Date().toISOString(),
+                }
+              : conversation,
+          ),
+        ),
+      );
     };
 
     const handleMessageReaction = (payload) => {
@@ -534,7 +591,6 @@ const MessagesPage = () => {
         conversation.counterpartName,
         conversation.title,
         conversation.subtitle,
-        conversation.lastMessage,
       ]
         .filter(Boolean)
         .join(" ")
@@ -550,6 +606,13 @@ const MessagesPage = () => {
   );
 
   const activeMessages = messagesByConversation[activeConversationId] || [];
+
+  const sortConversationsByRecentActivity = (items = []) =>
+    [...items].sort(
+      (first, second) =>
+        new Date(second.updatedAt || second.createdAt || 0) -
+        new Date(first.updatedAt || first.createdAt || 0),
+    );
 
   const summarizeReactions = (reactions = []) => {
     const ownReaction = reactions.find((reaction) => sameId(reaction.userId, userId)) || null;
@@ -585,30 +648,19 @@ const MessagesPage = () => {
   };
 
   const handleSelectConversation = (conversationId) => {
+    setOpenConversationMenuForId("");
+    setIsHeaderMenuOpen(false);
     setActiveConversationId(conversationId);
     setDraft("");
     setIsMobileConversationListOpen(false);
 
     setConversations((current) =>
-      current.map((conversation) =>
-        conversation.conversationId === conversationId
-          ? { ...conversation, unreadCount: 0 }
-          : conversation,
-      ),
-    );
-  };
-
-  const updateConversationAfterSend = (conversationId, text, time) => {
-    setConversations((current) =>
-      current.map((conversation) =>
-        conversation.conversationId === conversationId
-          ? {
-              ...conversation,
-              lastMessage: text,
-              lastMessageTime: time,
-              unreadCount: 0,
-            }
-          : conversation,
+      sortConversationsByRecentActivity(
+        current.map((conversation) =>
+          conversation.conversationId === conversationId
+            ? { ...conversation, unreadCount: 0, updatedAt: new Date().toISOString() }
+            : conversation,
+        ),
       ),
     );
   };
@@ -643,7 +695,19 @@ const MessagesPage = () => {
       ],
     }));
 
-    updateConversationAfterSend(activeConversationId, trimmedDraft, optimisticMessage.time);
+    setConversations((current) =>
+      sortConversationsByRecentActivity(
+        current.map((conversation) =>
+          conversation.conversationId === activeConversationId
+            ? {
+                ...conversation,
+                unreadCount: 0,
+                updatedAt: new Date().toISOString(),
+              }
+            : conversation,
+        ),
+      ),
+    );
     setDraft("");
 
     if (socket?.connected) {
@@ -655,6 +719,80 @@ const MessagesPage = () => {
         text: trimmedDraft,
         clientMessageId: tempClientMessageId,
       });
+    }
+  };
+
+  const handleDeleteConversation = async (conversationId) => {
+    if (!conversationId || !userId || !role) {
+      return;
+    }
+
+    if (!window.confirm("Delete this conversation?")) {
+      return;
+    }
+
+    try {
+      await axios.delete(`${API_URL}/messages/${encodeURIComponent(conversationId)}`, {
+        data: { userId, role },
+      });
+
+      setConversations((current) =>
+        current.filter((conversation) => conversation.conversationId !== conversationId),
+      );
+      setMessagesByConversation((current) => {
+        const next = { ...current };
+        delete next[conversationId];
+        return next;
+      });
+      setOpenConversationMenuForId("");
+
+      if (activeConversationId === conversationId) {
+        const nextConversation = conversations.find(
+          (conversation) => conversation.conversationId !== conversationId,
+        );
+        setActiveConversationId(nextConversation?.conversationId || "");
+      }
+    } catch (error) {
+      console.error("Failed to delete conversation:", error);
+      setPageError(error?.response?.data?.message || "Unable to delete conversation");
+    }
+  };
+
+  const handleClearChat = async (conversationId) => {
+    if (!conversationId || !userId || !role) {
+      return;
+    }
+
+    if (!window.confirm("Clear this chat?")) {
+      return;
+    }
+
+    try {
+      await axios.patch(`${API_URL}/messages/${encodeURIComponent(conversationId)}/clear`, {
+        userId,
+        role,
+      });
+
+      setMessagesByConversation((current) => ({
+        ...current,
+        [conversationId]: [],
+      }));
+      setConversations((current) =>
+        current.map((conversation) =>
+          conversation.conversationId === conversationId
+            ? {
+                ...conversation,
+                unreadCount: 0,
+                lastMessageTime: "",
+                updatedAt: new Date().toISOString(),
+              }
+            : conversation,
+        ),
+      );
+      setIsHeaderMenuOpen(false);
+    } catch (error) {
+      console.error("Failed to clear chat:", error);
+      setPageError(error?.response?.data?.message || "Unable to clear chat");
     }
   };
 
@@ -874,13 +1012,21 @@ const MessagesPage = () => {
                 ) : filteredConversations.length > 0 ? (
                   filteredConversations.map((conversation) => {
                     const isActive = conversation.conversationId === activeConversationId;
+                    const isMenuOpen = openConversationMenuForId === conversation.conversationId;
 
                     return (
-                      <button
+                      <div
                         key={conversation.conversationId}
-                        type="button"
+                        role="button"
+                        tabIndex={0}
                         onClick={() => handleSelectConversation(conversation.conversationId)}
-                        className={`mb-2 flex w-full items-start gap-3  border p-2 text-left transition ${
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            handleSelectConversation(conversation.conversationId);
+                          }
+                        }}
+                        className={`relative mb-2 flex w-full items-start gap-3 border p-2 text-left transition ${
                           isActive
                             ? "border-blue-200 bg-blue-100 shadow-md"
                             : "border-transparent bg-white hover:border-slate-200 hover:bg-slate-50"
@@ -897,7 +1043,7 @@ const MessagesPage = () => {
                           ) : null}
                         </div>
 
-                        <div className="min-w-0 flex-1">
+                        <div className="min-w-0 flex-1 pr-8">
                           <div className="flex items-start justify-between gap-3">
                             <div>
                               <p className="truncate font-semibold text-slate-900">
@@ -909,9 +1055,6 @@ const MessagesPage = () => {
                                 >
                                   {getRoleBadge(conversation).label}
                                 </span>
-                                {/* <p className="text-xs font-medium uppercase tracking-[0.18em] text-blue-600">
-                                  {conversation.title}
-                                </p> */}
                               </div>
                             </div>
                             <span className="text-xs text-slate-400">
@@ -919,14 +1062,8 @@ const MessagesPage = () => {
                             </span>
                           </div>
 
-                          {/* <p className=" line-clamp-2 text-sm leading-6 text-slate-500">
-                            {conversation.subtitle}
-                          </p> */}
-
                           <div className="mt-3 flex items-center justify-between gap-3">
-                            <p className="truncate text-sm text-slate-600">
-                              {conversation.lastMessage}
-                            </p>
+                            <div className="h-5" />
                             {conversation.unreadCount > 0 ? (
                               <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-blue-600 px-2 text-xs font-semibold text-white">
                                 {conversation.unreadCount}
@@ -934,7 +1071,47 @@ const MessagesPage = () => {
                             ) : null}
                           </div>
                         </div>
-                      </button>
+
+                        <div className="absolute right-2 top-2" data-menu-root="true">
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setOpenConversationMenuForId((current) =>
+                                current === conversation.conversationId
+                                  ? ""
+                                  : conversation.conversationId,
+                              );
+                              setIsHeaderMenuOpen(false);
+                            }}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+                            aria-label="Conversation options"
+                          >
+                            <MoreVertical size={16} />
+                          </button>
+
+                          <div
+                            aria-hidden={!isMenuOpen}
+                            className={`absolute right-0 top-9 z-20 w-40 rounded-2xl border border-slate-200 bg-white p-1 shadow-xl transition ${
+                              isMenuOpen
+                                ? "pointer-events-auto translate-y-0 opacity-100"
+                                : "pointer-events-none -translate-y-1 opacity-0"
+                            }`}
+                          >
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleDeleteConversation(conversation.conversationId);
+                              }}
+                              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-rose-600 transition hover:bg-rose-50"
+                            >
+                              <Trash2 size={14} />
+                              Delete conversation
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     );
                   })
                 ) : (
@@ -1007,29 +1184,34 @@ const MessagesPage = () => {
                       </div>
                     </div>
 
-                    {/* <div className="flex items-center gap-2">
+                    <div className="relative" data-menu-root="true">
                       <button
                         type="button"
-                        className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-blue-300 hover:text-blue-600"
-                        aria-label="Start phone call"
-                      >
-                        <Phone size={17} />
-                      </button>
-                      <button
-                        type="button"
-                        className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-blue-300 hover:text-blue-600"
-                        aria-label="Start video call"
-                      >
-                        <Video size={17} />
-                      </button>
-                      <button
-                        type="button"
+                        onClick={() => setIsHeaderMenuOpen((current) => !current)}
                         className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-blue-300 hover:text-blue-600"
                         aria-label="More options"
                       >
                         <MoreVertical size={17} />
                       </button>
-                    </div> */}
+
+                      <div
+                        aria-hidden={!isHeaderMenuOpen}
+                        className={`absolute right-0 top-12 z-30 w-40 rounded-2xl border border-slate-200 bg-white p-1 shadow-xl transition ${
+                          isHeaderMenuOpen
+                            ? "pointer-events-auto translate-y-0 opacity-100"
+                            : "pointer-events-none -translate-y-1 opacity-0"
+                        }`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => handleClearChat(activeConversationId)}
+                          className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-amber-700 transition hover:bg-amber-50"
+                        >
+                          <Trash2 size={14} />
+                          Clear chat
+                        </button>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="min-h-0 flex-1 overflow-y-auto bg-linear-to-br from-blue-500/50 to-blue-500/20 bg-cover bg-center px-3 py-4 sm:px-6 sm:py-6">
@@ -1163,7 +1345,7 @@ const MessagesPage = () => {
                     onSubmit={handleSendMessage}
                     className="border-t border-slate-200/80 p-3 lg:mb-0 mb-10 sm:p-3"
                   >
-                    <div className="flex w-full items-end gap-3 rounded-3xl border border-slate-200 bg-slate-50 px-3 py-3 shadow-sm sm:w-[90%] sm:rounded-[28px] sm:px-4">
+                    <div className="flex w-full items-end gap-3 rounded-3xl border border-slate-200 bg-slate-50 px-3 py-3 shadow-sm sm:w-full sm:rounded-[28px] sm:px-4">
                       {/* <button
                         type="button"
                         className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-slate-500 transition hover:text-blue-600"
@@ -1175,6 +1357,12 @@ const MessagesPage = () => {
                       <textarea
                         value={draft}
                         onChange={(event) => setDraft(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" && !event.shiftKey) {
+                            event.preventDefault();
+                            handleSendMessage(event);
+                          }
+                        }}
                         rows={1}
                         placeholder={`Message ${activeConversation.counterpartName}...`}
                         className="min-h-10 flex-1 resize-none bg-transparent py-2 text-sm text-slate-700 outline-none placeholder:text-slate-400"

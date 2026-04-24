@@ -281,7 +281,7 @@ const EditLawyerProfile = () => {
                 : undefined,
             });
           })()
-        : await axios.patch(`${API_URL}/lawyers/update-lawyer/${lawyerId}`, sharedPayload, {
+        : await axios.put(`${API_URL}/lawyers/update-lawyer/${lawyerId}`, sharedPayload, {
             headers: token
               ? {
                   Authorization: `Bearer ${token}`,

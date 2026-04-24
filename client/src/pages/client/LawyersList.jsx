@@ -2,6 +2,7 @@ import React from "react";
 import { FaArrowAltCircleLeft, FaGavel, FaSearch } from "react-icons/fa";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Pagination } from "@heroui/pagination";
+import { RefreshCw } from "lucide-react";
 import useFetch from "../../hooks/useFetch";
 import LawyerCard from "../../components/common/LawyerCard";
 import LawyerCardSkeleton from "../../components/layout/LawyerCardSkeleton";
@@ -21,11 +22,9 @@ function LawyerList() {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const [refreshToken, setRefreshToken] = React.useState(0);
 
-  const { data, loading, error } = useFetch(`${API_URL}/lawyers/available`);
-  console.log("Data:", data);
-  console.log("Loading:", loading);
-  console.log("Error:", error);
+  const { data, loading, error } = useFetch(`${API_URL}/lawyers/available?refresh=${refreshToken}`);
   React.useEffect(() => {
     if (data) {
       setLawyers(data);
@@ -286,23 +285,34 @@ function LawyerList() {
 
         {/* LAWYERS */}
         <main className="flex-1 rounded-3xl border border-slate-100 bg-white/70 p-4 shadow-xl backdrop-blur-md sm:p-6">
-          <p className="mb-4 text-base text-slate-600 sm:text-lg">
-            {loading ? (
-              "Loading legal professionals..."
-            ) : (
-              <>
-                Showing{" "}
-                <span className="font-semibold text-slate-900">
-                  {paginatedLawyers.length}
-                </span>{" "}
-                of{" "}
-                <span className="font-semibold text-slate-900">
-                  {filteredLawyers.length}
-                </span>{" "}
-                legal professionals
-              </>
-            )}
-          </p>
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-base text-slate-600 sm:text-lg">
+              {loading ? (
+                "Loading legal professionals..."
+              ) : (
+                <>
+                  Showing{" "}
+                  <span className="font-semibold text-slate-900">
+                    {paginatedLawyers.length}
+                  </span>{" "}
+                  of{" "}
+                  <span className="font-semibold text-slate-900">
+                    {filteredLawyers.length}
+                  </span>{" "}
+                  legal professionals
+                </>
+              )}
+            </p>
+            <button
+              type="button"
+              onClick={() => setRefreshToken((current) => current + 1)}
+              disabled={loading}
+              className="inline-flex w-fit items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+              Refresh
+            </button>
+          </div>
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 xl:grid-cols-3 xl:gap-8">
             {loading ? (
