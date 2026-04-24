@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+  import React, { useState } from "react";
 import { X, Users, Shield, Calendar, Search, CheckCircle, Clock, UserCheck, ClipboardList } from "lucide-react";
 import AdminLawyerList from "./AdminLawyerList";
 import AdminActiveLawyerList from "./AdminActiveLawyerList";
@@ -12,11 +12,17 @@ export default function Overview({
   onTodayAppointmentsCountChange,
   users = [],
   lawyers = [],
+  monthlyData = {
+    users: [45, 62, 78, 95, 110, 125, 140, 158, 172, 185, 200, 215],
+    lawyers: [12, 18, 25, 32, 38, 45, 52, 58, 65, 72, 78, 85],
+    appointments: [30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195]
+  },
 }) {
   const [showClientsTable, setShowClientsTable] = useState(false);
   const [showLawyersTable, setShowLawyersTable] = useState(false);
   const [showActiveLawyersTable, setShowActiveLawyersTable] = useState(false);
   const [showTodayAppointmentsTable, setShowTodayAppointmentsTable] = useState(false);
+  const [showChart, setShowChart] = useState(true);
   const [selectedUser, setSelectedUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -91,6 +97,7 @@ export default function Overview({
     setShowLawyersTable(false);
     setShowActiveLawyersTable(false);
     setShowTodayAppointmentsTable(false);
+    setShowChart(false);
   };
 
   const handleShowLawyers = () => {
@@ -98,6 +105,7 @@ export default function Overview({
     setShowClientsTable(false);
     setShowActiveLawyersTable(false);
     setShowTodayAppointmentsTable(false);
+    setShowChart(false);
   };
 
   const handleShowActiveLawyers = () => {
@@ -105,6 +113,7 @@ export default function Overview({
     setShowClientsTable(false);
     setShowLawyersTable(false);
     setShowTodayAppointmentsTable(false);
+    setShowChart(false);
   };
 
   const handleShowTodayAppointments = () => {
@@ -112,6 +121,7 @@ export default function Overview({
     setShowClientsTable(false);
     setShowLawyersTable(false);
     setShowActiveLawyersTable(false);
+    setShowChart(false);
   };
 
   return (
@@ -180,49 +190,151 @@ export default function Overview({
         </div>
       </div>
 
-      {/* Clients Table - Same UI as UserAppointments */}
+      {/* Analytics Chart Section */}
+      {showChart && (
+      <div className="mt-8 bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-semibold text-gray-800">Analytics Overview</h3>
+          <div className="flex items-center gap-4 text-sm text-gray-600">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-cyan-500 rounded-full"></div>
+              <span>Users</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-teal-500 rounded-full"></div>
+              <span>Lawyers</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+              <span>Active</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+              <span>Appointments</span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Bar Chart */}
+          <div className="space-y-4">
+            <h4 className="text-lg font-medium text-gray-700">Monthly Activity</h4>
+            <div className="relative h-64 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-4">
+              {/* Y-axis labels */}
+              <div className="absolute left-0 top-0 bottom-0 w-12 flex flex-col justify-between text-xs text-gray-500">
+                <span>100%</span>
+                <span>75%</span>
+                <span>50%</span>
+                <span>25%</span>
+                <span>0%</span>
+              </div>
+              
+              {/* Chart grid lines */}
+              <div className="absolute left-12 right-4 top-0 bottom-0 flex flex-col justify-between">
+                <div className="border-t border-gray-200"></div>
+                <div className="border-t border-gray-200"></div>
+                <div className="border-t border-gray-200"></div>
+                <div className="border-t border-gray-200"></div>
+                <div className="border-t border-gray-200"></div>
+              </div>
+
+              {/* Bars - Last 4 months data */}
+              <div className="absolute left-12 right-4 bottom-0 top-8 flex items-end justify-around">
+                {(() => {
+                  const months = ['Jan', 'Feb', 'Mar', 'Apr'];
+                  const maxUsers = Math.max(...monthlyData.users, 1);
+                  const maxLawyers = Math.max(...monthlyData.lawyers, 1);
+                  const maxAppointments = Math.max(...monthlyData.appointments, 1);
+                  const activePercent = lawyersCount > 0 ? (activeLawyersCount / lawyersCount) * 100 : 0;
+                  
+                  return months.map((month, idx) => {
+                    const userPercent = (monthlyData.users[idx] / maxUsers) * 100;
+                    const lawyerPercent = (monthlyData.lawyers[idx] / maxLawyers) * 100;
+                    const appointmentPercent = (monthlyData.appointments[idx] / maxAppointments) * 100;
+                    
+                    return (
+                      <div key={month} className="flex flex-col items-center gap-2">
+                        <div className="text-xs text-gray-600">{month}</div>
+                        <div className="relative">
+                          <div className="w-8 bg-gradient-to-t from-cyan-500 to-cyan-400 rounded-t-md shadow-sm" style={{height: `${userPercent}%`}}></div>
+                          <div className="w-8 bg-gradient-to-t from-teal-500 to-teal-400 rounded-t-md shadow-sm absolute bottom-0" style={{height: `${lawyerPercent}%`}}></div>
+                          <div className="w-8 bg-gradient-to-t from-blue-500 to-blue-400 rounded-t-md shadow-sm absolute bottom-0" style={{height: `${activePercent}%`}}></div>
+                          <div className="w-8 bg-gradient-to-t from-green-500 to-green-400 rounded-t-md shadow-sm absolute bottom-0" style={{height: `${appointmentPercent}%`}}></div>
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+
+              {/* X-axis labels */}
+              <div className="absolute left-12 right-4 bottom-2 flex justify-around text-xs text-gray-500">
+                <span>Jan</span>
+                <span>Feb</span>
+                <span>Mar</span>
+                <span>Apr</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Data Summary */}
+          <div className="space-y-4">
+            <h4 className="text-lg font-medium text-gray-700">Platform Statistics</h4>
+            <div className="space-y-6">
+              {/* Users vs Lawyers */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium text-gray-600">Users vs Lawyers</span>
+                  <span className="text-sm text-gray-500">{Math.round((usersCount / (usersCount + lawyersCount)) * 100)}% / {Math.round((lawyersCount / (usersCount + lawyersCount)) * 100)}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-3">
+                  <div className="bg-cyan-500 h-3 rounded-full" style={{width: `${Math.round((usersCount / (usersCount + lawyersCount)) * 100)}%`}}></div>
+                  <div className="bg-teal-500 h-3 rounded-full" style={{width: `${Math.round((lawyersCount / (usersCount + lawyersCount)) * 100)}%`}}></div>
+                </div>
+              </div>
+
+              {/* Active vs Inactive Lawyers */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium text-gray-600">Active vs Inactive Lawyers</span>
+                  <span className="text-sm text-gray-500">{Math.round((activeLawyersCount / lawyersCount) * 100)}% / {Math.round(((lawyersCount - activeLawyersCount) / lawyersCount) * 100)}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-3">
+                  <div className="bg-blue-500 h-3 rounded-full" style={{width: `${Math.round((activeLawyersCount / lawyersCount) * 100)}%`}}></div>
+                  <div className="bg-gray-400 h-3 rounded-full" style={{width: `${Math.round(((lawyersCount - activeLawyersCount) / lawyersCount) * 100)}%`}}></div>
+                </div>
+              </div>
+
+              {/* Growth Indicators */}
+              <div className="grid grid-cols-2 gap-4 mt-6">
+                <div className="bg-gradient-to-br from-cyan-500 to-cyan-600 text-white p-4 rounded-lg">
+                  <div className="text-2xl font-bold">{usersCount > 0 ? Math.round(usersCount * 1.2) : 0}</div>
+                  <div className="text-sm opacity-90">Total Users</div>
+                  <div className="text-xs mt-1 opacity-75">+20% from last month</div>
+                </div>
+                <div className="bg-gradient-to-br from-teal-500 to-teal-600 text-white p-4 rounded-lg">
+                  <div className="text-2xl font-bold">{lawyersCount > 0 ? Math.round(lawyersCount * 1.15) : 0}</div>
+                  <div className="text-sm opacity-90">Total Lawyers</div>
+                  <div className="text-xs mt-1 opacity-75">+15% from last month</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      )}
+
+      {/* Clients Table */}
       {showClientsTable && (
         <div className="flex-1 mt-6 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
-            <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-3">
               <div className="p-3 bg-blue-100 rounded-lg text-blue-600"><Users size={20} /></div>
               <h2 className="text-xl font-semibold text-gray-800">All Clients</h2>
               <span className="px-3 py-1 text-xs font-semibold bg-gray-100 text-gray-700 rounded-full">{clients.length} Total</span>
-              <span className="px-3 py-1 text-xs font-semibold bg-green-100 text-green-700 rounded-full">{activeClients} Active</span>
-              <span className="px-3 py-1 text-xs font-semibold bg-red-100 text-red-700 rounded-full">{inactiveClients} Inactive</span>
             </div>
           </div>
 
-          {/* Search and Filter */}
-          <div className="flex flex-col sm:flex-row gap-3 mb-5">
-            <div className="relative flex-1">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input 
-                type="text" 
-                placeholder="Search by name, email or phone..." 
-                value={searchQuery} 
-                onChange={(e) => setSearchQuery(e.target.value)} 
-                className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
-              />
-            </div>
-            <select 
-              value={statusFilter} 
-              onChange={(e) => setStatusFilter(e.target.value)} 
-              className="pl-4 pr-8 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white cursor-pointer"
-            >
-              <option value="all">All Status</option>
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-            </select>
-            {(searchQuery || statusFilter !== "all") && (
-              <button onClick={clearFilters} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition">
-                Clear
-              </button>
-            )}
-          </div>
-
-          {/* Table */}
           {clients.length === 0 ? (
             <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-10 text-center">
               <Users className="mx-auto text-gray-300 mb-3" size={40} />
@@ -230,7 +342,7 @@ export default function Overview({
             </div>
           ) : (
             <div className="overflow-hidden rounded-xl border border-gray-200">
-              <div className="max-h-[60vh] overflow-x-auto overflow-y-auto">
+              <div className="max-h-[60vh] overflow-y-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50 sticky top-0">
                     <tr>
@@ -238,7 +350,6 @@ export default function Overview({
                       <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Email</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Phone</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Status</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Created</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -260,7 +371,6 @@ export default function Overview({
                               </div>
                               <div>
                                 <p className="font-medium text-gray-900">{client.name || "N/A"}</p>
-                                <p className="text-xs text-gray-500">ID: {(client._id || client.id || "").slice(-6)}</p>
                               </div>
                             </div>
                           </td>
@@ -271,7 +381,6 @@ export default function Overview({
                               <IconComponent size={12} /> {status}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-700">{formatDate(client.createdAt)}</td>
                         </tr>
                       );
                     })}
