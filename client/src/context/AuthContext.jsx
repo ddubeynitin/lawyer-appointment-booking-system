@@ -27,8 +27,25 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("role");
   };
 
+  const updateUser = (nextUser) => {
+    setAuth((current) => {
+      const updatedUser = typeof nextUser === "function"
+        ? nextUser(current.user)
+        : nextUser;
+
+      if (updatedUser) {
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+      }
+
+      return {
+        ...current,
+        user: updatedUser,
+      };
+    });
+  };
+
   const value = useMemo(
-    () => ({ token: auth.token, user: auth.user, login, logout }),
+    () => ({ token: auth.token, user: auth.user, login, logout, updateUser }),
     [auth.token, auth.user],
   );
 
