@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Star, Send, X, CheckCircle } from "lucide-react";
 import axios from "axios";
 import { API_URL } from "../utils/api";
@@ -20,6 +20,19 @@ export default function ReviewRating({
   const lawyerId = appointment?.lawyerId?._id || appointment?.lawyerId;
   const appointmentId = appointment?._id;
 
+  useEffect(() => {
+    if (!import.meta.env.DEV) {
+      return;
+    }
+
+    console.debug("[ReviewRating] Opened review modal", {
+      appointmentId,
+      lawyerId,
+      lawyerName,
+      status: appointment?.status,
+    });
+  }, [appointmentId, lawyerId, lawyerName, appointment?.status]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -32,6 +45,15 @@ export default function ReviewRating({
     setError("");
 
     try {
+      if (import.meta.env.DEV) {
+        console.debug("[ReviewRating] Submitting review", {
+          appointmentId,
+          lawyerId,
+          rating,
+          comment: comment.trim(),
+        });
+      }
+
       const token = localStorage.getItem("token");
       
       const response = await axios.post(
@@ -58,7 +80,12 @@ export default function ReviewRating({
         }, 2000);
       }
     } catch (err) {
-      console.error("Review submission error:", err);
+      console.error("Review submission error:", {
+        status: err?.response?.status,
+        data: err?.response?.data,
+        appointmentId,
+        lawyerId,
+      });
       setError(
         err?.response?.data?.message || 
         err?.response?.data?.error || 

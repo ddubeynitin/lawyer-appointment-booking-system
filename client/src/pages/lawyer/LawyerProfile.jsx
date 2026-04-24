@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import {
   CheckCircle,
@@ -184,6 +184,19 @@ const LawyerProfile = () => {
   const canShowBookingCard = !user || user.role !== "lawyer";
   const isOwnProfile = user?.role === "lawyer" && user?.id === id || user?._id === id;
   const isAvailable = lawyerProfileData?.availability !== false;
+  const uniqueClientReviews = useMemo(() => {
+    const byClientId = new Map();
+    const reviewList = Array.isArray(reviews) ? reviews : [];
+
+    reviewList.forEach((review) => {
+      const clientId = review?.userId?._id || review?.userId || review?._id;
+      if (!byClientId.has(clientId)) {
+        byClientId.set(clientId, review);
+      }
+    });
+
+    return Array.from(byClientId.values());
+  }, [reviews]);
   const primaryConsultationFee =
     lawyerProfileData?.feesByCategory &&
     lawyerProfileData.feesByCategory.length > 0
@@ -595,9 +608,9 @@ const LawyerProfile = () => {
                 <p className="text-slate-600 italic">Loading reviews...</p>
               ) : reviewsError ? (
                 <p className="text-red-500">Unable to load reviews</p>
-              ) : reviews.length > 0 ? (
+              ) : uniqueClientReviews.length > 0 ? (
                 <div className="space-y-4">
-                  {reviews.map((review) => (
+                  {uniqueClientReviews.map((review) => (
                     <div key={review._id} className="p-5 border border-slate-200 rounded-xl hover:shadow-md transition">
                       <div className="flex items-start justify-between gap-4 mb-3">
                         <div>

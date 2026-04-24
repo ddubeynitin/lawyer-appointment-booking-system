@@ -119,6 +119,11 @@ const toAppointmentDate = (dateValue) => {
   return Number.isNaN(normalized.getTime()) ? null : normalized;
 };
 
+const normalizeFeeCharged = (value) => {
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) && numericValue >= 0 ? numericValue : 0;
+};
+
 const buildJitsiRoomName = (appointment) => {
   const appointmentId = String(appointment?._id || "").trim();
   if (!appointmentId) {
@@ -326,6 +331,8 @@ const createAppointment = async (req, res) => {
         : "Online";
     const appointmentDate = toAppointmentDate(req.body.date);
     const timeSlot = normalizeTimeSlot(req.body.timeSlot);
+    const feeCharged =
+      appointmentMode === "Office" ? 0 : normalizeFeeCharged(req.body.feeCharged);
 
     if (!appointmentDate) {
       return res.status(400).json({ error: "Valid appointment date is required" });
@@ -347,6 +354,7 @@ const createAppointment = async (req, res) => {
       rescheduleRequestedDate: null,
       rescheduleRequestedTimeSlot: null,
       rescheduleReason: null,
+      feeCharged,
     };
 
     if (req.file) {
