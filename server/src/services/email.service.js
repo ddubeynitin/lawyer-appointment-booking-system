@@ -268,16 +268,71 @@ const sendAppointmentApprovalEmail = async ({
   meetingLink,
 }) => {
   const formattedDate = formatAppointmentDate(date);
+
+  const subject = `Your appointment with ${lawyerName || "your lawyer"} has been approved`;
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#0f172a">
+      <h2 style="margin:0 0 12px">Appointment Approved</h2>
+      <p style="margin:0 0 16px">Hi ${name || "there"},</p>
+      <p style="margin:0 0 16px">
+        Your appointment request has been approved.
+      </p>
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:16px">
+        <p style="margin:0 0 8px"><strong>Lawyer:</strong> ${lawyerName || "-"}</p>
+        <p style="margin:0 0 8px"><strong>Date:</strong> ${formattedDate}</p>
+        <p style="margin:0 0 8px"><strong>Time:</strong> ${timeSlot || "-"}</p>
+      </div>
+      <p style="margin:16px 0 0;color:#64748b">
+        Please go to the Appointments page in your dashboard to complete the payment and finalize the booking.
+      </p>
+    </div>
+  `;
+
+  const text = [
+    "Appointment Approved",
+    "",
+    `Hi ${name || "there"},`,
+    "Your appointment request has been approved.",
+    "",
+    `Lawyer: ${lawyerName || "-"}`,
+    `Date: ${formattedDate}`,
+    `Time: ${timeSlot || "-"}`,
+    "",
+    "Please go to the Appointments page in your dashboard to complete the payment and finalize the booking.",
+  ].join("\n");
+
+  return sendBrevoEmail({
+    to: { email, name: name || email },
+    subject,
+    html,
+    text,
+  });
+};
+
+const sendAppointmentPaymentSuccessEmail = async ({
+  email,
+  name,
+  lawyerName,
+  lawyerSpecialization,
+  appointmentMode,
+  date,
+  timeSlot,
+  caseCategory,
+  feeCharged,
+  lawyerLocation,
+  meetingLink,
+}) => {
+  const formattedDate = formatAppointmentDate(date);
   const officeLocation = formatLawyerLocation(lawyerLocation);
   const isOffice = appointmentMode === "Office";
 
-  const subject = `Your appointment with ${lawyerName || "your lawyer"} is confirmed`;
+  const subject = `Payment received for your appointment with ${lawyerName || "your lawyer"}`;
   const html = `
     <div style="font-family:Arial,sans-serif;line-height:1.6;color:#0f172a">
-      <h2 style="margin:0 0 12px">Appointment Confirmed</h2>
+      <h2 style="margin:0 0 12px">Appointment Booked Successfully</h2>
       <p style="margin:0 0 16px">Hi ${name || "there"},</p>
       <p style="margin:0 0 16px">
-        Your appointment request has been approved. Here are the full appointment details.
+        We have received your payment and your appointment is now confirmed.
       </p>
       <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:16px">
         <p style="margin:0 0 8px"><strong>Lawyer:</strong> ${lawyerName || "-"}</p>
@@ -294,16 +349,16 @@ const sendAppointmentApprovalEmail = async ({
           : `<p style="margin:16px 0 0"><strong>Meeting Link:</strong> <a href="${meetingLink || "#"}">${meetingLink || "Not available yet"}</a></p>`
       }
       <p style="margin:16px 0 0;color:#64748b">
-        Please keep this email for your records.
+        You can view this appointment anytime from the Appointments page in your dashboard.
       </p>
     </div>
   `;
 
   const text = [
-    "Appointment Confirmed",
+    "Appointment Booked Successfully",
     "",
     `Hi ${name || "there"},`,
-    "Your appointment request has been approved. Here are the full appointment details.",
+    "We have received your payment and your appointment is now confirmed.",
     "",
     `Lawyer: ${lawyerName || "-"}`,
     `Specialization: ${lawyerSpecialization || "-"}`,
@@ -316,7 +371,83 @@ const sendAppointmentApprovalEmail = async ({
       ? `Lawyer Office: ${officeLocation}`
       : `Meeting Link: ${meetingLink || "Not available yet"}`,
     "",
-    "Please keep this email for your records.",
+    "You can view this appointment anytime from the Appointments page in your dashboard.",
+  ].join("\n");
+
+  return sendBrevoEmail({
+    to: { email, name: name || email },
+    subject,
+    html,
+    text,
+  });
+};
+
+const sendAppointmentPaymentSuccessEmailToLawyer = async ({
+  email,
+  name,
+  clientName,
+  lawyerName,
+  lawyerSpecialization,
+  appointmentMode,
+  date,
+  timeSlot,
+  caseCategory,
+  feeCharged,
+  lawyerLocation,
+  meetingLink,
+}) => {
+  const formattedDate = formatAppointmentDate(date);
+  const officeLocation = formatLawyerLocation(lawyerLocation);
+  const isOffice = appointmentMode === "Office";
+
+  const subject = `Payment received for appointment with ${clientName || "your client"}`;
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#0f172a">
+      <h2 style="margin:0 0 12px">Appointment Booked Successfully</h2>
+      <p style="margin:0 0 16px">Hi ${name || "there"},</p>
+      <p style="margin:0 0 16px">
+        The client has completed the payment and the appointment is now confirmed.
+      </p>
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:16px">
+        <p style="margin:0 0 8px"><strong>Client:</strong> ${clientName || "-"}</p>
+        <p style="margin:0 0 8px"><strong>Lawyer:</strong> ${lawyerName || "-"}</p>
+        <p style="margin:0 0 8px"><strong>Specialization:</strong> ${lawyerSpecialization || "-"}</p>
+        <p style="margin:0 0 8px"><strong>Date:</strong> ${formattedDate}</p>
+        <p style="margin:0 0 8px"><strong>Time:</strong> ${timeSlot || "-"}</p>
+        <p style="margin:0 0 8px"><strong>Mode:</strong> ${appointmentMode || "-"}</p>
+        <p style="margin:0 0 8px"><strong>Category:</strong> ${caseCategory || "-"}</p>
+        <p style="margin:0"><strong>Fee:</strong> Rs ${feeCharged ?? "-"}</p>
+      </div>
+      ${
+        isOffice
+          ? `<p style="margin:16px 0 0"><strong>Lawyer Office:</strong> ${officeLocation}</p>`
+          : `<p style="margin:16px 0 0"><strong>Meeting Link:</strong> <a href="${meetingLink || "#"}">${meetingLink || "Not available yet"}</a></p>`
+      }
+      <p style="margin:16px 0 0;color:#64748b">
+        Please review the appointment details in your dashboard.
+      </p>
+    </div>
+  `;
+
+  const text = [
+    "Appointment Booked Successfully",
+    "",
+    `Hi ${name || "there"},`,
+    "The client has completed the payment and the appointment is now confirmed.",
+    "",
+    `Client: ${clientName || "-"}`,
+    `Lawyer: ${lawyerName || "-"}`,
+    `Specialization: ${lawyerSpecialization || "-"}`,
+    `Date: ${formattedDate}`,
+    `Time: ${timeSlot || "-"}`,
+    `Mode: ${appointmentMode || "-"}`,
+    `Category: ${caseCategory || "-"}`,
+    `Fee: Rs ${feeCharged ?? "-"}`,
+    isOffice
+      ? `Lawyer Office: ${officeLocation}`
+      : `Meeting Link: ${meetingLink || "Not available yet"}`,
+    "",
+    "Please review the appointment details in your dashboard.",
   ].join("\n");
 
   return sendBrevoEmail({
@@ -507,6 +638,8 @@ module.exports = {
   sendAppointmentRequestEmail,
   sendAppointmentRequestNotificationEmail,
   sendAppointmentApprovalEmail,
+  sendAppointmentPaymentSuccessEmail,
+  sendAppointmentPaymentSuccessEmailToLawyer,
   sendAppointmentRejectionEmail,
   sendRescheduleRequestEmail,
   sendRescheduleRequestNotificationEmail,

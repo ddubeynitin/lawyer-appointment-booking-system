@@ -429,7 +429,7 @@ const AppointmentSchedulingPage = () => {
   }
 
   if (bookingDetails) {
-    return <AppointmentBooked bookingDetails={bookingDetails} />;
+    return <AppointmentBooked bookingDetails={bookingDetails} variant="requested" />;
   }
 
   return (

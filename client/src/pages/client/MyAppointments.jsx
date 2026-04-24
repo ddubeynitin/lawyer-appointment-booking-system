@@ -5,6 +5,7 @@ import ClientHeader from "../../components/common/ClientHeader";
 import ReviewRating from "../../components/ReviewRating";
 import DateTimeSlotPicker from "../../components/DateTimeSlotPicker";
 import MeetingAccessCard from "../../components/meeting/MeetingAccessCard";
+import AppointmentBooked from "../../components/appointment/AppointmentBooked";
 import { useAuth } from "../../context/AuthContext";
 import { useLocation } from "react-router-dom";
 import { API_URL } from "../../utils/api";
@@ -127,8 +128,31 @@ const formatLocalDate = (date) => {
   return `${year}-${month}-${day}`;
 };
 
+const loadRazorpayScript = () =>
+  new Promise((resolve) => {
+    if (typeof window !== "undefined" && window.Razorpay) {
+      resolve(true);
+      return;
+    }
+
+    const existingScript = document.getElementById("razorpay-checkout-script");
+    if (existingScript) {
+      existingScript.addEventListener("load", () => resolve(true), { once: true });
+      existingScript.addEventListener("error", () => resolve(false), { once: true });
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.id = "razorpay-checkout-script";
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+
 export default function MyAppointments() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const location = useLocation();
   const userId = user?.id || user?._id;
 
@@ -149,6 +173,9 @@ export default function MyAppointments() {
   const [rescheduleError, setRescheduleError] = useState("");
   const [autoOpenedRescheduleId, setAutoOpenedRescheduleId] = useState("");
   const [cancelSubmitting, setCancelSubmitting] = useState(false);
+  const [paymentError, setPaymentError] = useState("");
+  const [paymentBookingDetails, setPaymentBookingDetails] = useState(null);
+  const [payingAppointmentId, setPayingAppointmentId] = useState("");
 
   const fetchAppointments = useCallback(async () => {
     if (!userId) {
@@ -347,6 +374,104 @@ export default function MyAppointments() {
     }
   };
 
+  const handlePayNow = async (appointment) => {
+    if (!appointment?._id) return;
+
+    try {
+      setPayingAppointmentId(appointment._id);
+      setPaymentError("");
+      setPaymentBookingDetails(null);
+
+      const orderResponse = await axios.post(
+        `${API_URL}/payments/create-order`,
+        { appointmentId: appointment._id },
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        },
+      );
+
+      const razorpayReady = await loadRazorpayScript();
+      if (!razorpayReady) {
+        throw new Error("Unable to load Razorpay checkout right now.");
+      }
+
+      const options = {
+        key: orderResponse.data?.keyId,
+        amount: orderResponse.data?.amount,
+        currency: orderResponse.data?.currency || "INR",
+        name: "JustifAi",
+        description: `Payment for appointment with ${appointment.lawyerName}`,
+        order_id: orderResponse.data?.orderId,
+        prefill: {
+          name: user?.name || "",
+          email: user?.email || "",
+          contact: user?.phone || "",
+        },
+        notes: {
+          appointmentId: appointment._id,
+        },
+        theme: {
+          color: "#2563eb",
+        },
+        handler: async (response) => {
+          try {
+            await axios.post(
+              `${API_URL}/payments/verify`,
+              {
+                appointmentId: appointment._id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              },
+              {
+                headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+              },
+            );
+
+            setPaymentBookingDetails({
+              lawyerName: appointment.lawyerName,
+              lawyerSpecialization: appointment.lawyerSpecialization,
+              lawyerLocation:
+                [
+                  appointment.lawyerId?.location?.address,
+                  appointment.lawyerId?.location?.city,
+                  appointment.lawyerId?.location?.state,
+                ]
+                  .map((part) => String(part || "").trim())
+                  .filter(Boolean)
+                  .join(", ") || "Office location not available",
+              date: appointment.date,
+              timeSlot: appointment.timeSlot,
+              caseCategory: appointment.caseCategory,
+              appointmentMode: appointment.appointmentMode,
+              feeCharged: appointment.feeCharged,
+            });
+            await fetchAppointments();
+          } catch (verifyError) {
+            setPaymentError(
+              verifyError.response?.data?.error ||
+                "Payment was collected, but verification could not be completed right away.",
+            );
+          } finally {
+            setPayingAppointmentId("");
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            setPayingAppointmentId("");
+          },
+        },
+      };
+
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+    } catch (error) {
+      console.error("Failed to start Razorpay checkout:", error);
+      setPaymentError(error.response?.data?.error || error.message || "Unable to start payment.");
+      setPayingAppointmentId("");
+    }
+  };
+
   useEffect(() => {
     const targetAppointmentId = location.state?.rescheduleAppointmentId;
     if (!targetAppointmentId || appointments.length === 0) {
@@ -396,6 +521,10 @@ export default function MyAppointments() {
     setReviews((currentReviews) => [createdReview, ...currentReviews]);
     setSelectedAppointmentForReview(null);
   };
+
+  if (paymentBookingDetails) {
+    return <AppointmentBooked bookingDetails={paymentBookingDetails} />;
+  }
 
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 font-barlow">
@@ -504,6 +633,12 @@ export default function MyAppointments() {
             {error}
           </div>
         )}
+
+        {paymentError ? (
+          <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
+            {paymentError}
+          </div>
+        ) : null}
 
         <section className="overflow-hidden rounded-3xl bg-white shadow-xl">
           {loading ? (
@@ -631,10 +766,12 @@ export default function MyAppointments() {
                               {appointment.paymentStatus !== "Success" && (
                                 <button
                                   type="button"
-                                  className="ml-2 inline-flex items-center gap-2 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700 transition hover:bg-green-200"
+                                  onClick={() => handlePayNow(appointment)}
+                                  disabled={payingAppointmentId === appointment._id}
+                                  className="ml-2 inline-flex items-center gap-2 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700 transition hover:bg-green-200 disabled:cursor-not-allowed disabled:opacity-70"
                                 >
                                   <CreditCard size={12} />
-                                  Pay Now
+                                  {payingAppointmentId === appointment._id ? "Opening..." : "Pay Now"}
                                 </button>
                               )}
                             </div>
@@ -787,10 +924,12 @@ export default function MyAppointments() {
                               {appointment.paymentStatus !== "Success" && (
                                 <button
                                   type="button"
-                                  className="ml-2 inline-flex items-center gap-2 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700 transition hover:bg-green-200"
+                                  onClick={() => handlePayNow(appointment)}
+                                  disabled={payingAppointmentId === appointment._id}
+                                  className="ml-2 inline-flex items-center gap-2 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700 transition hover:bg-green-200 disabled:cursor-not-allowed disabled:opacity-70"
                                 >
                                   <CreditCard size={12} />
-                                  Pay Now
+                                  {payingAppointmentId === appointment._id ? "Opening..." : "Pay Now"}
                                 </button>
                               )}
                             </div>

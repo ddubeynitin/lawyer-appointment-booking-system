@@ -101,6 +101,35 @@ const appointmentSchema = new mongoose.Schema(
       required: true
     },
 
+    paymentStatus: {
+      type: String,
+      enum: ["Pending", "Success", "Failed"],
+      default: "Pending",
+    },
+
+    paymentMode: {
+      type: String,
+      enum: ["Razorpay", "UPI", "Card", "NetBanking"],
+      default: null,
+    },
+
+    paymentTransactionId: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+
+    paymentOrderId: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+
+    paymentAmount: {
+      type: Number,
+      default: null,
+    },
+
     status: {
       type: String,
       enum: ["Pending", "Approved", "Rejected", "Completed"],

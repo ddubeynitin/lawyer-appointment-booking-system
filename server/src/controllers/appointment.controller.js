@@ -1,4 +1,5 @@
 const Appointment = require("../models/appointment.model");
+const Payment = require("../models/payment.model");
 const Availability = require("../models/availability.model");
 const User = require("../models/user.model");
 const Lawyer = require("../models/lawyer.model");
@@ -163,6 +164,50 @@ const ensureMeetingDetailsForAppointments = async (appointments = []) => {
   return Promise.all(
     appointments.map((appointment) => ensureAppointmentMeetingDetails(appointment)),
   );
+};
+
+const attachPaymentDetailsToAppointments = async (appointments = []) => {
+  if (!appointments.length) {
+    return appointments;
+  }
+
+  const appointmentIds = appointments
+    .map((appointment) => appointment?._id)
+    .filter(Boolean);
+
+  if (!appointmentIds.length) {
+    return appointments;
+  }
+
+  const payments = await Payment.find({ appointmentId: { $in: appointmentIds } })
+    .sort({ createdAt: -1 })
+    .lean();
+
+  const paymentByAppointmentId = new Map();
+  payments.forEach((payment) => {
+    const key = String(payment.appointmentId);
+    if (!paymentByAppointmentId.has(key)) {
+      paymentByAppointmentId.set(key, payment);
+    }
+  });
+
+  return appointments.map((appointment) => {
+    const payment = paymentByAppointmentId.get(String(appointment._id));
+
+    if (payment) {
+      appointment.paymentStatus = payment.paymentStatus;
+      appointment.paymentMode = payment.paymentMode;
+      appointment.paymentTransactionId = payment.transactionId;
+      appointment.paymentOrderId = payment.razorpayOrderId;
+      appointment.paymentAmount = payment.amount;
+    } else if (!appointment.paymentStatus) {
+      appointment.paymentStatus = "Pending";
+    } else if (appointment.paymentStatus === "Success" && !appointment.paymentMode) {
+      appointment.paymentMode = "Razorpay";
+    }
+
+    return appointment;
+  });
 };
 
 const isWithinRescheduleWindow = (appointmentDateTime, now = new Date()) => {
@@ -393,6 +438,7 @@ const getAllAppointments = async (req, res) => {
       .populate("userId", "name email phone gender city state profilePicture createdAt")
       .populate("lawyerId", "name email phone profileImage location");
     const enrichedAppointments = await ensureMeetingDetailsForAppointments(appointments);
+    await attachPaymentDetailsToAppointments(enrichedAppointments);
     res.json(enrichedAppointments);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -416,6 +462,7 @@ const getAppointmentById = async (req, res) => {
     ]);
 
     const enrichedAppointments = await ensureMeetingDetailsForAppointments(appointments);
+    await attachPaymentDetailsToAppointments(enrichedAppointments);
 
     if (enrichedAppointments.length === 0) {
       return res.json({
@@ -874,6 +921,7 @@ const getAllLawyerAppointments = async (req, res) => {
     ]);
 
     const enrichedAppointments = await ensureMeetingDetailsForAppointments(appointments);
+    await attachPaymentDetailsToAppointments(enrichedAppointments);
 
     res.json({
       message: "Appointments retrieved successfully",
@@ -894,6 +942,7 @@ const getAllUserAppointments = async (req, res) => {
       .populate("userId", "name email phone gender city state profilePicture createdAt")
       .populate("lawyerId", "name email phone profileImage location");
     const enrichedAppointments = await ensureMeetingDetailsForAppointments(appointments);
+    await attachPaymentDetailsToAppointments(enrichedAppointments);
     
     res.json({ message: "Appointments retrieved successfully", appointments: enrichedAppointments });
   } catch (err) {
