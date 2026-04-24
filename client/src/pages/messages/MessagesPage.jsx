@@ -416,6 +416,38 @@ const MessagesPage = () => {
       );
     };
 
+    const handlePresenceSnapshot = (payload) => {
+      const onlineUserIds = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.onlineUserIds)
+          ? payload.onlineUserIds
+          : [];
+
+      if (!onlineUserIds.length) {
+        return;
+      }
+
+      const onlineSet = new Set(onlineUserIds.map((id) => String(id)));
+
+      setPresenceByUserId((current) => {
+        const next = { ...current };
+
+        onlineUserIds.forEach((userIdValue) => {
+          next[String(userIdValue)] = true;
+        });
+
+        return next;
+      });
+
+      setConversations((current) =>
+        current.map((conversation) =>
+          onlineSet.has(String(conversation.counterpartId))
+            ? { ...conversation, online: true }
+            : conversation,
+        ),
+      );
+    };
+
     const handleConversationMessage = (payload) => {
       if (!payload?.message) {
         return;
@@ -425,15 +457,28 @@ const MessagesPage = () => {
 
       setMessagesByConversation((current) => {
         const conversationMessages = current[payload.conversationId] || [];
-        const alreadyExists = conversationMessages.some(
+        const existingIndex = conversationMessages.findIndex(
           (message) =>
             sameId(message.id, normalizedMessage.id) ||
             (normalizedMessage.clientMessageId &&
               sameId(message.clientMessageId, normalizedMessage.clientMessageId)),
         );
 
-        if (alreadyExists) {
-          return current;
+        if (existingIndex >= 0) {
+          const nextMessages = [...conversationMessages];
+          const existingMessage = nextMessages[existingIndex];
+          nextMessages[existingIndex] = {
+            ...existingMessage,
+            ...normalizedMessage,
+            reactions: Array.isArray(normalizedMessage.reactions)
+              ? normalizedMessage.reactions
+              : existingMessage.reactions,
+          };
+
+          return {
+            ...current,
+            [payload.conversationId]: nextMessages,
+          };
         }
 
         return {
@@ -523,6 +568,7 @@ const MessagesPage = () => {
 
     socket.on("connect", handleConnect);
     socket.on("presence_update", handlePresenceUpdate);
+    socket.on("presence_snapshot", handlePresenceSnapshot);
     socket.on("conversation_message", handleConversationMessage);
     socket.on("conversation_read", handleConversationRead);
     socket.on("message_reaction", handleMessageReaction);
@@ -541,6 +587,7 @@ const MessagesPage = () => {
 
       socket.off("connect", handleConnect);
       socket.off("presence_update", handlePresenceUpdate);
+      socket.off("presence_snapshot", handlePresenceSnapshot);
       socket.off("conversation_message", handleConversationMessage);
       socket.off("conversation_read", handleConversationRead);
       socket.off("message_reaction", handleMessageReaction);
@@ -802,6 +849,10 @@ const MessagesPage = () => {
     }
 
     const socket = socketRef.current;
+    const currentMessage =
+      (messagesByConversation[activeConversationId] || []).find((message) =>
+        sameId(message.id, messageId),
+      ) || null;
 
     setMessagesByConversation((current) => {
       const conversationMessages = current[activeConversationId] || [];
@@ -847,6 +898,7 @@ const MessagesPage = () => {
     if (socket?.connected) {
       socket.emit("react_message", {
         messageId,
+        clientMessageId: currentMessage?.clientMessageId || null,
         userId,
         role,
         emoji,

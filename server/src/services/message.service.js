@@ -2,6 +2,7 @@ const Conversation = require("../models/conversation.model");
 const Message = require("../models/message.model");
 const User = require("../models/user.model");
 const Lawyer = require("../models/lawyer.model");
+const mongoose = require("mongoose");
 
 const DEFAULT_USER_AVATAR = "/assets/images/user.png";
 const DEFAULT_LAWYER_AVATAR = "/assets/images/profile.png";
@@ -445,7 +446,25 @@ const saveConversationMessage = async ({
   };
 };
 
-const saveMessageReaction = async ({ messageId, userId, role, emoji }) => {
+const resolveMessageForReaction = async ({ messageId, clientMessageId }) => {
+  if (messageId && mongoose.isValidObjectId(messageId)) {
+    const messageById = await Message.findById(messageId);
+    if (messageById) {
+      return messageById;
+    }
+  }
+
+  if (clientMessageId) {
+    const messageByClientMessageId = await Message.findOne({ clientMessageId });
+    if (messageByClientMessageId) {
+      return messageByClientMessageId;
+    }
+  }
+
+  return null;
+};
+
+const saveMessageReaction = async ({ messageId, clientMessageId, userId, role, emoji }) => {
   const normalizedEmoji = String(emoji || "").trim();
 
   if (!messageId || !userId || !role) {
@@ -460,7 +479,7 @@ const saveMessageReaction = async ({ messageId, userId, role, emoji }) => {
     throw error;
   }
 
-  const message = await Message.findById(messageId);
+  const message = await resolveMessageForReaction({ messageId, clientMessageId });
 
   if (!message) {
     const error = new Error("Message not found");
