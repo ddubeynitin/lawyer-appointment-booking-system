@@ -2,12 +2,36 @@ import { useNavigate } from "react-router-dom";
 import { CheckCircle2, MapPin, Video } from "lucide-react";
 import { FaBuilding } from "react-icons/fa";
 
-const AppointmentBooked = ({ bookingDetails }) => {
+const DEFAULT_COPY = {
+  title: "Appointment Booked Successfully",
+  description: "Your consultation has been confirmed and saved to your dashboard.",
+  noteTitle: (mode) =>
+    mode === "Office" ? "Lawyer Office Location" : "Online Appointment Note",
+  noteBody: (mode, bookingDetails) =>
+    mode === "Office"
+      ? bookingDetails?.lawyerLocation || "Office location not available."
+      : "The Online Meeting Link Provided to your registered Email before few minutes to Appointment time.",
+};
+
+const REQUESTED_COPY = {
+  title: "Appointment Requested Successfully",
+  description: "Your request has been sent to the lawyer and is waiting for approval.",
+  noteTitle: (mode) =>
+    mode === "Office" ? "Lawyer Office Location" : "Next Step",
+  noteBody: (mode, bookingDetails) =>
+    mode === "Office"
+      ? bookingDetails?.lawyerLocation || "Office location not available."
+      : "Once the lawyer approves the request, please complete the payment from the Appointments page.",
+};
+
+const AppointmentBooked = ({ bookingDetails, variant = "booked" }) => {
   const navigate = useNavigate();
 
   if (!bookingDetails) {
     return null;
   }
+
+  const copy = variant === "requested" ? REQUESTED_COPY : DEFAULT_COPY;
 
   return (
     <div className="min-h-screen bg-linear-to-br from-blue-200 via-white to-blue-500 font-barlow">
@@ -17,10 +41,10 @@ const AppointmentBooked = ({ bookingDetails }) => {
             <CheckCircle2 size={34} strokeWidth={2.2} />
           </div>
           <h1 className="text-2xl font-bold text-slate-800">
-            Appointment Booked Successfully
+            {copy.title}
           </h1>
           <p className="mt-2 text-slate-500">
-            Your consultation has been confirmed and saved to your dashboard.
+            {copy.description}
           </p>
 
           <div className="mt-6 rounded-2xl bg-slate-50 p-5 text-left">
@@ -76,22 +100,13 @@ const AppointmentBooked = ({ bookingDetails }) => {
                 <Video size={18} className="text-blue-600" />
               )}
               <h3 className="font-semibold">
-                {bookingDetails.appointmentMode === "Office"
-                  ? "Lawyer Office Location"
-                  : "Online Appointment Note"}
+                {copy.noteTitle(bookingDetails.appointmentMode)}
               </h3>
             </div>
 
-            {bookingDetails.appointmentMode === "Office" ? (
-              <p className="mt-3 text-sm leading-6 text-slate-600">
-                {bookingDetails.lawyerLocation || "Office location not available."}
-              </p>
-            ) : (
-              <p className="mt-3 text-sm leading-6 text-slate-600">
-                The Online Meeting Link Provided to your registered Email before few
-                minutes to Appointment time.
-              </p>
-            )}
+            <p className="mt-3 text-sm leading-6 text-slate-600">
+              {copy.noteBody(bookingDetails.appointmentMode, bookingDetails)}
+            </p>
           </div>
 
           <button
