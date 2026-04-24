@@ -45,7 +45,7 @@ const normalizeFees = (feesByCategory = []) => {
 };
 
 const EditLawyerProfile = () => {
-  const { user, token } = useAuth();
+  const { user, token, updateUser } = useAuth();
   const navigate = useNavigate();
   const lawyerId = user?.id || user?._id || "";
 
@@ -290,6 +290,20 @@ const EditLawyerProfile = () => {
           });
 
       if (response.status === 200) {
+        const updatedLawyer = response.data?.lawyer || response.data || {};
+        const nextProfileImage =
+          updatedLawyer.profileImage?.url ||
+          updatedLawyer.profileImage ||
+          profileImagePreview ||
+          user?.profileImage?.url ||
+          null;
+
+        updateUser((currentUser) => ({
+          ...currentUser,
+          ...user,
+          profileImage: nextProfileImage ? { url: nextProfileImage } : null,
+        }));
+
         toast.success("Profile updated successfully");
         navigate(`/lawyer/lawyer-profile/${lawyerId}`);
       }

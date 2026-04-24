@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+﻿import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { 
   Bell, 
   Calendar, 
@@ -22,6 +23,7 @@ export default function BookingNotifications({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [showAllModal, setShowAllModal] = useState(false);
   const dropdownRef = useRef(null);
 
   // Fetch notifications
@@ -116,6 +118,19 @@ export default function BookingNotifications({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (!showAllModal) return undefined;
+
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
+        setShowAllModal(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [showAllModal]);
+
   // Initial fetch and polling
   useEffect(() => {
     fetchNotifications();
@@ -135,7 +150,13 @@ export default function BookingNotifications({
     }
   };
 
+  const handleViewAllNotifications = () => {
+    setIsOpen(false);
+    setShowAllModal(true);
+  };
+
   const unreadCount = notifications.filter(n => !n.isRead).length;
+  const previewNotifications = notifications.slice(0, 5);
 
   // Get notification icon based on type
   const getNotificationIcon = (type) => {
@@ -225,7 +246,7 @@ export default function BookingNotifications({
                 <p className="text-gray-500 text-sm">No notifications yet</p>
               </div>
             ) : (
-              notifications.map((notification) => (
+              previewNotifications.map((notification) => (
                 <div
                   key={notification._id || notification.id}
                   className={`px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer ${
@@ -262,13 +283,156 @@ export default function BookingNotifications({
           {/* Footer */}
           {notifications.length > 0 && (
             <div className="px-4 py-3 border-t border-gray-100 bg-gray-50">
-              <button className="w-full text-center text-sm text-blue-600 hover:text-blue-700 font-medium">
+              <p className="mb-2 text-center text-xs text-gray-500">
+                Showing latest 5 notifications
+              </p>
+              <button
+                type="button"
+                onClick={handleViewAllNotifications}
+                className="w-full text-center text-sm text-blue-600 hover:text-blue-700 font-medium"
+              >
                 View All Notifications
               </button>
             </div>
           )}
         </div>
       )}
+
+      {showAllModal && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              className="fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto bg-slate-950/50 px-4 py-8 backdrop-blur-sm"
+              role="presentation"
+              onClick={() => setShowAllModal(false)}
+            >
+              <div
+                className="flex max-h-[calc(100vh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl"
+                role="dialog"
+                aria-modal="true"
+                aria-label="All notifications"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="flex items-start justify-between gap-4 border-b border-slate-100 bg-gradient-to-r from-blue-50 to-white px-6 py-5">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">
+                      Notification History
+                    </p>
+                    <h3 className="mt-1 text-2xl font-bold text-slate-800">
+                      All Notifications
+                    </h3>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Browse your full notification timeline.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowAllModal(false)}
+                    className="rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+                    aria-label="Close notifications history"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-4">
+                  <p className="text-sm text-slate-600">
+                    {notifications.length} notification{notifications.length === 1 ? "" : "s"}
+                  </p>
+                  <div className="flex items-center gap-3">
+                    {unreadCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={markAllAsRead}
+                        className="rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700 transition hover:bg-blue-100"
+                      >
+                        Mark all as read
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50">
+                  {loading ? (
+                    <div className="flex items-center justify-center py-16">
+                      <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                    </div>
+                  ) : error ? (
+                    <div className="px-6 py-16 text-center text-sm text-slate-500">
+                      {error}
+                    </div>
+                  ) : notifications.length === 0 ? (
+                    <div className="px-6 py-16 text-center">
+                      <Bell className="mx-auto mb-3 h-12 w-12 text-slate-300" />
+                      <h4 className="text-lg font-semibold text-slate-700">
+                        No notifications yet
+                      </h4>
+                      <p className="mt-1 text-sm text-slate-500">
+                        New notifications will appear here as they arrive.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 px-6 py-5">
+                      {notifications.map((notification) => {
+                        const title =
+                          notification.title ||
+                          notification.message ||
+                          notification.notificationMsg ||
+                          "Notification";
+
+                        return (
+                          <button
+                            key={notification._id || notification.id}
+                            type="button"
+                            onClick={() => !notification.isRead && markAsRead(notification._id)}
+                            className={`w-full rounded-2xl border px-4 py-4 text-left transition hover:shadow-sm ${
+                              !notification.isRead
+                                ? "border-blue-200 bg-white"
+                                : "border-slate-200 bg-white"
+                            }`}
+                          >
+                            <div className="flex gap-4">
+                              <div className="mt-1 shrink-0">
+                                {getNotificationIcon(notification.type)}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="min-w-0">
+                                    <p className={`text-sm ${!notification.isRead ? "font-semibold text-slate-800" : "font-medium text-slate-700"}`}>
+                                      {title}
+                                    </p>
+                                    {notification.description && (
+                                      <p className="mt-1 text-sm leading-6 text-slate-500">
+                                        {notification.description}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <div className="flex shrink-0 items-center gap-2">
+                                    {!notification.isRead && (
+                                      <span className="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700">
+                                        New
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-400">
+                                  <span>{formatTime(notification.createdAt || notification.timestamp)}</span>
+                                  <span>•</span>
+                                  <span>{notification.type || "general"}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
     </div>
   );
 }

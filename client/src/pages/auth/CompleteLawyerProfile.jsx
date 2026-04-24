@@ -22,7 +22,7 @@ const specializationOptions = [
 
 const CompleteLawyerProfile = () => {
   const navigate = useNavigate();
-  const { user, token } = useAuth();
+  const { user, token, updateUser } = useAuth();
   const [step, setStep] = useState(1);
 
   const [formData, setFormData] = useState({
@@ -250,6 +250,19 @@ const CompleteLawyerProfile = () => {
       );
 
       if (res.status === 200) {
+        const updatedLawyer = res.data?.lawyer || res.data || {};
+        const nextProfileImage =
+          updatedLawyer.profileImage?.url ||
+          updatedLawyer.profileImage ||
+          user?.profileImage?.url ||
+          null;
+
+        updateUser((currentUser) => ({
+          ...currentUser,
+          ...user,
+          profileImage: nextProfileImage ? { url: nextProfileImage } : null,
+        }));
+
         alert("Profile Completed Successfully!");
         navigate("/lawyer/lawyer-dashboard");
       }
