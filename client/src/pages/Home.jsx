@@ -275,7 +275,7 @@ const Home = () => {
           </nav>
 
           {user ? (
-            user.profileImage?.url || user.profilePicture ? (
+            (user.profileImage?.url || user.profilePicture) ? (
               <>
                 <div className=" w-40 flex justify-center items-center gap-5 ">
                   <button
