@@ -585,7 +585,7 @@ const ClientDashboard = () => {
                         </td>
                         <td className="text-center border border-dashed border-gray-200">
                           <img
-                            src={appointment.lawyerId.profileImage?.url || "/assets/images/profile.png"}
+                            src={appointment.lawyerId?.profileImage?.url || "/assets/images/profile.png"}
                             alt={appointment.lawyerName}
                             className="mx-auto h-10 w-10  rounded-full object-cover"
                           />

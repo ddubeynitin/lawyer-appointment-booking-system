@@ -38,7 +38,7 @@ app.use(cors(corsOptions));
 const PORT = env.PORT || 3000;
 const server = http.createServer(app);
 
-
+  
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);

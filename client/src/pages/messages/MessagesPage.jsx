@@ -988,7 +988,7 @@ const MessagesPage = () => {
             {user ? (
               <div className="hidden items-center gap-3 rounded-full border border-slate-200 bg-white px-3 py-2 shadow-sm sm:flex">
                 <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-blue-100 text-blue-600 ring-2 ring-blue-400">
-                  {user.profileImage?.url || user.profilePicture ? (
+                  {(user.profileImage?.url || user.profilePicture) ? (
                     <img
                       src={user.profileImage?.url || user.profilePicture}
                       alt={user.name || "Profile"}

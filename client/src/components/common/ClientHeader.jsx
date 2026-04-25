@@ -77,7 +77,7 @@ const ClientHeader = () => {
     });
     setProfileImagePreview(
       user?.profilePicture ||
-        user?.profileImage?.url ||
+        (user?.profileImage?.url) ||
         "/assets/images/user.png",
     );
     setProfileImageFile(null);
@@ -169,7 +169,7 @@ const ClientHeader = () => {
         state: updatedUser.state || "",
       });
       setProfileImagePreview(
-        updatedUser.profilePicture || "/assets/images/user.png",
+        updatedUser.profilePicture || updatedUser.profileImage?.url || "/assets/images/user.png",
       );
       setIsEditingProfile(false);
       setProfileUpdateSuccess("Profile updated successfully.");
@@ -569,7 +569,7 @@ const ClientHeader = () => {
                         setProfileImageFile(null);
                         setProfileImagePreview(
                           user?.profilePicture ||
-                            user?.profileImage?.url ||
+                            (user?.profileImage?.url) ||
                             "/assets/images/user.png",
                         );
                         setProfileUpdateError("");
