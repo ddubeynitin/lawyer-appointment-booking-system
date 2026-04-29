@@ -35,12 +35,23 @@ const LawyerProfile = lazy(() => import("./pages/lawyer/LawyerProfile"));
 const LawyerAccountSettings = lazy(() => import("./pages/lawyer/LawyerAccountSettings"));
 const MessagesPage = lazy(() => import("./pages/messages/MessagesPage"));
 
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+
+  React.useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [pathname]);
+
+  return null;
+};
+
 const AppShell = () => {
   const location = useLocation();
   const hideAiChat = location.pathname.startsWith("/auth") || location.pathname.startsWith("/admin") || location.pathname.startsWith("/messages") || location.pathname.startsWith("/complete-profile");
 
   return (
     <>
+      <ScrollToTop />
       <Routes>
         <Route path="*" element={<PageNotFound />} />
         <Route path="/" element={<Home />} />
