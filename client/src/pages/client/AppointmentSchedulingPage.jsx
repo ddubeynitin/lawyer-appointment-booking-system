@@ -154,6 +154,7 @@ const AppointmentSchedulingPage = () => {
     return feeMatch?.fee || 0;
   }, [selectedLawyer, caseCategory]);
   const appointmentFee = appointmentMode === "Office" ? 0 : selectedFee;
+  const hasCaseDescription = caseDescription.trim().length > 0;
 
   const availableCaseCategories = useMemo(() => {
     const lawyerCategories = Array.isArray(selectedLawyer?.feesByCategory)
@@ -651,6 +652,26 @@ const AppointmentSchedulingPage = () => {
                 placeholder="Describe your legal issue, what kind of help you need, and any important background."
                 className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-blue-500"
               />
+
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  disabled={!hasCaseDescription}
+                  onClick={() => {
+                    window.dispatchEvent(
+                      new CustomEvent("ai-chat:open-with-prompt", {
+                        detail: {
+                          prompt: caseDescription.trim(),
+                        },
+                      }),
+                    );
+                  }}
+                  className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-purple-800 via-purple-700 to-purple-500 px-4 py-3 text-sm font-semibold text-white transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Sparkles size={16} />
+                  ASK Ai
+                </button>
+              </div>
 
               <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4">
                 <div className="flex items-start gap-3">

@@ -4,6 +4,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { FaGavel, FaShieldAlt } from "react-icons/fa";
 import { RiLoginBoxLine } from "react-icons/ri";
 import { MdEmail, MdLock } from "react-icons/md";
+import { useAuth } from "../../context/AuthContext";
 import { API_URL } from "../../utils/api";
 
 const AdminLoginPage = () => {
@@ -11,6 +12,7 @@ const AdminLoginPage = () => {
   const [password, setPassword] = useState("");
 
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleAdminLogin = (e) => {
     e.preventDefault();
@@ -22,7 +24,17 @@ const AdminLoginPage = () => {
 
     axios
       .post(`${API_URL}/admin/login`, { email, password })
-      .then(() => {
+      .then((response) => {
+        const admin = response?.data?.user || null;
+        const token = response?.data?.token || null;
+
+        if (token && admin) {
+          localStorage.setItem("token", token);
+          localStorage.setItem("role", "admin");
+          localStorage.setItem("user", JSON.stringify(admin));
+          login({ token, user: admin });
+        }
+
         alert("Login successful");
         navigate("/admin/admin-dashboard");
       })

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { Bot, Sparkles, User, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -12,6 +12,8 @@ const READY_PROMPTS = [
   "How do I file an FIR?",
   "What should be in a basic contract?",
 ];
+
+const AI_CHAT_OPEN_EVENT = "ai-chat:open-with-prompt";
 
 const AiChatWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -27,13 +29,84 @@ const AiChatWidget = () => {
   const messagesRef = useRef(null);
   const chipsScrollerRef = useRef(null);
   const chipsResumeTimerRef = useRef(null);
+  const sendPromptRef = useRef(null);
   const isChipsPausedRef = useRef(false);
+
+  const sendPrompt = useCallback(async (promptValue) => {
+    const prompt = String(promptValue || "").trim();
+
+    if (!prompt || isLoading) return;
+
+    setMessages((currentMessages) => [
+      ...currentMessages,
+      { id: Date.now(), from: "user", text: prompt },
+    ]);
+    setInput("");
+    setIsLoading(true);
+
+    try {
+      const response = await axios.post(`${API_URL}/ai/generate`, {
+        prompt: `You are the JustifAi assistant. Answer clearly and concisely. You can explain platform features and provide general legal information, but you must not present yourself as a lawyer or as a substitute for professional legal advice.\n\nUser question: ${prompt}`,
+      });
+
+      setMessages((currentMessages) => [
+        ...currentMessages,
+        {
+          id: Date.now() + 1,
+          from: "bot",
+          text:
+            response.data?.text ||
+            "I could not generate a response right now. Please try again.",
+        },
+      ]);
+    } catch (error) {
+      setMessages((currentMessages) => [
+        ...currentMessages,
+        {
+          id: Date.now() + 1,
+          from: "bot",
+          text:
+            error.response?.data?.error ||
+            "The AI assistant is unavailable right now. Please try again shortly.",
+        },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [isLoading]);
 
   useEffect(() => {
     if (messagesRef.current) {
       messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
     }
   }, [messages, isOpen]);
+
+  useEffect(() => {
+    sendPromptRef.current = sendPrompt;
+  }, [sendPrompt]);
+
+  useEffect(() => {
+    const handleOpenWithPrompt = (event) => {
+      const prompt = event?.detail?.prompt?.trim();
+
+      setIsOpen(true);
+
+      if (!prompt) {
+        return;
+      }
+
+      setInput(prompt);
+      window.setTimeout(() => {
+        sendPromptRef.current?.(prompt);
+      }, 0);
+    };
+
+    window.addEventListener(AI_CHAT_OPEN_EVENT, handleOpenWithPrompt);
+
+    return () => {
+      window.removeEventListener(AI_CHAT_OPEN_EVENT, handleOpenWithPrompt);
+    };
+  }, []);
 
   useEffect(() => {
     const scroller = chipsScrollerRef.current;
@@ -88,46 +161,7 @@ const AiChatWidget = () => {
   }, [isOpen]);
 
   const sendMessage = async () => {
-    const prompt = input.trim();
-
-    if (!prompt || isLoading) return;
-
-    setMessages((currentMessages) => [
-      ...currentMessages,
-      { id: Date.now(), from: "user", text: prompt },
-    ]);
-    setInput("");
-    setIsLoading(true);
-
-    try {
-      const response = await axios.post(`${API_URL}/ai/generate`, {
-        prompt: `You are the JustifAi assistant. Answer clearly and concisely. You can explain platform features and provide general legal information, but you must not present yourself as a lawyer or as a substitute for professional legal advice.\n\nUser question: ${prompt}`,
-      });
-
-      setMessages((currentMessages) => [
-        ...currentMessages,
-        {
-          id: Date.now() + 1,
-          from: "bot",
-          text:
-            response.data?.text ||
-            "I could not generate a response right now. Please try again.",
-        },
-      ]);
-    } catch (error) {
-      setMessages((currentMessages) => [
-        ...currentMessages,
-        {
-          id: Date.now() + 1,
-          from: "bot",
-          text:
-            error.response?.data?.error ||
-            "The AI assistant is unavailable right now. Please try again shortly.",
-        },
-      ]);
-    } finally {
-      setIsLoading(false);
-    }
+    await sendPrompt(input);
   };
 
   return (
