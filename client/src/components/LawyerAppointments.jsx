@@ -1,22 +1,47 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import axios from "axios";
 import { Search, RefreshCw, Users, AlertCircle, ChevronLeft, ChevronRight, CalendarCheck } from "lucide-react";
 import LawyerClientsModal from "./common/LawyerClientsModal";
+import { useQuery } from "@tanstack/react-query";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL || "";
 
 export default function LawyerAppointments() {
-  const [lawyers, setLawyers] = useState([]);
-  const [appointments, setAppointments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [specializationFilter, setSpecializationFilter] = useState("all");
-  const [refreshing, setRefreshing] = useState(false);
   const [selectedLawyer, setSelectedLawyer] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  const lawyersQuery = useQuery({
+    queryKey: ["lawyer-appointments-lawyers"],
+    queryFn: async () => {
+      const response = await axios.get(`${API_URL}/lawyers`);
+      return Array.isArray(response.data) ? response.data : [];
+    },
+    staleTime: 30_000,
+  });
+
+  const appointmentsQuery = useQuery({
+    queryKey: ["lawyer-appointments-list"],
+    queryFn: async () => {
+      const response = await axios.get(`${API_URL}/appointments`);
+      return Array.isArray(response.data) ? response.data : [];
+    },
+    staleTime: 30_000,
+  });
+
+  const lawyers = lawyersQuery.data || [];
+  const appointments = appointmentsQuery.data || [];
+  const loading = lawyersQuery.isPending || appointmentsQuery.isPending;
+  const error = lawyersQuery.error || appointmentsQuery.error;
+  const refreshing = lawyersQuery.isFetching || appointmentsQuery.isFetching;
+  const errorMessage =
+    error?.response?.data?.message ||
+    error?.response?.data?.error ||
+    error?.message ||
+    "Failed to load data. Please try again.";
 
   const allSpecializations = useMemo(() => {
     const specs = new Set();
@@ -27,35 +52,6 @@ export default function LawyerAppointments() {
     });
     return Array.from(specs).sort();
   }, [lawyers]);
-
-  const fetchLawyers = async () => {
-    const response = await axios.get(`${API_URL}/lawyers`);``
-    setLawyers(Array.isArray(response.data) ? response.data : []);
-  };
-
-  const fetchAppointments = async () => {
-    const response = await axios.get(`${API_URL}/appointments`);
-    setAppointments(Array.isArray(response.data) ? response.data : []);
-  };
-
-  const fetchData = async (isRefresh = false) => {
-    if (isRefresh) setRefreshing(true);
-    else setLoading(true);
-    setError(null);
-    
-    try {
-      await Promise.all([fetchLawyers(), fetchAppointments()]);
-    } catch (err) {
-      setError("Failed to load data. Please try again.");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
 
   const lawyerAppointmentCounts = useMemo(() => {
     const counts = {};
@@ -149,8 +145,8 @@ export default function LawyerAppointments() {
         </div>
         <div className="flex flex-col items-center justify-center py-12">
           <AlertCircle className="text-red-500 mb-3" size={40} />
-          <p className="text-gray-600 mb-4 text-center">{error}</p>
-          <button onClick={() => fetchData()} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+          <p className="text-gray-600 mb-4 text-center">{errorMessage}</p>
+          <button onClick={() => Promise.all([lawyersQuery.refetch(), appointmentsQuery.refetch()])} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
             Try Again
           </button>
         </div>
@@ -168,7 +164,7 @@ export default function LawyerAppointments() {
           <span className="px-3 py-1 text-xs font-semibold bg-amber-100 text-amber-700 rounded-full">{pendingCount} Pending</span>
           <span className="px-3 py-1 text-xs font-semibold bg-green-100 text-green-700 rounded-full">{approvedCount} Approved</span>
         </div>
-        <button onClick={() => fetchData(true)} disabled={refreshing} className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg disabled:opacity-50">
+        <button onClick={() => Promise.all([lawyersQuery.refetch(), appointmentsQuery.refetch()])} disabled={refreshing} className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg disabled:opacity-50">
           <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} /> Refresh
         </button>
       </div>

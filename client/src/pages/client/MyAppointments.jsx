@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { CalendarDays, Clock3, Filter, RefreshCcw, Search, Star, X, AlertCircle, CreditCard } from "lucide-react";
 import ClientHeader from "../../components/common/ClientHeader";
@@ -8,6 +8,7 @@ import MeetingAccessCard from "../../components/meeting/MeetingAccessCard";
 import AppointmentBooked from "../../components/appointment/AppointmentBooked";
 import { useAuth } from "../../context/AuthContext";
 import { useLocation } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { API_URL } from "../../utils/api";
 
 const STATUS_OPTIONS = ["All", "Pending", "Approved", "Rejected", "Completed"];
@@ -154,15 +155,12 @@ const loadRazorpayScript = () =>
 export default function MyAppointments() {
   const { user, token } = useAuth();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const userId = user?.id || user?._id;
 
-  const [appointments, setAppointments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [categoryFilter, setCategoryFilter] = useState(ALL_CATEGORIES);
-  const [reviews, setReviews] = useState([]);
   const [selectedAppointmentForReview, setSelectedAppointmentForReview] = useState(null);
   const [selectedAppointmentForReschedule, setSelectedAppointmentForReschedule] = useState(null);
   const [selectedAppointmentForCancel, setSelectedAppointmentForCancel] = useState(null);
@@ -177,50 +175,39 @@ export default function MyAppointments() {
   const [paymentBookingDetails, setPaymentBookingDetails] = useState(null);
   const [payingAppointmentId, setPayingAppointmentId] = useState("");
 
-  const fetchAppointments = useCallback(async () => {
-    if (!userId) {
-      setAppointments([]);
-      setLoading(false);
-      setError("Unable to load appointment history because the client account is missing.");
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError("");
+  const appointmentsQuery = useQuery({
+    queryKey: ["client-my-appointments", userId],
+    queryFn: async () => {
       const response = await axios.get(`${API_URL}/appointments/user/${userId}`);
-      setAppointments(response.data?.appointments || []);
-    } catch (fetchError) {
-      console.error("Failed to fetch client appointments:", fetchError);
-      setAppointments([]);
-      setError("Unable to load appointment history right now.");
-    } finally {
-      setLoading(false);
-    }
-  }, [userId]);
+      return response.data?.appointments || [];
+    },
+    enabled: Boolean(userId),
+    staleTime: 30_000,
+  });
 
-  useEffect(() => {
-    fetchAppointments();
-  }, [fetchAppointments]);
+  const reviewsQuery = useQuery({
+    queryKey: ["client-my-reviews", userId],
+    queryFn: async () => {
+      const response = await axios.get(`${API_URL}/reviews/user/${userId}`);
+      return response.data || [];
+    },
+    enabled: Boolean(userId),
+    staleTime: 30_000,
+  });
 
-  useEffect(() => {
-    const fetchReviews = async () => {
-      if (!userId) {
-        setReviews([]);
-        return;
-      }
-
-      try {
-        const response = await axios.get(`${API_URL}/reviews/user/${userId}`);
-        setReviews(response.data || []);
-      } catch (fetchError) {
-        console.error("Failed to fetch client reviews:", fetchError);
-        setReviews([]);
-      }
-    };
-
-    fetchReviews();
-  }, [userId]);
+  const appointments = appointmentsQuery.data || [];
+  const reviews = reviewsQuery.data || [];
+  const loading = appointmentsQuery.isPending;
+  const error = appointmentsQuery.error;
+  const hasMissingUser = !userId;
+  const showError = Boolean(error || hasMissingUser);
+  const refreshing = appointmentsQuery.isFetching;
+  const errorMessage =
+    (!userId && "Unable to load appointment history because the client account is missing.") ||
+    error?.response?.data?.message ||
+    error?.response?.data?.error ||
+    error?.message ||
+    "Unable to load appointment history right now.";
 
   const categoryOptions = useMemo(() => {
     const uniqueCategories = [
@@ -336,9 +323,10 @@ export default function MyAppointments() {
         reason: rescheduleReason.trim(),
       });
 
-      await axios.get(`${API_URL}/appointments/user/${userId}`).then((response) => {
-        setAppointments(response.data?.appointments || []);
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["client-my-appointments", userId] }),
+        queryClient.invalidateQueries({ queryKey: ["client-my-reviews", userId] }),
+      ]);
       closeRescheduleModal();
     } catch (submitError) {
       setRescheduleError(
@@ -359,11 +347,8 @@ export default function MyAppointments() {
     try {
       setCancelSubmitting(true);
       await axios.delete(`${API_URL}/appointments/${selectedAppointmentForCancel._id}`);
-      
-      // Refresh appointments after cancellation
-      await axios.get(`${API_URL}/appointments/user/${userId}`).then((response) => {
-        setAppointments(response.data?.appointments || []);
-      });
+
+      await queryClient.invalidateQueries({ queryKey: ["client-my-appointments", userId] });
 
       setSelectedAppointmentForCancel(null);
     } catch (error) {
@@ -450,7 +435,7 @@ export default function MyAppointments() {
               appointmentMode: appointment.appointmentMode,
               feeCharged: appointment.feeCharged,
             });
-            await fetchAppointments();
+            await queryClient.invalidateQueries({ queryKey: ["client-my-appointments", userId] });
           } catch (verifyError) {
             setPaymentError(
               verifyError.response?.data?.error ||
@@ -522,7 +507,10 @@ export default function MyAppointments() {
     "";
 
   const handleReviewSubmitted = (createdReview) => {
-    setReviews((currentReviews) => [createdReview, ...currentReviews]);
+    queryClient.setQueryData(["client-my-reviews", userId], (currentReviews = []) => [
+      createdReview,
+      ...currentReviews,
+    ]);
     setSelectedAppointmentForReview(null);
   };
 
@@ -621,20 +609,20 @@ export default function MyAppointments() {
               </button>
               <button
                 type="button"
-                onClick={fetchAppointments}
-                disabled={loading}
+                onClick={() => appointmentsQuery.refetch()}
+                disabled={refreshing}
                 className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
               >
-                <RefreshCcw size={16} />
+                <RefreshCcw size={16} className={refreshing ? "animate-spin" : ""} />
                 Refresh
               </button>
             </div>
           </div>
         </section>
 
-        {error && (
+        {showError && (
           <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
-            {error}
+            {errorMessage}
           </div>
         )}
 
