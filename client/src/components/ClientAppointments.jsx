@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { CalendarDays, Search, RefreshCw, CheckCircle, XCircle, Clock, AlertCircle, Star, ChevronDown, User, Briefcase } from "lucide-react";
 import ReviewRating from "./ReviewRating";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 
@@ -57,72 +58,48 @@ const formatLawyerLocation = (lawyer) => {
 
 export default function ClientAppointments({ userId, userRole = "user" }) {
   const [viewType, setViewType] = useState(userRole === "lawyer" ? "lawyer" : "client");
-  const [appointments, setAppointments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [refreshing, setRefreshing] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(null);
-  const [reviews, setReviews] = useState([]);
+  const queryClient = useQueryClient();
 
-  const fetchAppointments = useCallback(async (isRefresh = false) => {
-    if (isRefresh) {
-      setRefreshing(true);
-    } else {
-      setLoading(true);
-    }
-    setError(null);
-    
-    try {
+  const appointmentsQuery = useQuery({
+    queryKey: ["client-appointments", userId, viewType],
+    queryFn: async () => {
       let endpoint = "/appointments";
-      // If viewing as lawyer, filter by lawyerId
       if (viewType === "lawyer" && userId) {
         endpoint = `/appointments/lawyer/${userId}`;
       }
-      
+
       const response = await requestWithFallback("get", endpoint);
-      
-      // Handle both response formats
-      let appointmentsData = [];
-      if (Array.isArray(response.data)) {
-        appointmentsData = response.data;
-      } else if (response.data?.appointments) {
-        appointmentsData = response.data.appointments;
-      }
-      
-      setAppointments(appointmentsData);
-    } catch (err) {
-      console.error("Failed to fetch appointments:", err);
-      setError(err?.response?.data?.message || err?.response?.data?.error || "Failed to load appointments");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [viewType, userId]);
+      if (Array.isArray(response.data)) return response.data;
+      if (response.data?.appointments) return response.data.appointments;
+      return [];
+    },
+    enabled: Boolean(viewType === "client" || userId),
+    staleTime: 30_000,
+  });
 
-  const fetchReviews = useCallback(async () => {
-    if (viewType !== "client" || !userId) {
-      setReviews([]);
-      return;
-    }
-
-    try {
+  const reviewsQuery = useQuery({
+    queryKey: ["client-reviews", userId],
+    queryFn: async () => {
       const response = await requestWithFallback("get", `/reviews/user/${userId}`);
-      setReviews(Array.isArray(response.data) ? response.data : []);
-    } catch (fetchError) {
-      console.error("Failed to fetch client reviews:", fetchError);
-      setReviews([]);
-    }
-  }, [userId, viewType]);
+      return Array.isArray(response.data) ? response.data : [];
+    },
+    enabled: viewType === "client" && Boolean(userId),
+    staleTime: 30_000,
+  });
 
-  useEffect(() => {
-    fetchAppointments();
-  }, [fetchAppointments]);
-
-  useEffect(() => {
-    fetchReviews();
-  }, [fetchReviews]);
+  const appointments = appointmentsQuery.data || [];
+  const loading = appointmentsQuery.isPending;
+  const error = appointmentsQuery.error;
+  const refreshing = appointmentsQuery.isFetching;
+  const reviews = reviewsQuery.data || [];
+  const errorMessage =
+    error?.response?.data?.message ||
+    error?.response?.data?.error ||
+    error?.message ||
+    "Failed to load appointments";
 
   const reviewedAppointmentIds = useMemo(() => {
     return new Set(
@@ -140,7 +117,7 @@ export default function ClientAppointments({ userId, userRole = "user" }) {
       await requestWithFallback("put", `/appointments/${appointmentId}`, {
         status: "Rejected"
       });
-      fetchAppointments();
+      appointmentsQuery.refetch();
       alert("Appointment cancelled successfully");
     } catch (err) {
       console.error("Failed to cancel appointment:", err);
@@ -219,9 +196,9 @@ export default function ClientAppointments({ userId, userRole = "user" }) {
         </div>
         <div className="flex flex-col items-center justify-center py-12">
           <AlertCircle className="text-red-500 mb-3" size={40} />
-          <p className="text-gray-600 mb-4">{error}</p>
+          <p className="text-gray-600 mb-4">{errorMessage}</p>
           <button
-            onClick={() => fetchAppointments()}
+            onClick={() => appointmentsQuery.refetch()}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             Try Again
@@ -273,7 +250,7 @@ export default function ClientAppointments({ userId, userRole = "user" }) {
         </div>
 
         <button
-          onClick={() => fetchAppointments(true)}
+          onClick={() => appointmentsQuery.refetch()}
           disabled={refreshing}
           className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
         >
@@ -376,14 +353,14 @@ export default function ClientAppointments({ userId, userRole = "user" }) {
       {/* Review Modal - Using New ReviewRating Component */}
       {showReviewModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <ReviewRating 
-              appointment={showReviewModal}
-              onClose={() => setShowReviewModal(null)}
-              onSubmitSuccess={() => {
-                fetchAppointments();
-                fetchReviews();
-              }}
-            />
+              <ReviewRating 
+                appointment={showReviewModal}
+                onClose={() => setShowReviewModal(null)}
+                onSubmitSuccess={() => {
+                queryClient.invalidateQueries({ queryKey: ["client-appointments", userId, viewType] });
+                queryClient.invalidateQueries({ queryKey: ["client-reviews", userId] });
+                }}
+              />
           </div>
         )}
     </div>

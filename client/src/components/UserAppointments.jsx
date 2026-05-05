@@ -1,19 +1,14 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import axios from "axios";
 import { CalendarDays, Search, RefreshCw, CheckCircle, XCircle, Clock, AlertCircle, User } from "lucide-react";
 import UserAppointmentDetails from "./UserAppointmentDetails";
+import { useQuery } from "@tanstack/react-query";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 export default function UserAppointments() {
-  const [appointments, setAppointments] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [lawyers, setLawyers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [refreshing, setRefreshing] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   
   // Get current user info from localStorage
@@ -31,50 +26,44 @@ export default function UserAppointments() {
   
   const currentUserId = currentUser?.id || currentUser?._id || currentUser?.userId || null;
 
-  const fetchAppointments = async (isRefresh = false) => {
-    if (isRefresh) setRefreshing(true);
-    else setLoading(true);
-    setError(null);
-    
-    try {
+  const appointmentsQuery = useQuery({
+    queryKey: ["admin-appointments"],
+    queryFn: async () => {
       const response = await axios.get(`${API_BASE_URL}/appointments`, { timeout: 10000 });
-      setAppointments(Array.isArray(response.data) ? response.data : []);
-    } catch (err) {
-      console.error("Failed to fetch appointments:", err);
-      if (err.code === 'ECONNABORTED') {
-        setError("Request timed out. Please check if the server is running.");
-      } else {
-        setError(err?.response?.data?.message || err?.response?.data?.error || "Failed to load appointments. Please try again.");
-      }
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+      return Array.isArray(response.data) ? response.data : [];
+    },
+    staleTime: 30_000,
+  });
 
-  const fetchUsers = async () => {
-    try {
+  const usersQuery = useQuery({
+    queryKey: ["admin-users"],
+    queryFn: async () => {
       const response = await axios.get(`${API_BASE_URL}/users`, { timeout: 5000 });
-      setUsers(Array.isArray(response.data) ? response.data : []);
-    } catch (err) {
-      console.error("Failed to fetch users:", err);
-    }
-  };
+      return Array.isArray(response.data) ? response.data : [];
+    },
+    staleTime: 30_000,
+  });
 
-  const fetchLawyers = async () => {
-    try {
+  const lawyersQuery = useQuery({
+    queryKey: ["admin-lawyers"],
+    queryFn: async () => {
       const response = await axios.get(`${API_BASE_URL}/lawyers`, { timeout: 5000 });
-      setLawyers(Array.isArray(response.data) ? response.data : []);
-    } catch (err) {
-      console.error("Failed to fetch lawyers:", err);
-    }
-  };
+      return Array.isArray(response.data) ? response.data : [];
+    },
+    staleTime: 30_000,
+  });
 
-  useEffect(() => {
-    fetchAppointments();
-    fetchUsers();
-    fetchLawyers();
-  }, []);
+  const appointments = appointmentsQuery.data || [];
+  const users = usersQuery.data || [];
+  const lawyers = lawyersQuery.data || [];
+  const loading = appointmentsQuery.isPending || usersQuery.isPending || lawyersQuery.isPending;
+  const error = appointmentsQuery.error || usersQuery.error || lawyersQuery.error;
+  const refreshing = appointmentsQuery.isFetching || usersQuery.isFetching || lawyersQuery.isFetching;
+  const errorMessage =
+    error?.response?.data?.message ||
+    error?.response?.data?.error ||
+    error?.message ||
+    "Failed to load appointments. Please try again.";
 
   // Get user info helper function
   const getUserInfo = (userId) => {
@@ -204,9 +193,9 @@ export default function UserAppointments() {
         </div>
         <div className="flex flex-col items-center justify-center py-12">
           <AlertCircle className="text-red-500 mb-3" size={40} />
-          <p className="text-gray-600 mb-4 text-center">{error}</p>
+          <p className="text-gray-600 mb-4 text-center">{errorMessage}</p>
           <button
-            onClick={() => fetchAppointments()}
+            onClick={() => appointmentsQuery.refetch()}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             Try Again
@@ -228,7 +217,7 @@ export default function UserAppointments() {
           <span className="px-3 py-1 text-xs font-semibold bg-red-100 text-red-700 rounded-full">{rejectedCount} Cancelled</span>
           <span className="px-3 py-1 text-xs font-semibold bg-blue-100 text-blue-700 rounded-full">{completedCount} Completed</span>
         </div>
-        <button onClick={() => fetchAppointments(true)} disabled={refreshing} className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50">
+        <button onClick={() => appointmentsQuery.refetch()} disabled={refreshing} className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50">
           <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} /> Refresh
         </button>
       </div>

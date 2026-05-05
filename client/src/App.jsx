@@ -3,7 +3,6 @@ import React, { Suspense } from "react";
 import "./App.css";
 import LoadingFallback from "./components/LoadingFallback";
 import AiChatWidget from "./components/ai/AiChatWidget";
-import { AuthProvider } from "./context/AuthContext";
 import { publicRoutes } from "./routes/publicRoutes";
 import { clientRoutes } from "./routes/clientRoutes";
 import { lawyerRoutes } from "./routes/lawyerRoutes";
@@ -43,13 +42,11 @@ const AppShell = () => {
 
 const App = () => {
   return (
-    <AuthProvider>
-      <Suspense fallback={<LoadingFallback />}>
-        <Router>
-          <AppShell />
-        </Router>
-      </Suspense>
-    </AuthProvider>
+    <Suspense fallback={<LoadingFallback />}>
+      <Router>
+        <AppShell />
+      </Router>
+    </Suspense>
   );
 };
 

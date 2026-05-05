@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useMemo, useState } from "react";
+import { queryClient } from "../utils/queryClient";
 
 const AuthContext = createContext(null);
 
@@ -15,12 +16,14 @@ export const AuthProvider = ({ children }) => {
   const login = (nextAuth) => {
     const token = nextAuth?.token || null;
     const user = nextAuth?.user || null;
+    queryClient.clear();
     setAuth({ token, user });
     if (token) localStorage.setItem("token", token);
     if (user) localStorage.setItem("user", JSON.stringify(user));
   };
 
   const logout = () => {
+    queryClient.clear();
     setAuth({ token: null, user: null });
     localStorage.removeItem("token");
     localStorage.removeItem("user");

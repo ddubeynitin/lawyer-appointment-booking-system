@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import axios from "axios";
 import { CalendarDays, Search, RefreshCw, CheckCircle, XCircle, Clock, AlertCircle } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 
@@ -43,36 +44,27 @@ const requestWithFallback = async (method, path, payload) => {
 };
 
 export default function AppointmentsList() {
-  const [appointments, setAppointments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [refreshing, setRefreshing] = useState(false);
-
-  const fetchAppointments = async (isRefresh = false) => {
-    if (isRefresh) {
-      setRefreshing(true);
-    } else {
-      setLoading(true);
-    }
-    setError(null);
-    
-    try {
+  const {
+    data: appointments = [],
+    isPending: loading,
+    error,
+    refetch,
+    isFetching,
+  } = useQuery({
+    queryKey: ["appointments-list"],
+    queryFn: async () => {
       const response = await requestWithFallback("get", "/appointments");
-      setAppointments(Array.isArray(response.data) ? response.data : []);
-    } catch (err) {
-      console.error("Failed to fetch appointments:", err);
-      setError(err?.response?.data?.message || err?.response?.data?.error || "Failed to load appointments");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchAppointments();
-  }, []);
+      return Array.isArray(response.data) ? response.data : [];
+    },
+    staleTime: 30_000,
+  });
+  const errorMessage =
+    error?.response?.data?.message ||
+    error?.response?.data?.error ||
+    error?.message ||
+    "Failed to load appointments";
 
   // Filter appointments based on search and status
   const filteredAppointments = useMemo(() => {
@@ -162,9 +154,9 @@ export default function AppointmentsList() {
         </div>
         <div className="flex flex-col items-center justify-center py-12">
           <AlertCircle className="text-red-500 mb-3" size={40} />
-          <p className="text-gray-600 mb-4">{error}</p>
+          <p className="text-gray-600 mb-4">{errorMessage}</p>
           <button
-            onClick={() => fetchAppointments()}
+            onClick={() => refetch()}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             Try Again
@@ -204,11 +196,11 @@ export default function AppointmentsList() {
 
         {/* Refresh Button */}
         <button
-          onClick={() => fetchAppointments(true)}
-          disabled={refreshing}
+          onClick={() => refetch()}
+          disabled={isFetching}
           className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
         >
-          <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
+          <RefreshCw size={16} className={isFetching ? "animate-spin" : ""} />
           Refresh
         </button>
       </div>
